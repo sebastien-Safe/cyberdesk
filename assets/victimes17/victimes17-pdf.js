@@ -300,6 +300,127 @@ window.VictimPDF = (function () {
   }
 
   // ======================================================================
+  // DEVIS V2 — grille tarifaire multi-prestations (assets/data/tarifs-cyberdesk.json)
+  // devis: { prestation_label, lines:[{label,montant,inclus?,note?}],
+  //          ht, tva, ttc, observations, source, diagnostic_code }
+  // ======================================================================
+  function generateQuoteV2(lead, devis) {
+    if (!jsPDF) { alert('jsPDF indisponible.'); return; }
+    const doc = new jsPDF();
+    const ref = `CD-DEV-17C-${todayShort().replace(/-/g, '')}-${(lead.id || '').slice(0, 8).toUpperCase()}`;
+
+    drawHeader(doc, 'DEVIS — Intervention 17Cyber', ref);
+    let y = 34;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(3, 13, 38);
+    doc.text(devis.prestation_label || 'Intervention 17Cyber', 15, y);
+    y += 8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    const objetLines = doc.splitTextToSize(
+      `Intervention CyberDesk suite à un signalement 17Cyber — ${devis.prestation_label || 'diagnostic à préciser'}.`, 180
+    );
+    doc.text(objetLines, 15, y);
+    y += objetLines.length * 4.5 + 6;
+
+    y = drawParties(doc, lead, y);
+
+    // Détail de la prestation (une ligne par élément composé)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(3, 13, 38);
+    doc.text('Détail de la prestation', 15, y);
+    y += 7;
+
+    doc.setFontSize(9);
+    (devis.lines || []).forEach(l => {
+      if (y > 260) { doc.addPage(); y = 25; }
+      const valStr = l.inclus ? 'Inclus' : (l.note ? l.note : money(l.montant));
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(l.label, 15, y, { maxWidth: 140 });
+      doc.text(valStr, 195, y, { align: 'right' });
+      doc.setDrawColor(220, 220, 220);
+      doc.line(15, y + 1.5, 195, y + 1.5);
+      y += 6;
+    });
+
+    y += 2;
+    const totalRows = [
+      ['TOTAL HT', money(devis.ht)],
+      ['TVA 20 %', money(devis.tva)],
+      ['TOTAL TTC', money(devis.ttc)],
+    ];
+    totalRows.forEach((r, i) => {
+      if (y > 265) { doc.addPage(); y = 25; }
+      const isTotal = r[0].startsWith('TOTAL TTC');
+      doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
+      doc.setTextColor(isTotal ? 3 : 40, isTotal ? 13 : 40, isTotal ? 38 : 40);
+      doc.text(r[0], 15, y);
+      doc.text(r[1], 195, y, { align: 'right' });
+      y += 6;
+    });
+    y += 4;
+
+    if (devis.observations) {
+      if (y > 250) { doc.addPage(); y = 25; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(3, 13, 38);
+      doc.text('Observations', 15, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(60, 60, 60);
+      const obsLines = doc.splitTextToSize(devis.observations, 180);
+      doc.text(obsLines, 15, y);
+      y += obsLines.length * 4.2 + 6;
+    }
+
+    if (y > 220) { doc.addPage(); y = 25; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(3, 13, 38);
+    doc.text('Modalités de règlement', 15, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(60, 60, 60);
+    const modalites = [
+      "Acompte de 50 % à la signature du présent devis ; solde à la remise du rapport d'intervention.",
+      "Moyens de paiement acceptés : virement bancaire ou carte.",
+      "Devis gratuit et sans engagement, valable 30 jours à compter de sa date d'émission.",
+      "Garantie de reprise de 7 jours si l'incident n'est pas résolu par l'intervention.",
+      "En cas d'intervention réalisée mais incident non résolu du fait de contraintes techniques imprévues, la prestation reste due.",
+      "Conformément à l'art. L.221-18 du Code de la consommation, le client particulier dispose d'un délai de rétractation de 14 jours, sauf demande expresse d'exécution immédiate.",
+    ];
+    modalites.forEach(m => {
+      const lines = doc.splitTextToSize('• ' + m, 180);
+      if (y > 270) { doc.addPage(); y = 25; }
+      doc.text(lines, 15, y);
+      y += lines.length * 4.2 + 1.5;
+    });
+
+    y += 8;
+    if (y > 250) { doc.addPage(); y = 25; }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(20, 20, 20);
+    doc.text(`Fait à Paris, le ${todayFr()}`, 15, y);
+    doc.text(PRESTATAIRE.representant, 15, y + 6);
+
+    drawFooter(doc);
+
+    const filename = `${safeFileName(devis.prestation_label || 'Devis')}_${safeFileName(lead.last_name)}_${safeFileName(lead.first_name)}_${todayShort()}_DEVIS.pdf`;
+    doc.save(filename);
+    return filename;
+  }
+
+  // ======================================================================
   // RAPPORT
   // ======================================================================
   function generateReport(lead, product) {
@@ -397,5 +518,5 @@ window.VictimPDF = (function () {
     return filename;
   }
 
-  return { generateQuote, generateReport };
+  return { generateQuote, generateQuoteV2, generateReport };
 })();
