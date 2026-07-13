@@ -51,7 +51,7 @@ async function loadDashboard() {
     </div>
 
     ${incidentGraves > 0 ? `
-      <div style="background:rgba(255,77,94,.08);border:1px solid rgba(255,77,94,.25);
+      <div style="background:rgba(225,0,15,.08);border:1px solid rgba(225,0,15,.3);
         border-radius:var(--r-sm);padding:12px 16px;margin-bottom:18px;
         font-size:.82rem;color:var(--alert)">
         🚨 ${incidentGraves} incident(s) grave(s) ou critique(s) non résolus — action immédiate requise.
@@ -78,7 +78,7 @@ async function loadDashboard() {
             ['📋 Plan d\'action', () => actionsTotal + ' tâches', 'plan'],
           ].map(([lbl, val, view]) => `
             <div style="display:flex;align-items:center;justify-content:space-between;
-              padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid var(--line);
+              padding:10px 12px;background:rgba(0,0,0,.03);border:1px solid var(--line);
               border-radius:var(--r-sm)">
               <span style="font-size:.83rem">${lbl}</span>
               <span style="font-family:var(--ff-mono);font-size:.78rem;color:var(--cyber)">${val()}</span>
@@ -120,7 +120,7 @@ function renderScoreDistrib(scores) {
   return bins.map(b => `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
       <span style="font-family:var(--ff-mono);font-size:.7rem;color:var(--mut);min-width:50px">${b.lbl}</span>
-      <div style="flex:1;height:14px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden">
+      <div style="flex:1;height:14px;background:rgba(0,0,0,.07);border-radius:4px;overflow:hidden">
         <div style="height:100%;width:${Math.round((b.count/max)*100)}%;background:${b.cls};border-radius:4px;transition:.5s"></div>
       </div>
       <span style="font-family:var(--ff-mono);font-size:.76rem;font-weight:700;color:${b.cls};min-width:20px;text-align:right">${b.count}</span>
