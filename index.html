@@ -5,9 +5,6 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss://*.supabase.co blob:;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <title>CyberDesk — Dossiers victimes 17Cyber</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="assets/css/base.css">
@@ -61,33 +58,228 @@
   </main>
 </div>
 
-<!-- ================= MODALE NOUVEAU DOSSIER VICTIME ================= -->
+<!-- ================= MODALE DIAGNOSTIC DOSSIER VICTIME (5 étapes) ================= -->
+<!-- Conforme Charte Cybermalveillance.gouv.fr v2.5 — art. 3a (diagnostic
+     précis avant prestation) et 3b (préservation des traces / preuves). -->
 <div class="modal" id="victim-lead-modal">
-  <div class="box">
-    <h3 id="victim-lead-modal-title">🆘 Nouveau dossier victime — 17Cyber</h3>
+  <div class="box wide">
     <input type="hidden" id="vl-id">
 
-    <div class="field-row">
-      <div class="field"><label>👤 Prénom *</label><input id="vl-prenom" type="text" placeholder="Prénom de la victime"></div>
-      <div class="field"><label>Nom *</label><input id="vl-nom" type="text" placeholder="Nom de la victime"></div>
+    <!-- En-tête -->
+    <div class="modal-cyber-header">
+      <div class="modal-cyber-title">
+        <span class="modal-cyber-icon">🆘</span>
+        <span id="victim-lead-modal-title">Nouveau dossier victime</span>
+        <span class="badge-source" id="modal-source-badge">17Cyber</span>
+      </div>
+      <button class="modal-cyber-close" type="button" onclick="closeVictimLeadModal()">&times;</button>
     </div>
-    <div class="field-row">
-      <div class="field"><label>✉️ E-mail</label><input id="vl-email" type="email"></div>
-      <div class="field"><label>📞 Téléphone</label><input id="vl-telephone" type="tel"></div>
-    </div>
-    <div class="field">
-      <label>🎫 Numéro de ticket 17Cyber</label>
-      <input id="vl-ticket" type="text" class="v17-ticket-input" placeholder="Ex : 17C-2026-00042">
-    </div>
-    <div class="field">
-      <label>Type d'alerte / produit *</label>
-      <select id="vl-product"><option value="">Sélectionner une alerte…</option></select>
-    </div>
-    <div class="field"><label>Notes libres</label><textarea id="vl-notes" placeholder="Contexte, éléments transmis par la victime…"></textarea></div>
 
-    <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeVictimLeadModal()">Annuler</button>
-      <button class="btn btn-pri" id="victim-lead-save-btn" onclick="saveVictimLead()">Enregistrer</button>
+    <!-- Progression -->
+    <div class="modal-cyber-progress"><div class="modal-cyber-progress-fill" id="diagnostic-progress"></div></div>
+
+    <!-- Étapes -->
+    <div class="modal-cyber-steps" id="diagnostic-steps">
+      <div class="diag-step active" data-step="1"><div class="diag-step-dot">1</div><div class="diag-step-label">Victime</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="2"><div class="diag-step-dot">2</div><div class="diag-step-label">Incident</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="3"><div class="diag-step-dot">3</div><div class="diag-step-label">Impact</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="4"><div class="diag-step-dot">4</div><div class="diag-step-label">Chronologie</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="5"><div class="diag-step-dot">5</div><div class="diag-step-label">Preuves</div></div>
+    </div>
+
+    <!-- Corps -->
+    <div class="modal-cyber-body">
+
+      <!-- ÉTAPE 1 — Victime -->
+      <div class="diag-section active" id="diag-section-1">
+        <div class="diag-row-2">
+          <div class="diag-field"><label>👤 Prénom *</label><input type="text" id="diag-first-name" placeholder="Prénom"></div>
+          <div class="diag-field"><label>Nom *</label><input type="text" id="diag-last-name" placeholder="Nom de famille"></div>
+        </div>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>📞 Téléphone *</label><input type="text" id="diag-phone" placeholder="06 00 00 00 00"></div>
+          <div class="diag-field"><label>✉️ Email</label><input type="email" id="diag-email" placeholder="email@exemple.fr"></div>
+        </div>
+        <div class="diag-field">
+          <label>Type de victime *</label>
+          <div class="diag-chips" id="chips-victim-type">
+            <div class="diag-chip selected" data-value="particulier">👤 Particulier</div>
+            <div class="diag-chip" data-value="entreprise_association">🏢 Entreprise / Association</div>
+            <div class="diag-chip" data-value="collectivite">🏛️ Collectivité</div>
+          </div>
+        </div>
+        <div class="diag-field"><label>Ville / Code postal</label><input type="text" id="diag-city" placeholder="Ex : Lyon, 69001"></div>
+        <div class="diag-notice diag-notice-info">
+          🔒 Données confidentielles — usage exclusif à cette prestation (Charte Cybermalveillance, art. 3c).
+          Aucune transmission sans consentement RGPD.
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 — Incident -->
+      <div class="diag-section" id="diag-section-2">
+        <div class="diag-row-2">
+          <div class="diag-field">
+            <label>🎫 N° de ticket 17Cyber</label>
+            <input type="text" id="diag-ticket" class="v17-ticket-input" placeholder="Ex : 17C-2026-00042">
+          </div>
+          <div class="diag-field">
+            <label>Type d'alerte / produit *</label>
+            <select id="diag-product"><option value="">Sélectionner une alerte…</option></select>
+          </div>
+        </div>
+        <div class="diag-field">
+          <label>Type d'attaque *</label>
+          <div class="diag-chips diag-chips-wrap" id="chips-attack-type">
+            <div class="diag-chip" data-value="hameconnage">Hameçonnage</div>
+            <div class="diag-chip" data-value="ransomware">Rançongiciel</div>
+            <div class="diag-chip" data-value="violation_compte">Violation de compte</div>
+            <div class="diag-chip" data-value="arnaque_virement">Arnaque au virement</div>
+            <div class="diag-chip" data-value="fraude_telephonique">Fraude téléphonique</div>
+            <div class="diag-chip" data-value="usurpation_identite">Usurpation d'identité</div>
+            <div class="diag-chip" data-value="intrusion_reseau">Intrusion réseau</div>
+            <div class="diag-chip" data-value="deni_de_service">Déni de service</div>
+            <div class="diag-chip" data-value="autre">Autre</div>
+          </div>
+        </div>
+        <div class="diag-field">
+          <label>Description de l'incident *</label>
+          <textarea id="diag-attack-description" rows="4"
+            placeholder="Décrivez les faits : que s'est-il passé, comment la victime l'a découvert, quel vecteur d'attaque est suspecté..."></textarea>
+        </div>
+        <div class="diag-row-2">
+          <div class="diag-field">
+            <label>Système d'exploitation</label>
+            <select id="diag-os-victim">
+              <option value="">— Sélectionner —</option>
+              <option value="windows">Windows 10 / 11</option>
+              <option value="mac">macOS</option>
+              <option value="ios">iOS</option>
+              <option value="android">Android</option>
+            </select>
+          </div>
+          <div class="diag-field">
+            <label>Gravité estimée *</label>
+            <div class="diag-chips" id="chips-severity">
+              <div class="diag-chip" data-value="faible">Faible</div>
+              <div class="diag-chip selected" data-value="moderee">Modérée</div>
+              <div class="diag-chip diag-chip-warning" data-value="elevee">Élevée</div>
+              <div class="diag-chip diag-chip-danger" data-value="critique">Critique</div>
+            </div>
+          </div>
+        </div>
+        <div class="diag-field">
+          <label>Services / plateformes visés</label>
+          <input type="text" id="diag-targeted-services" placeholder="Ex : messagerie Gmail, compte bancaire, NAS Synology...">
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 — Impact -->
+      <div class="diag-section" id="diag-section-3">
+        <div class="diag-field">
+          <label>Systèmes touchés *</label>
+          <div class="diag-impact-grid" id="impact-grid">
+            <div class="diag-impact-card" data-value="ordinateurs">💻 Ordinateur(s)</div>
+            <div class="diag-impact-card" data-value="serveur_nas">🖥️ Serveur / NAS</div>
+            <div class="diag-impact-card" data-value="telephone">📱 Téléphone</div>
+            <div class="diag-impact-card" data-value="comptes_cloud">☁️ Comptes cloud</div>
+            <div class="diag-impact-card" data-value="reseau_box">🌐 Réseau / Box</div>
+            <div class="diag-impact-card" data-value="donnees_bancaires">💳 Données bancaires</div>
+            <div class="diag-impact-card" data-value="identites_acces">🪪 Identités / accès</div>
+            <div class="diag-impact-card" data-value="donnees_clients">🗄️ Données clients</div>
+            <div class="diag-impact-card" data-value="messagerie">📧 Messagerie</div>
+          </div>
+        </div>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>Montant du préjudice estimé</label><input type="text" id="diag-financial-loss" placeholder="Ex : 3 500 €"></div>
+          <div class="diag-field">
+            <label>Activité professionnelle impactée</label>
+            <select id="diag-activity-impacted">
+              <option value="">— Sélectionner —</option>
+              <option value="non">Non</option>
+              <option value="partiellement">Partiellement</option>
+              <option value="totalement">Totalement arrêtée</option>
+            </select>
+          </div>
+        </div>
+        <div class="diag-field">
+          <label>Données personnelles de tiers exposées</label>
+          <div class="diag-chips" id="chips-third-party">
+            <div class="diag-chip diag-chip-danger" data-value="oui_cnil">Oui — CNIL à notifier</div>
+            <div class="diag-chip selected" data-value="non">Non</div>
+            <div class="diag-chip" data-value="inconnu">Inconnu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 — Chronologie -->
+      <div class="diag-section" id="diag-section-4">
+        <div class="diag-notice diag-notice-warning">
+          ⚖️ La chronologie est essentielle à la préservation des preuves et au dépôt de plainte.
+          Renseignez les dates connues avec précision (Charte art. 3b).
+        </div>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>Date estimée de l'attaque</label><input type="date" id="diag-attack-date"></div>
+          <div class="diag-field"><label>Heure approximative</label><input type="time" id="diag-attack-time"></div>
+        </div>
+        <div class="diag-field"><label>Date de découverte par la victime</label><input type="date" id="diag-discovery-date"></div>
+        <div class="diag-field">
+          <label>Événements clés</label>
+          <div id="timeline-entries-container"></div>
+          <button type="button" class="diag-add-btn" id="btn-add-timeline">+ Ajouter un événement</button>
+        </div>
+        <div class="diag-field">
+          <label>Dépôt de plainte</label>
+          <div class="diag-chips" id="chips-complaint">
+            <div class="diag-chip" data-value="effectue">Déjà effectué</div>
+            <div class="diag-chip" data-value="a_effectuer">À effectuer — conseiller victime</div>
+            <div class="diag-chip selected" data-value="non_envisage">Non envisagé</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 5 — Preuves -->
+      <div class="diag-section" id="diag-section-5">
+        <div class="diag-notice diag-notice-success">
+          🔐 En tant que prestataire Cybermalveillance.gouv.fr, S@FE s'engage à préserver
+          les traces utiles aux services enquêteurs (Charte art. 3b).
+        </div>
+        <div class="diag-field">
+          <label>Preuves identifiées</label>
+          <div id="proofs-container"></div>
+          <button type="button" class="diag-add-btn" id="btn-add-proof">+ Ajouter une preuve</button>
+        </div>
+        <div class="diag-field">
+          <label>Référence de preuve principale</label>
+          <input type="text" id="diag-main-proof-ref" placeholder="Ex : hash SHA256, n° de dossier, référence interne...">
+        </div>
+        <div class="diag-field">
+          <label>Remontée d'informations anonymisées à Cybermalveillance.gouv.fr</label>
+          <div class="diag-chips" id="chips-remontee">
+            <div class="diag-chip selected" data-value="true">Accordé par la victime</div>
+            <div class="diag-chip" data-value="false">Refusé par la victime</div>
+          </div>
+        </div>
+        <div class="diag-field">
+          <label>Notes internes conseiller <span class="diag-label-hint">(non communiquées à la victime)</span></label>
+          <textarea id="diag-internal-notes" rows="3" placeholder="Observations techniques, risques identifiés, points d'attention..."></textarea>
+        </div>
+        <div class="diag-field">
+          <label>Notes dossier <span class="diag-label-hint">(incluses dans le rapport victime)</span></label>
+          <textarea id="diag-notes" rows="3" placeholder="Résumé de l'intervention, recommandations à la victime..."></textarea>
+        </div>
+      </div>
+
+    </div><!-- /modal-cyber-body -->
+
+    <!-- Pied de modale -->
+    <div class="modal-cyber-footer">
+      <button type="button" class="btn-diag-ghost" id="btn-diag-prev" style="display:none">← Précédent</button>
+      <span class="diag-step-counter" id="diag-step-counter">Étape 1 / 5</span>
+      <button type="button" class="btn-diag-primary" id="btn-diag-next">Suivant →</button>
     </div>
   </div>
 </div>
