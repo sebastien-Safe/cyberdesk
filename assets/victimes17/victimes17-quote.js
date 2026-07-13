@@ -383,6 +383,8 @@ function _quoteBuildDevisObject(lead) {
 
   return {
     prestation_label: _quoteSelection.label,
+    prestation_id: _quoteSelection.id || null,
+    selection_type: _quoteSelection.type || null,
     lines,
     prix_initial: prixInitial,
     remise,
