@@ -118,6 +118,7 @@ function _v17CardHTML(lead) {
       <button class="pcard-edit-btn" title="Diagnostic" onclick="openEditVictimLeadModal('${lead.id}')">✏️</button>
       <button class="pcard-edit-btn" title="Générer le devis" onclick="openQuoteModal('${lead.id}')">📋</button>
       <button class="pcard-edit-btn" title="Suivi d'intervention" onclick="openTaskTreeModal('${lead.id}')">🗂️</button>
+      <button class="pcard-edit-btn" title="Assistant IA" onclick="openVictimAiModal('${lead.id}')">🤖</button>
       <button class="pcard-edit-btn" title="Générer le rapport (PDF simple)" onclick="generateVictimReport('${lead.id}')">📄</button>
       <button class="pcard-edit-btn pcard-del-btn" title="Supprimer" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️</button>
     </div>
