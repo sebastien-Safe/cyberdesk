@@ -350,3 +350,11 @@
 }
 .quote-remise-display.quote-remise-discount { background:rgba(24,117,60,.1); color:#18753c; }
 .quote-remise-display.quote-remise-surcharge { background:rgba(179,64,0,.1); color:#b34000; }
+
+.quote-footer-actions { display:flex; align-items:center; gap:8px; }
+.quote-send-status {
+  padding:9px 13px; border-radius:8px; font-size:.8rem; margin-bottom:12px;
+}
+.quote-send-status-info    { background:rgba(0,0,145,.06);   color:#000091; }
+.quote-send-status-error   { background:rgba(225,0,15,.08);  color:#e1000f; }
+.quote-send-status-success { background:rgba(24,117,60,.08); color:#18753c; }
