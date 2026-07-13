@@ -358,3 +358,10 @@
 .quote-send-status-info    { background:rgba(0,0,145,.06);   color:#000091; }
 .quote-send-status-error   { background:rgba(225,0,15,.08);  color:#e1000f; }
 .quote-send-status-success { background:rgba(24,117,60,.08); color:#18753c; }
+
+/* ─── Modale « Assistant IA » (dossier victime) ─── */
+.ai-output {
+  margin-top:4px; background:#f6f6f6; border:1px solid var(--line);
+  border-radius:10px; padding:14px; min-height:80px;
+  font-size:.82rem; color:var(--mut); font-style:italic;
+}
