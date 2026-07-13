@@ -238,13 +238,13 @@
   padding-top:6px; border-top:1px solid var(--line, #dddddd);
 }
 .pcard-actions {
-  display:flex; justify-content:flex-end; margin-top:10px; padding-top:8px;
+  display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px 4px; margin-top:10px; padding-top:8px;
   border-top:1px solid var(--line, #dddddd);
 }
 .pcard-edit-btn {
-  font-size:.72rem; color:var(--mut, #666666); background:none; border:none;
-  cursor:pointer; padding:3px 8px; border-radius:6px; transition:.12s;
-  font-family:'IBM Plex Sans',sans-serif;
+  font-size:.7rem; color:var(--mut, #666666); background:none; border:none;
+  cursor:pointer; padding:3px 7px; border-radius:6px; transition:.12s;
+  font-family:'IBM Plex Sans',sans-serif; white-space:nowrap;
 }
 .pcard-edit-btn:hover { background:#f0f0f0; color:var(--txt, #1d1d1b); }
 
