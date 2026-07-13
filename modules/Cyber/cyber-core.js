@@ -151,9 +151,9 @@ function scoreColor(s) {
   return 'var(--alert)';
 }
 function scoreBadge(s) {
-  if (s >= 80) return '<span class="score-badge" style="background:rgba(34,197,94,.12);color:var(--ok)">🟢 Conforme</span>';
-  if (s >= 50) return '<span class="score-badge" style="background:rgba(245,158,11,.12);color:var(--warn)">🟡 À améliorer</span>';
-  return '<span class="score-badge" style="background:rgba(255,77,94,.12);color:var(--alert)">🔴 Action requise</span>';
+  if (s >= 80) return '<span class="score-badge" style="background:rgba(24,117,60,.1);color:var(--ok)">🟢 Conforme</span>';
+  if (s >= 50) return '<span class="score-badge" style="background:rgba(179,64,0,.1);color:var(--warn)">🟡 À améliorer</span>';
+  return '<span class="score-badge" style="background:rgba(225,0,15,.1);color:var(--alert)">🔴 Action requise</span>';
 }
 
 /* ============================================================
