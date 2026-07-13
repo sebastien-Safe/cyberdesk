@@ -9,6 +9,7 @@
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { durationForPrestation } from "../_shared/google-calendar.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
@@ -61,7 +62,7 @@ Deno.serve(async (req) => {
 
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, email, pipeline_stage")
+    .select("id, first_name, last_name, email, pipeline_stage, client_token")
     .eq("id", lead_id)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
@@ -103,6 +104,8 @@ Deno.serve(async (req) => {
     return json({ error: "stripe_error", details: String(e.message || e) }, 502);
   }
 
+  const bookingUrl = `${SITE_URL}/reserver-creneau.html?client_token=${lead.client_token}`;
+
   const htmlContent = `
     <div style="font-family:Arial,sans-serif;color:#1d1d1b;max-width:560px;margin:0 auto;line-height:1.6">
       <div style="border-bottom:3px solid #000091;padding-bottom:10px;margin-bottom:20px">
@@ -112,9 +115,14 @@ Deno.serve(async (req) => {
       <p>Bonjour ${clientNom},</p>
       <p>Vous trouverez ci-joint votre devis d'intervention <strong>${devis.prestation_label || "17Cyber"}</strong>
       d'un montant de <strong>${ttc.toFixed(2)} € TTC</strong>.</p>
-      <p style="text-align:center;margin:28px 0">
+      <p style="text-align:center;margin:24px 0 10px">
         <a href="${session.url}" style="background:#000091;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">
           Payer en ligne
+        </a>
+      </p>
+      <p style="text-align:center;margin:0 0 24px">
+        <a href="${bookingUrl}" style="color:#000091;text-decoration:underline;font-size:14px">
+          📅 Réserver un créneau d'intervention
         </a>
       </p>
       <p style="font-size:13px;color:#666">Devis gratuit et sans engagement, valable 30 jours.
@@ -146,6 +154,10 @@ Deno.serve(async (req) => {
     stripe_session_id: session.id,
     stripe_checkout_url: session.url,
     payment_status: "en_attente",
+    quote_prestation_id: devis.prestation_id || null,
+    appointment_duration_minutes: durationForPrestation(devis.prestation_id || null, devis.selection_type || null),
+    // Active le lien de réservation publique (client_token) pour 30 jours.
+    client_token_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
   };
   if (["signalement", "qualification"].includes(lead.pipeline_stage)) {
     updatePayload.pipeline_stage = "devis_envoye";
