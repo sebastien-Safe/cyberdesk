@@ -428,11 +428,48 @@
   </div>
 </div>
 
+<!-- ================= MODALE ASSISTANT IA — DOSSIER VICTIME ================= -->
+<div class="modal" id="victim-ai-modal">
+  <div class="box wide">
+    <div class="modal-cyber-header">
+      <div class="modal-cyber-title">
+        <span class="modal-cyber-icon">🤖</span>
+        <span id="victim-ai-modal-title">Assistant IA — dossier</span>
+        <span class="badge-source">17Cyber</span>
+      </div>
+      <button class="modal-cyber-close" type="button" onclick="closeVictimAiModal()">&times;</button>
+    </div>
+    <div class="modal-cyber-body">
+      <div class="diag-field">
+        <label>Suggestions rapides</label>
+        <select id="victim-ai-suggest">
+          <option value="">— Suggestions —</option>
+          <option value="Qualifie précisément cet incident et évalue son niveau de gravité.">Qualifier l'incident</option>
+          <option value="Propose un plan d'action priorisé (mesures immédiates, remédiation, sécurisation).">Plan d'action priorisé</option>
+          <option value="Quelles démarches administratives ou juridiques recommandes-tu pour cette victime ?">Démarches à effectuer</option>
+          <option value="Rédige une synthèse de cet incident adaptée à la victime, dans un langage simple.">Synthèse pour la victime</option>
+          <option value="Estime la durée d'intervention et les prestations à proposer pour ce dossier.">Estimation intervention</option>
+        </select>
+      </div>
+      <div class="diag-field">
+        <div style="display:flex;gap:8px">
+          <input type="text" id="victim-ai-input" placeholder="Posez une question sur ce dossier…" style="flex:1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendVictimAiMessage()}">
+          <button class="btn-diag-primary" id="victim-ai-send" onclick="sendVictimAiMessage()">Envoyer</button>
+        </div>
+      </div>
+      <div id="victim-ai-output" class="ai-output">Prêt — posez votre question.</div>
+    </div>
+  </div>
+</div>
+
 <script src="assets/js/supabase.client.js"></script>
+<script src="assets/js/cyber-ai-system-prompt.js"></script>
 <script src="assets/js/task-tree.js"></script>
 <script src="assets/victimes17/victimes17-pdf.js"></script>
 <script src="assets/victimes17/victimes17-quote.js"></script>
 <script src="assets/victimes17/victimes17.js"></script>
+<script src="assets/victimes17/victimes17-ai.js"></script>
 
 <script>
 async function checkSession() {
