@@ -36,7 +36,7 @@ async function loadPlan() {
 
   el.innerHTML = `
     ${critiques.length ? `
-      <div style="background:rgba(255,77,94,.07);border:1px solid rgba(255,77,94,.2);
+      <div style="background:rgba(225,0,15,.07);border:1px solid rgba(225,0,15,.25);
         border-radius:var(--r-sm);padding:10px 14px;font-size:.8rem;color:var(--alert);margin-bottom:14px">
         🔴 ${critiques.length} action(s) critique(s) en attente
       </div>` : ''}
