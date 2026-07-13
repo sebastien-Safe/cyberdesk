@@ -109,6 +109,7 @@ function _v17CardHTML(lead) {
       <div class="pcard-meta">
         <div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(product.price_ttc)} TTC</div>
         <div class="pcard-meta-item">📅 ${dateStr}</div>
+        ${lead.birth_year ? `<div class="pcard-meta-item">🎂 ${_diagComputeAge(lead.birth_year)} ans</div>` : ''}
         ${lead.task_completion_pct ? `<div class="pcard-meta-item">🗂️ ${lead.task_completion_pct}% tâches</div>` : ''}
       </div>
       ${lead.notes ? `<div class="pcard-meta-item" style="margin-top:4px;font-size:.76rem;opacity:.75">📝 ${escapeHtml(lead.notes.slice(0, 80))}${lead.notes.length > 80 ? '…' : ''}</div>` : ''}
@@ -356,11 +357,25 @@ function _diagAddTimelineEntry(date = '', description = '') {
   container.appendChild(div);
 }
 
-function _diagAddProofEntry(type = '', details = '') {
+// ID utilisé pour scoper les captures d'écran uploadées dans le bucket
+// Supabase Storage 'cybervictim-proofs' (assets/data/... non concerné,
+// bucket dédié créé par la migration 004). En édition c'est l'ID réel du
+// dossier ; en création un UUID est généré à l'ouverture de la modale et
+// réutilisé comme "id" explicite à l'insertion (voir saveVictimLead), pour
+// que les fichiers déjà envoyés restent rattachés au bon dossier.
+let _diagUploadLeadId = null;
+const PROOF_FILE_MAX_BYTES = 8 * 1024 * 1024;
+
+function _diagAddProofEntry(type = '', details = '', filePath = '', fileName = '') {
   const container = document.getElementById('proofs-container');
   if (!container || container.children.length >= V17_TIMELINE_MAX) return;
   const div = document.createElement('div');
   div.className = 'proof-entry';
+  div.dataset.filePath = filePath || '';
+  div.dataset.fileName = fileName || '';
+
+  const main = document.createElement('div');
+  main.className = 'proof-entry-main';
   const sel = document.createElement('select');
   sel.className = 'proof-entry-type';
   sel.innerHTML = V17_PROOF_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
@@ -375,9 +390,99 @@ function _diagAddProofEntry(type = '', details = '') {
   del.className = 'diag-del-btn';
   del.title = 'Supprimer';
   del.textContent = '✕';
-  del.addEventListener('click', () => div.remove());
-  div.append(sel, input, del);
+  del.addEventListener('click', async () => {
+    if (div.dataset.filePath) {
+      try { await sb.storage.from('cybervictim-proofs').remove([div.dataset.filePath]); } catch (e) { console.error('[proof-file]', e); }
+    }
+    div.remove();
+  });
+  main.append(sel, input, del);
+
+  const fileRow = document.createElement('div');
+  fileRow.className = 'proof-entry-file-row';
+  const fileInputId = `proof-file-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const fileLabel = document.createElement('label');
+  fileLabel.className = 'proof-file-btn';
+  fileLabel.title = 'Joindre une capture d\'écran';
+  fileLabel.htmlFor = fileInputId;
+  fileLabel.textContent = '📎 Capture d\'écran';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = fileInputId;
+  fileInput.accept = 'image/*';
+  fileInput.className = 'proof-file-input';
+  fileInput.style.display = 'none';
+  const status = document.createElement('span');
+  status.className = 'proof-entry-file-status';
+  fileInput.addEventListener('change', () => _diagUploadProofFile(fileInput, div));
+  fileRow.append(fileLabel, fileInput, status);
+
+  div.append(main, fileRow);
   container.appendChild(div);
+  _diagRenderProofFileStatus(div);
+}
+
+async function _diagUploadProofFile(fileInput, entryDiv) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { alert("Seules les images sont acceptées (capture d'écran)."); fileInput.value = ''; return; }
+  if (file.size > PROOF_FILE_MAX_BYTES) { alert('Fichier trop volumineux (8 Mo maximum).'); fileInput.value = ''; return; }
+  if (!_diagUploadLeadId) { alert('Dossier non initialisé — réessayez.'); return; }
+
+  const status = entryDiv.querySelector('.proof-entry-file-status');
+  status.textContent = 'Envoi…';
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${_diagUploadLeadId}/${Date.now()}_${safeName}`;
+  const { error } = await sb.storage.from('cybervictim-proofs').upload(path, file);
+  if (error) {
+    status.textContent = '';
+    alert('Erreur upload : ' + error.message);
+    fileInput.value = '';
+    return;
+  }
+
+  entryDiv.dataset.filePath = path;
+  entryDiv.dataset.fileName = file.name;
+  fileInput.value = '';
+  _diagRenderProofFileStatus(entryDiv);
+}
+
+async function _diagRemoveProofFile(entryDiv) {
+  const path = entryDiv.dataset.filePath;
+  if (path) {
+    try { await sb.storage.from('cybervictim-proofs').remove([path]); } catch (e) { console.error('[proof-file]', e); }
+  }
+  entryDiv.dataset.filePath = '';
+  entryDiv.dataset.fileName = '';
+  _diagRenderProofFileStatus(entryDiv);
+}
+
+async function _diagViewProofFile(entryDiv) {
+  const path = entryDiv.dataset.filePath;
+  if (!path) return;
+  const { data, error } = await sb.storage.from('cybervictim-proofs').createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) { alert("Impossible d'ouvrir le fichier : " + (error?.message || 'inconnu')); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+function _diagRenderProofFileStatus(entryDiv) {
+  const status = entryDiv.querySelector('.proof-entry-file-status');
+  const btn = entryDiv.querySelector('.proof-file-btn');
+  const path = entryDiv.dataset.filePath;
+  if (!path) {
+    status.innerHTML = '';
+    if (btn) btn.style.display = '';
+    return;
+  }
+  if (btn) btn.style.display = 'none';
+  status.innerHTML = `
+    <span class="proof-file-chip" title="${escapeHtml(entryDiv.dataset.fileName || '')}">🖼️ ${escapeHtml((entryDiv.dataset.fileName || 'capture').slice(0, 26))}</span>
+    <button type="button" class="proof-file-view" title="Voir">👁️</button>
+    <button type="button" class="proof-file-remove" title="Retirer le fichier">✕</button>
+  `;
+  status.querySelector('.proof-file-view').addEventListener('click', () => _diagViewProofFile(entryDiv));
+  status.querySelector('.proof-file-remove').addEventListener('click', () => _diagRemoveProofFile(entryDiv));
 }
 
 function _diagGetTimelineEvents() {
@@ -391,14 +496,33 @@ function _diagGetAvailableProofs() {
   return Array.from(document.querySelectorAll('.proof-entry')).map(entry => ({
     type: entry.querySelector('.proof-entry-type').value,
     details: entry.querySelector('.proof-entry-details').value.trim(),
-  })).filter(p => p.details);
+    file_path: entry.dataset.filePath || null,
+    file_name: entry.dataset.fileName || null,
+  })).filter(p => p.details || p.file_path);
+}
+
+// Âge approximatif (année seule, pas de jour/mois collecté) à partir de
+// l'année de naissance. Retourne null si non renseignée/invalide.
+function _diagComputeAge(birthYear) {
+  const y = parseInt(birthYear, 10);
+  if (!y || y < 1900 || y > new Date().getFullYear()) return null;
+  return new Date().getFullYear() - y;
+}
+
+function _diagUpdateAgeDisplay() {
+  const input = document.getElementById('diag-birth-year');
+  const display = document.getElementById('diag-age-display');
+  const age = _diagComputeAge(input.value);
+  if (age === null) { display.style.display = 'none'; return; }
+  display.style.display = '';
+  display.textContent = `≈ ${age} ans`;
 }
 
 // Remet la modale à l'état "nouveau dossier vierge".
 function _diagResetForm() {
   document.getElementById('vl-id').value = '';
   ['diag-first-name', 'diag-last-name', 'diag-phone', 'diag-email', 'diag-city',
-   'diag-ticket', 'diag-attack-description', 'diag-targeted-services',
+   'diag-birth-year', 'diag-ticket', 'diag-attack-description', 'diag-targeted-services',
    'diag-financial-loss', 'diag-attack-date', 'diag-attack-time', 'diag-discovery-date',
    'diag-main-proof-ref', 'diag-internal-notes', 'diag-notes'].forEach(id => {
     const el = document.getElementById(id);
@@ -406,6 +530,7 @@ function _diagResetForm() {
   });
   document.getElementById('diag-os-victim').value = '';
   document.getElementById('diag-activity-impacted').value = '';
+  _diagUpdateAgeDisplay();
 
   _diagSelectChip(document.getElementById('chips-victim-type'), 'particulier');
   _diagSelectChip(document.getElementById('chips-attack-type'), null);
@@ -432,6 +557,8 @@ function _diagPrefillForm(lead) {
   document.getElementById('diag-phone').value = lead.phone || '';
   document.getElementById('diag-email').value = lead.email || '';
   document.getElementById('diag-city').value = lead.city || '';
+  document.getElementById('diag-birth-year').value = lead.birth_year || '';
+  _diagUpdateAgeDisplay();
   _diagSelectChip(document.getElementById('chips-victim-type'), lead.victim_type || 'particulier');
 
   document.getElementById('diag-ticket').value = lead.ticket_number || '';
@@ -459,7 +586,7 @@ function _diagPrefillForm(lead) {
 
   document.getElementById('proofs-container').innerHTML = '';
   const proofs = Array.isArray(lead.available_proofs) ? lead.available_proofs : [];
-  if (proofs.length) proofs.forEach(p => _diagAddProofEntry(p.type, p.details));
+  if (proofs.length) proofs.forEach(p => _diagAddProofEntry(p.type, p.details, p.file_path, p.file_name));
   else _diagAddProofEntry();
   document.getElementById('diag-main-proof-ref').value = lead.main_proof_ref || '';
   _diagSelectChip(document.getElementById('chips-remontee'), lead.remontee_cybermalveillance === false ? 'false' : 'true');
@@ -496,6 +623,10 @@ async function openVictimLeadModal() {
   if (!_v17Products.length) {
     try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
   }
+  // UUID généré côté client pour scoper les captures d'écran uploadées
+  // avant même l'enregistrement du dossier — réutilisé comme id explicite
+  // à l'insertion dans saveVictimLead().
+  _diagUploadLeadId = crypto.randomUUID();
   document.getElementById('victim-lead-modal-title').textContent = 'Nouveau dossier victime';
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagResetForm();
@@ -507,6 +638,7 @@ async function openEditVictimLeadModal(leadId) {
   if (!_v17Products.length) {
     try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
   }
+  _diagUploadLeadId = leadId;
   document.getElementById('victim-lead-modal-title').textContent =
     `Modifier — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
   document.getElementById('victim-lead-modal').classList.add('show');
@@ -542,6 +674,7 @@ async function saveVictimLead() {
     phone:       phone,
     email:       document.getElementById('diag-email').value.trim() || null,
     city:        document.getElementById('diag-city').value.trim() || null,
+    birth_year:  parseInt(document.getElementById('diag-birth-year').value, 10) || null,
     victim_type: _diagGetSelectedChip('chips-victim-type'),
 
     // Étape 2
@@ -573,7 +706,12 @@ async function saveVictimLead() {
     internal_notes:               document.getElementById('diag-internal-notes').value.trim() || null,
     notes:                         document.getElementById('diag-notes').value.trim() || null,
   };
-  if (!leadId) payload.source = '17cyber'; // valeur par défaut à la création uniquement
+  if (!leadId) {
+    payload.source = '17cyber'; // valeur par défaut à la création uniquement
+    // id explicite = celui déjà utilisé comme préfixe de stockage pour les
+    // captures d'écran éventuellement uploadées avant l'enregistrement.
+    payload.id = _diagUploadLeadId || undefined;
+  }
 
   try {
     let data, error;
@@ -637,6 +775,9 @@ function _diagInit() {
   if (btnAddTimeline) btnAddTimeline.addEventListener('click', () => _diagAddTimelineEntry());
   const btnAddProof = document.getElementById('btn-add-proof');
   if (btnAddProof) btnAddProof.addEventListener('click', () => _diagAddProofEntry());
+
+  const birthYearInput = document.getElementById('diag-birth-year');
+  if (birthYearInput) birthYearInput.addEventListener('input', _diagUpdateAgeDisplay);
 }
 
 // ── Génération devis (modale 3 étapes, assets/victimes17/victimes17-quote.js)
