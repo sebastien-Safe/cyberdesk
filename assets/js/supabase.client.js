@@ -15,8 +15,8 @@
 // figurer dans du code public (GitHub, site déployé, etc.).
 // =========================================================
 
-const SUPABASE_URL = "https://xxxx.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_xxxx";
+const SUPABASE_URL = "https://rxxciopqqqpsmyisxtcc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_a0fVnXW4OVIaFuxJhkH8fw_7i3l5wen";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
