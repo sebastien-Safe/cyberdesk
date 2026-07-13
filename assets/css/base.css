@@ -4,20 +4,28 @@
    Doit être chargé en PREMIER, avant style.css et tous les composants.
    ========================================================= */
 
-/* ── Variables globales ── */
+/* ── Variables globales ──
+   Thème clair inspiré de cybermalveillance.gouv.fr (Système de Design de
+   l'État — DSFR) : bleu France #000091, rouge Marianne #e1000f, fond
+   blanc/gris clair. Les noms de variables sont conservés (moins de
+   modifications dans les fichiers qui les consomment) mais leurs valeurs
+   changent de rôle : --navy/--navy-mid/--panel deviennent des fonds
+   clairs, --gold devient le rouge d'accent secondaire. */
 :root {
-  --navy:     #0a1628;
-  --navy-mid: #142240;
-  --panel:    #142240;
-  --line:     rgba(255,255,255,.08);
-  --mut:      #94a3b8;
-  --mut-2:    #cbd5e1;
-  --accent:   #3b82f6;
-  --accent-2: #2563eb;
-  --gold:     #f59e0b;
-  --gold-light: #fbbf24;
-  --alert:    #ff4d5e;
-  --ok:       #22c55e;
+  --navy:     #ffffff;
+  --navy-mid: #f6f6f6;
+  --panel:    #f6f6f6;
+  --line:     #dddddd;
+  --mut:      #666666;
+  --mut-2:    #3a3a3a;
+  --txt:      #1d1d1b;
+  --accent:   #000091;
+  --accent-2: #1212a5;
+  --gold:     #e1000f;
+  --gold-light: #ff4d5a;
+  --alert:    #e1000f;
+  --ok:       #18753c;
+  --warn:     #b34000;
   --r:        14px;
   --ff-disp:  'Sora', sans-serif;
   --ff-body:  'IBM Plex Sans', sans-serif;
