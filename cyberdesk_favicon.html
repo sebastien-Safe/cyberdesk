@@ -1,0 +1,156 @@
+
+<style>
+.fav-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 2rem 0;
+}
+.fav-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.fav-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 8px;
+}
+.fav-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bg-dark { background: #0f172a; border-radius: 12px; padding: 16px; }
+.bg-light { background: #f8fafc; border-radius: 12px; padding: 16px; border: 0.5px solid var(--border); }
+.bg-browser { background: #e2e8f0; border-radius: 12px; padding: 16px; }
+
+.tab-mockup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e2e8f0;
+  border-radius: 8px 8px 0 0;
+  padding: 7px 14px 7px 10px;
+  width: 200px;
+  border-bottom: 2px solid #cbd5e1;
+}
+.tab-mockup span {
+  font-size: 12px;
+  color: #334155;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
+
+<div class="fav-grid">
+
+  <div class="fav-row">
+
+    <div class="fav-swatch">
+      <div class="bg-dark">
+        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="shield-clip">
+              <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z"/>
+            </clipPath>
+          </defs>
+          <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+          <path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56 C32 56 12 47 12 36 L12 17 Z" fill="#0f2744"/>
+          <text x="32" y="38" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#60a5fa" letter-spacing="-1">CD</text>
+          <rect x="12" y="41" width="40" height="1.5" fill="#3b82f6" opacity="0.5"/>
+          <circle cx="16" cy="41.75" r="2" fill="#60a5fa"/>
+          <circle cx="48" cy="41.75" r="2" fill="#60a5fa"/>
+          <path d="M18 41.75 L24 38 L28 44 L32 36 L36 44 L40 38 L46 41.75" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#shield-clip)"/>
+        </svg>
+      </div>
+      <div class="fav-label">64×64 — fond sombre</div>
+    </div>
+
+    <div class="fav-swatch">
+      <div class="bg-light">
+        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z" fill="#1e40af" stroke="#1d4ed8" stroke-width="1.5"/>
+          <path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56 C32 56 12 47 12 36 L12 17 Z" fill="#1e3a8a"/>
+          <text x="32" y="38" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#bfdbfe" letter-spacing="-1">CD</text>
+          <rect x="12" y="41" width="40" height="1.5" fill="#93c5fd" opacity="0.6"/>
+          <circle cx="16" cy="41.75" r="2" fill="#93c5fd"/>
+          <circle cx="48" cy="41.75" r="2" fill="#93c5fd"/>
+          <path d="M18 41.75 L24 38 L28 44 L32 36 L36 44 L40 38 L46 41.75" fill="none" stroke="#93c5fd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="fav-label">64×64 — fond blanc</div>
+    </div>
+
+    <div class="fav-swatch">
+      <div class="bg-dark">
+        <svg width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+          <path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56 C32 56 12 47 12 36 L12 17 Z" fill="#0f2744"/>
+          <text x="32" y="38" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#60a5fa" letter-spacing="-1">CD</text>
+          <path d="M18 41.75 L24 38 L28 44 L32 36 L36 44 L40 38 L46 41.75" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="fav-label">32×32</div>
+    </div>
+
+    <div class="fav-swatch">
+      <div class="bg-dark">
+        <svg width="16" height="16" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z" fill="#1e3a5f" stroke="#3b82f6" stroke-width="3"/>
+          <path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56 C32 56 12 47 12 36 L12 17 Z" fill="#0f2744"/>
+          <text x="32" y="38" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#60a5fa" letter-spacing="-1">CD</text>
+        </svg>
+      </div>
+      <div class="fav-label">16×16</div>
+    </div>
+
+  </div>
+
+  <div class="fav-swatch">
+    <div class="tab-mockup">
+      <svg width="16" height="16" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60 C32 60 8 50 8 36 L8 14 Z" fill="#1e40af" stroke="#2563eb" stroke-width="2"/>
+        <path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56 C32 56 12 47 12 36 L12 17 Z" fill="#1e3a8a"/>
+        <text x="32" y="38" text-anchor="middle" font-family="system-ui" font-size="20" font-weight="700" fill="#bfdbfe" letter-spacing="-1">CD</text>
+      </svg>
+      <span>CyberDesk — S@FE</span>
+    </div>
+    <div class="fav-label">Aperçu onglet navigateur</div>
+  </div>
+
+  <div style="max-width:500px;width:100%">
+    <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:14px 16px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;">Code SVG — à enregistrer en <code style="font-size:11px">favicon.svg</code></div>
+      <pre style="font-size:10px;color:var(--text-secondary);line-height:1.6;overflow-x:auto;margin:0;white-space:pre-wrap">&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"&gt;
+  &lt;path d="M32 4 L56 14 L56 36 C56 50 32 60 32 60
+           C32 60 8 50 8 36 L8 14 Z"
+        fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/&gt;
+  &lt;path d="M32 8 L52 17 L52 36 C52 47 32 56 32 56
+           C32 56 12 47 12 36 L12 17 Z"
+        fill="#0f2744"/&gt;
+  &lt;text x="32" y="38" text-anchor="middle"
+        font-family="system-ui,sans-serif"
+        font-size="20" font-weight="700"
+        fill="#60a5fa" letter-spacing="-1"&gt;CD&lt;/text&gt;
+  &lt;rect x="12" y="41" width="40" height="1.5"
+        fill="#3b82f6" opacity="0.5"/&gt;
+  &lt;circle cx="16" cy="41.75" r="2" fill="#60a5fa"/&gt;
+  &lt;circle cx="48" cy="41.75" r="2" fill="#60a5fa"/&gt;
+  &lt;path d="M18 41.75 L24 38 L28 44 L32 36
+           L36 44 L40 38 L46 41.75"
+        fill="none" stroke="#60a5fa"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"/&gt;
+&lt;/svg&gt;</pre>
+    </div>
+  </div>
+
+</div>
