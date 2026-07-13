@@ -41,13 +41,64 @@ function _cyberDemoReply(question) {
   return (entry || CYBER_DEMO_RESPONSES[CYBER_DEMO_RESPONSES.length - 1]).reply;
 }
 
+// Construit le contexte "CRM" attendu par le prompt système partagé :
+// score global, points d'audit non conformes (avec libellés lisibles via
+// CYBER_CATS), incidents récents, actions du plan encore ouvertes.
+async function _buildB2bAuditContext(contact) {
+  if (!contact) return '';
+  const lines = [`Client : ${contact.entreprise || contact.nom || contact.prenom || 'non renseigné'} (TPE/PME/collectivité).`];
+
+  try {
+    const [{ data: profile }, { data: auditRows }, { data: incidents }, { data: plan }] = await Promise.all([
+      supa.from('cyber_client_profiles').select('score_global, last_audit_at').eq('contact_id', contact.id).maybeSingle(),
+      supa.from('cyber_client_audits').select('item_key, statut, notes').eq('contact_id', contact.id),
+      supa.from('cyber_client_incidents').select('titre, type_incident, niveau_gravite, statut, date_incident, description')
+        .eq('contact_id', contact.id).order('date_incident', { ascending: false }).limit(5),
+      supa.from('cyber_client_plan').select('titre, priorite, statut, categorie, date_echeance')
+        .eq('contact_id', contact.id).neq('statut', 'fait'),
+    ]);
+
+    if (profile?.score_global != null) {
+      lines.push(`Score de sécurité global : ${profile.score_global}/100${profile.last_audit_at ? ' (dernier audit : ' + fmtDate(profile.last_audit_at) + ')' : ''}.`);
+    }
+
+    if (auditRows?.length) {
+      const byKey = {};
+      auditRows.forEach(r => { byKey[r.item_key] = r; });
+      const weak = [];
+      for (const cat of Object.values(CYBER_CATS)) {
+        for (const item of cat.items) {
+          const row = byKey[item.key];
+          const statut = row?.statut || 'non_verifie';
+          if (statut !== 'conforme' && statut !== 'na') {
+            weak.push(`${item.label} [${statut}]${row?.notes ? ' — ' + row.notes : ''}`);
+          }
+        }
+      }
+      if (weak.length) lines.push(`Points d'audit non conformes ou non vérifiés :\n- ${weak.join('\n- ')}`);
+    }
+
+    if (incidents?.length) {
+      lines.push('Incidents récents :\n' + incidents.map(i =>
+        `- ${fmtDate(i.date_incident)} : ${i.titre} (${i.type_incident || 'type non précisé'}, gravité ${i.niveau_gravite}, statut ${i.statut})${i.description ? ' — ' + i.description : ''}`
+      ).join('\n'));
+    }
+
+    if (plan?.length) {
+      lines.push('Actions du plan encore ouvertes :\n' + plan.map(p =>
+        `- ${p.titre} (priorité ${p.priorite}, statut ${p.statut}${p.date_echeance ? ', échéance ' + fmtDate(p.date_echeance) : ''})`
+      ).join('\n'));
+    }
+  } catch (e) {
+    console.error('[cyber-assistant] contexte audit:', e);
+  }
+
+  return lines.join('\n') + '\n\n';
+}
+
 async function loadCyberAssistant() {
   const el = document.getElementById('assistant-content');
   if (!el) return;
-
-  const clientCtx = currentContact
-    ? `Client sélectionné : ${currentContact.entreprise || currentContact.nom}. `
-    : '';
 
   el.innerHTML = `
     <div class="card" style="text-align:center;padding:28px 24px;margin-bottom:14px">
@@ -83,7 +134,7 @@ async function loadCyberAssistant() {
           <option value="Quelle politique de mots de passe recommandes-tu ?">Politique mots de passe</option>
           <option value="Comment mettre en place une stratégie de sauvegarde efficace ?">Stratégie sauvegarde</option>
           <option value="Comment sensibiliser les collaborateurs au phishing ?">Formation anti-phishing</option>
-          <option value="${clientCtx}Analyse les points faibles de l'audit de sécurité et propose un plan d'action priorisé.">Analyser l'audit client</option>
+          <option value="Analyse les points faibles de l'audit de sécurité et propose un plan d'action priorisé.">Analyser l'audit client</option>
         </select>
       </div>
       <div style="display:flex;gap:8px">
@@ -117,9 +168,7 @@ async function sendCyberMessage() {
   input.disabled = true;
   document.getElementById('cyber-ia-send').disabled = true;
 
-  const clientCtx = currentContact
-    ? `Contexte client : "${currentContact.entreprise || currentContact.nom}". `
-    : '';
+  const clientCtx = await _buildB2bAuditContext(currentContact);
 
   try {
     const { data: { session } } = await sb.auth.getSession();
