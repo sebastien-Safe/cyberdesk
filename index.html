@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss://*.supabase.co blob:;">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberDesk — Dossiers victimes 17Cyber</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/pipeline.css">
+<link rel="stylesheet" href="assets/victimes17/victimes17.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- ================= ÉCRAN DE CONNEXION ================= -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div id="login-panel">
+      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Gestion de dossiers victimes cyber</p>
+      <form id="login-form" onsubmit="return false">
+        <div class="field"><label>E-mail</label><input id="login-email" type="email" autocomplete="username"></div>
+        <div class="field"><label>Mot de passe</label><input id="login-password" type="password" autocomplete="current-password"></div>
+        <button type="submit" class="btn btn-pri btn--full" id="login-btn">Se connecter</button>
+        <p class="error" id="login-error"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app-shell" class="is-hidden">
+  <header class="cyber-topbar">
+    <span class="cyber-topbar-brand">🛡 CyberDesk</span>
+    <span class="cyber-topbar-subtitle">Dossiers victimes 17Cyber</span>
+    <div class="cyber-topbar-right" style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <a href="modules/Cyber/module-cyber-clients.html" class="btn btn-ghost btn-sm">🛡 Audit clients</a>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+  </header>
+
+  <main style="display:flex;flex-direction:column;height:calc(100vh - 56px)">
+    <section id="view-victimes17" class="view active">
+      <div class="pipeline-toolbar">
+        <h2>🆘 Particuliers — 17Cyber</h2>
+        <div class="pipeline-total" id="v17-total"><span>Dossiers actifs</span> —</div>
+        <input class="pipeline-search" id="v17-search" type="text" placeholder="Rechercher (nom, ticket)…" oninput="_v17ApplySearch()">
+        <button class="pipeline-btn-add" onclick="openVictimLeadModal()">+ Nouveau dossier victime</button>
+      </div>
+      <div class="pipeline-board" id="v17-board">
+        <div class="pipeline-loading"><div class="pipeline-spinner"></div> Chargement…</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= MODALE NOUVEAU DOSSIER VICTIME ================= -->
+<div class="modal" id="victim-lead-modal">
+  <div class="box">
+    <h3 id="victim-lead-modal-title">🆘 Nouveau dossier victime — 17Cyber</h3>
+    <input type="hidden" id="vl-id">
+
+    <div class="field-row">
+      <div class="field"><label>👤 Prénom *</label><input id="vl-prenom" type="text" placeholder="Prénom de la victime"></div>
+      <div class="field"><label>Nom *</label><input id="vl-nom" type="text" placeholder="Nom de la victime"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>✉️ E-mail</label><input id="vl-email" type="email"></div>
+      <div class="field"><label>📞 Téléphone</label><input id="vl-telephone" type="tel"></div>
+    </div>
+    <div class="field">
+      <label>🎫 Numéro de ticket 17Cyber</label>
+      <input id="vl-ticket" type="text" class="v17-ticket-input" placeholder="Ex : 17C-2026-00042">
+    </div>
+    <div class="field">
+      <label>Type d'alerte / produit *</label>
+      <select id="vl-product"><option value="">Sélectionner une alerte…</option></select>
+    </div>
+    <div class="field"><label>Notes libres</label><textarea id="vl-notes" placeholder="Contexte, éléments transmis par la victime…"></textarea></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeVictimLeadModal()">Annuler</button>
+      <button class="btn btn-pri" id="victim-lead-save-btn" onclick="saveVictimLead()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODALE SUIVI D'INTERVENTION 17CYBER (arbre de tâches) ================= -->
+<div class="modal" id="task-tree-modal">
+  <div class="box wide">
+    <h3 id="task-tree-modal-title">🗂️ Suivi d'intervention</h3>
+    <div id="task-tree-container"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeTaskTreeModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/supabase.client.js"></script>
+<script src="assets/js/task-tree.js"></script>
+<script src="assets/victimes17/victimes17-pdf.js"></script>
+<script src="assets/victimes17/victimes17.js"></script>
+
+<script>
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    document.getElementById('login-screen').classList.add('is-hidden');
+    document.getElementById('app-shell').classList.remove('is-hidden');
+    initVictimes17();
+  } else {
+    document.getElementById('login-screen').classList.remove('is-hidden');
+    document.getElementById('app-shell').classList.add('is-hidden');
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async () => {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+  errEl.textContent = '';
+  btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false;
+  if (error) { errEl.textContent = error.message; return; }
+  checkSession();
+});
+
+async function logout() {
+  await sb.auth.signOut();
+  checkSession();
+}
+
+checkSession();
+</script>
+
+</body>
+</html>
