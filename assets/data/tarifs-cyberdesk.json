@@ -1,0 +1,75 @@
+{
+  "niveaux": [
+    {
+      "id": "N1", "label": "Niveau 1 — Assistance simple",
+      "description": "Intervention de moins de 30 minutes",
+      "prestations": [
+        { "id": "N1-1", "label": "Conseils de sécurisation",       "ht": 35,  "codes_diagnostic": [] },
+        { "id": "N1-2", "label": "Vérification de compromission",  "ht": 45,  "codes_diagnostic": ["hameconnage", "violation_compte"] },
+        { "id": "N1-3", "label": "Paramétrage MFA",                "ht": 49,  "codes_diagnostic": [] },
+        { "id": "N1-4", "label": "Suppression malware simple",     "ht": 59,  "codes_diagnostic": [] }
+      ]
+    },
+    {
+      "id": "N2", "label": "Niveau 2 — Intervention standard",
+      "description": "Entre 30 minutes et 1h30",
+      "prestations": [
+        { "id": "N2-1", "label": "Récupération compte Google",     "ht": 79,  "codes_diagnostic": [], "mots_cles": ["gmail", "google"] },
+        { "id": "N2-2", "label": "Récupération compte Microsoft",  "ht": 89,  "codes_diagnostic": [], "mots_cles": ["outlook", "microsoft", "hotmail"] },
+        { "id": "N2-3", "label": "Facebook piraté",                "ht": 99,  "codes_diagnostic": [], "mots_cles": ["facebook"] },
+        { "id": "N2-4", "label": "Instagram piraté",               "ht": 99,  "codes_diagnostic": [], "mots_cles": ["instagram"] },
+        { "id": "N2-5", "label": "Snapchat piraté",                "ht": 99,  "codes_diagnostic": [], "mots_cles": ["snapchat"] },
+        { "id": "N2-6", "label": "Compte LeBonCoin",               "ht": 79,  "codes_diagnostic": [], "mots_cles": ["leboncoin", "le bon coin"] },
+        { "id": "N2-7", "label": "Compte Amazon",                  "ht": 79,  "codes_diagnostic": [], "mots_cles": ["amazon"] },
+        { "id": "N2-8", "label": "Compte PayPal",                  "ht": 89,  "codes_diagnostic": [], "mots_cles": ["paypal"] }
+      ]
+    },
+    {
+      "id": "N3", "label": "Niveau 3 — Incident important",
+      "description": "",
+      "prestations": [
+        { "id": "N3-1", "label": "Nettoyage complet PC",                        "ht": 129, "codes_diagnostic": ["ransomware", "intrusion_reseau"] },
+        { "id": "N3-2", "label": "Suppression faux support informatique",        "ht": 149, "codes_diagnostic": ["fraude_telephonique"] },
+        { "id": "N3-3", "label": "Piratage avec vol de données",                 "ht": 159, "codes_diagnostic": [] },
+        { "id": "N3-4", "label": "Accompagnement dépôt de plainte + preuves",   "ht": 69,  "codes_diagnostic": ["arnaque_virement"] }
+      ]
+    },
+    {
+      "id": "N4", "label": "Niveau 4 — Incident critique",
+      "description": "Plusieurs heures réparties sur plusieurs jours",
+      "prestations": [
+        { "id": "N4-1", "label": "Smartphone compromis",             "ht": 199, "codes_diagnostic": [] },
+        { "id": "N4-2", "label": "Plusieurs comptes piratés",        "ht": 229, "codes_diagnostic": [] },
+        { "id": "N4-3", "label": "Usurpation d'identité numérique",  "ht": 249, "codes_diagnostic": ["usurpation_identite"] },
+        { "id": "N4-4", "label": "Sextorsion / Deepfake",            "ht": 279, "codes_diagnostic": [] }
+      ]
+    }
+  ],
+  "accompagnement": [
+    { "id": "A1", "label": "Assistance 7 jours",           "ht": 59 },
+    { "id": "A2", "label": "Assistance 30 jours",          "ht": 99 },
+    { "id": "A3", "label": "Vérification sécurité finale", "ht": 39 },
+    { "id": "A4", "label": "Rapport d'intervention PDF",   "ht": 0, "inclus": true }
+  ],
+  "options": [
+    { "id": "O1", "label": "Heure supplémentaire",       "ht": 75,   "type": "fixe" },
+    { "id": "O2", "label": "Intervention urgente (<2h)", "ht": 50,   "type": "fixe" },
+    { "id": "O3", "label": "Intervention soir/week-end", "ht": null, "type": "pourcentage", "valeur": 40 },
+    { "id": "O4", "label": "Déplacement",                "ht": null, "type": "bareme" }
+  ],
+  "packs": [
+    { "id": "P1", "label": "Pack Sécurisation",   "ht": 99,
+      "inclus": ["Audit rapide", "Changement mots de passe", "MFA", "Vérification des comptes"] },
+    { "id": "P2", "label": "Pack Famille",         "ht": 179,
+      "inclus": ["Jusqu'à 5 comptes", "Sécurisation complète", "Sauvegarde des preuves"] },
+    { "id": "P3", "label": "Pack Après Piratage",  "ht": 249,
+      "inclus": ["Récupération des comptes", "Suppression accès pirates", "Vérification appareils", "Sécurisation complète", "Rapport"] }
+  ],
+  "cas_complexe": { "taux_horaire": 75, "label": "Cas complexe — facturation horaire", "codes_diagnostic": ["deni_de_service"] },
+  "tva": 0.20,
+  "politique": {
+    "devis_gratuit": true,
+    "garantie_reprise_jours": 7,
+    "facturation_si_impossible": true
+  }
+}
