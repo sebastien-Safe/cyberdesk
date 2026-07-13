@@ -13,7 +13,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 a{color:inherit}
-h1,h2,h3,h4{font-family:var(--ff-disp);color:#fff;letter-spacing:-.02em}
+h1,h2,h3,h4{font-family:var(--ff-disp);color:var(--txt, #1d1d1b);letter-spacing:-.02em}
 button{font-family:var(--ff-body)}
 
 .brand-logo{height:42px;width:42px;object-fit:contain;border-radius:10px;display:block}
@@ -22,19 +22,16 @@ button{font-family:var(--ff-body)}
 /* ---------- BUTTONS ---------- */
 .btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-disp);font-weight:700;font-size:.85rem;padding:10px 18px;border-radius:11px;cursor:pointer;border:0;transition:.15s}
 .btn-pri{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff}
-.btn-pri:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(37,99,235,.35)}
-.btn-out{background:transparent;color:#fff;border:1px solid var(--line)}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,145,.3)}
+.btn-out{background:transparent;color:var(--txt, #1d1d1b);border:1px solid var(--line)}
 .btn-out:hover{border-color:var(--accent);color:var(--accent)}
-.btn-danger{background:rgba(255,77,94,.12);color:var(--alert);border:1px solid rgba(255,77,94,.35)}
-.btn-danger:hover{background:rgba(255,77,94,.2)}
+.btn-danger{background:rgba(225,0,15,.08);color:var(--alert);border:1px solid rgba(225,0,15,.3)}
+.btn-danger:hover{background:rgba(225,0,15,.15)}
 .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px}
 
 /* ---------- LOGIN ---------- */
-.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;
-  background:radial-gradient(900px 600px at 85% -5%, rgba(37,99,235,.18), transparent 60%),
-             radial-gradient(800px 700px at -10% 20%, rgba(245,158,11,.07), transparent 55%),
-             linear-gradient(180deg,var(--navy),var(--navy-mid));}
-.login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--navy);}
+.login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
 .login-card .brand{margin-bottom:18px}
 .login-card h1{font-size:1.4rem;margin-bottom:18px}
 .login-card .error{color:var(--alert);font-size:.85rem;margin-top:10px;min-height:1.2em}
@@ -48,13 +45,13 @@ button{font-family:var(--ff-body)}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:.78rem;color:var(--mut);margin-bottom:6px;font-family:var(--ff-mono);letter-spacing:.04em}
 .field input,.field select,.field textarea{
-  width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;
-  padding:10px 12px;color:#fff;font-family:var(--ff-body);font-size:.9rem;outline:none;transition:.15s;
+  width:100%;background:#ffffff;border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;color:var(--txt, #1d1d1b);font-family:var(--ff-body);font-size:.9rem;outline:none;transition:.15s;
 }
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
 .field textarea{min-height:80px;resize:vertical}
 .checks{display:flex;flex-wrap:wrap;gap:10px}
-.checks label{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--mut-2);background:rgba(255,255,255,.03);border:1px solid var(--line);padding:7px 12px;border-radius:999px;cursor:pointer}
+.checks label{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--mut-2);background:#ffffff;border:1px solid var(--line);padding:7px 12px;border-radius:999px;cursor:pointer}
 .checks input{width:auto}
 .checkbox-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;color:var(--mut-2);font-family:var(--ff-mono)}
 .checkbox-label input{width:auto}
@@ -240,9 +237,9 @@ a.sidebar-item{text-decoration:none}
 .overdue{color:var(--alert) !important;font-weight:600}
 
 /* ---------- MODAL ---------- */
-.modal{position:fixed;inset:0;z-index:100;background:rgba(5,9,20,.78);backdrop-filter:blur(6px);display:none;place-items:center;padding:20px;overflow-y:auto}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(29,29,27,.55);backdrop-filter:blur(6px);display:none;place-items:center;padding:20px;overflow-y:auto}
 .modal.show{display:grid}
-.modal .box{max-width:560px;width:100%;background:var(--navy-mid);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .2s;max-height:90vh;overflow-y:auto}
+.modal .box{max-width:560px;width:100%;background:var(--navy-mid);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:pop .2s;max-height:90vh;overflow-y:auto}
 @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
 .modal h3{font-size:1.2rem;margin-bottom:18px}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
