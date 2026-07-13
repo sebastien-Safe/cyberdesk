@@ -19,3 +19,54 @@ const SUPABASE_URL = "https://xxxx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xxxx";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Helpers partagés (remplacent les utilitaires du CRM parent safecrm) ──
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatMoney(n) {
+  return (Number(n) || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+
+let _cdToastTimer;
+function showCrmToast(msg) {
+  let el = document.getElementById('cd-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cd-toast';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);'
+      + 'background:#0a1628;color:#fff;border:1px solid rgba(255,255,255,.15);'
+      + 'padding:10px 18px;border-radius:8px;font-size:.85rem;z-index:9999;'
+      + 'opacity:0;transition:opacity .2s;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(_cdToastTimer);
+  _cdToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+// Journal RGPD minimal — remplace logRgpd() de safecrm.
+// entityType/entityId/donnees/criticite/details : voir table audit_logs
+// (supabase/migrations/001_cyber_schema.sql).
+async function logRgpd(action, module, { entityType, entityId, donnees, criticite = 'Info', details = {} } = {}) {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    await sb.from('audit_logs').insert({
+      action,
+      module,
+      entity_type: entityType || null,
+      entity_id: entityId || null,
+      description: donnees || null,
+      criticite,
+      details,
+      created_by: user?.id || null,
+    });
+  } catch (e) {
+    console.error('[logRgpd]', e);
+  }
+}
