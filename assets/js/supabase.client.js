@@ -64,7 +64,7 @@ async function logRgpd(action, module, { entityType, entityId, donnees, criticit
       description: donnees || null,
       criticite,
       details,
-      created_by: user?.id || null,
+      user_id: user?.id || null,
     });
   } catch (e) {
     console.error('[logRgpd]', e);
