@@ -121,16 +121,14 @@
 
       <!-- ÉTAPE 2 — Incident -->
       <div class="diag-section" id="diag-section-2">
-        <div class="diag-row-2">
-          <div class="diag-field">
-            <label>🎫 N° de ticket 17Cyber</label>
-            <input type="text" id="diag-ticket" class="v17-ticket-input" placeholder="Ex : 17C-2026-00042">
-          </div>
-          <div class="diag-field">
-            <label>Type d'alerte / produit *</label>
-            <select id="diag-product"><option value="">Sélectionner une alerte…</option></select>
-          </div>
+        <div class="diag-field">
+          <label>🎫 N° de ticket 17Cyber</label>
+          <input type="text" id="diag-ticket" class="v17-ticket-input" placeholder="Ex : 17C-2026-00042">
         </div>
+        <!-- Le type d'alerte 17Cyber (product_id) est désormais dérivé
+             automatiquement du type d'attaque ci-dessous — plus de
+             sélection manuelle redondante (voir ATTACK_TYPE_TO_PRODUCT_CODE
+             dans victimes17.js). -->
         <div class="diag-field">
           <label>Type d'attaque *</label>
           <div class="diag-chips diag-chips-wrap" id="chips-attack-type">
@@ -284,6 +282,115 @@
   </div>
 </div>
 
+<!-- ================= MODALE DEVIS 17CYBER (3 étapes) ================= -->
+<!-- Grille tarifaire : assets/data/tarifs-cyberdesk.json (source unique de vérité).
+     Prestation présélectionnée à partir du diagnostic (attack_type +
+     mots-clés targeted_services), toujours modifiable, montant ajustable
+     manuellement en étape 3, confirmation explicite avant génération. -->
+<div class="modal" id="quote-modal">
+  <div class="box wide">
+
+    <div class="modal-cyber-header">
+      <div class="modal-cyber-title">
+        <span class="modal-cyber-icon">📋</span>
+        <span id="quote-modal-title">Devis — dossier victime</span>
+        <span class="badge-source">17Cyber</span>
+      </div>
+      <button class="modal-cyber-close" type="button" onclick="closeQuoteModal()">&times;</button>
+    </div>
+
+    <div class="modal-cyber-progress"><div class="modal-cyber-progress-fill" id="quote-progress"></div></div>
+
+    <div class="modal-cyber-steps" id="quote-steps">
+      <div class="diag-step active" data-step="1"><div class="diag-step-dot">1</div><div class="diag-step-label">Prestation</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="2"><div class="diag-step-dot">2</div><div class="diag-step-label">Options</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="3"><div class="diag-step-dot">3</div><div class="diag-step-label">Résumé</div></div>
+    </div>
+
+    <div class="modal-cyber-body">
+
+      <!-- ÉTAPE 1 — Prestation -->
+      <div class="diag-section active" id="quote-section-1">
+        <div class="diag-notice diag-notice-info" id="quote-suggestion-banner" style="display:none"></div>
+
+        <div class="quote-mode-tabs" id="quote-mode-tabs">
+          <div class="quote-mode-tab active" data-mode="niveaux">Par niveau</div>
+          <div class="quote-mode-tab" data-mode="packs">Packs</div>
+          <div class="quote-mode-tab" data-mode="complexe">Cas complexe</div>
+        </div>
+
+        <div id="quote-niveaux-container"></div>
+
+        <div id="quote-packs-container" style="display:none"></div>
+
+        <div id="quote-complexe-container" style="display:none">
+          <div class="diag-notice diag-notice-warning">
+            ⚖️ Facturation horaire au taux de 75 €/h — utilisez ce mode pour un incident
+            ne correspondant à aucune prestation type de la grille.
+          </div>
+          <div class="diag-field">
+            <label>Nombre d'heures estimées</label>
+            <input type="number" id="quote-complexe-hours" min="0.5" step="0.5" placeholder="Ex : 3">
+          </div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 — Options et accompagnement -->
+      <div class="diag-section" id="quote-section-2">
+        <div class="diag-field">
+          <label>Accompagnement</label>
+          <div id="quote-accompagnement-container" class="quote-check-list"></div>
+        </div>
+        <div class="diag-field">
+          <label>Options</label>
+          <div id="quote-options-container" class="quote-check-list"></div>
+        </div>
+        <div class="diag-field" id="quote-o4-field" style="display:none">
+          <label>Précisions déplacement</label>
+          <input type="text" id="quote-o4-text" placeholder="Ex : Lyon, 15 km — montant à ajouter manuellement si applicable">
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 — Résumé et génération -->
+      <div class="diag-section" id="quote-section-3">
+        <div id="quote-modified-badge" class="quote-modified-badge" style="display:none">✏️ Modifié manuellement par rapport à la suggestion du diagnostic</div>
+
+        <div id="quote-summary-table" class="quote-summary-table"></div>
+
+        <div class="diag-row-2">
+          <div class="diag-field">
+            <label>Montant HT <span class="diag-label-hint">(modifiable)</span></label>
+            <input type="number" id="quote-ht-override" step="0.01" min="0">
+          </div>
+          <div class="diag-field">
+            <label>TVA 20 % / Total TTC</label>
+            <input type="text" id="quote-ttc-display" disabled>
+          </div>
+        </div>
+
+        <div class="diag-field">
+          <label>Observations <span class="diag-label-hint">(incluses dans le devis)</span></label>
+          <textarea id="quote-observations" rows="3" placeholder="Précisions sur la prestation, conditions particulières..."></textarea>
+        </div>
+
+        <div class="diag-notice diag-notice-success">
+          💶 Devis gratuit et sans engagement · Garantie reprise 7 jours ·
+          Facturation possible si intervention réalisée mais incident non résolu.
+        </div>
+      </div>
+
+    </div><!-- /modal-cyber-body -->
+
+    <div class="modal-cyber-footer">
+      <button type="button" class="btn-diag-ghost" id="btn-quote-prev" style="display:none">← Précédent</button>
+      <span class="diag-step-counter" id="quote-step-counter">Étape 1 / 3</span>
+      <button type="button" class="btn-diag-primary" id="btn-quote-next">Suivant →</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= MODALE SUIVI D'INTERVENTION 17CYBER (arbre de tâches) ================= -->
 <div class="modal" id="task-tree-modal">
   <div class="box wide">
@@ -298,6 +405,7 @@
 <script src="assets/js/supabase.client.js"></script>
 <script src="assets/js/task-tree.js"></script>
 <script src="assets/victimes17/victimes17-pdf.js"></script>
+<script src="assets/victimes17/victimes17-quote.js"></script>
 <script src="assets/victimes17/victimes17.js"></script>
 
 <script>
