@@ -1,0 +1,510 @@
+/* =========================================================
+   CyberDesk — Styles
+   Charte graphique reprise du site S@FE Digitalisation
+   Variables CSS → assets/css/base.css (chargé avant ce fichier)
+   ========================================================= */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--ff-body);
+  background:var(--navy);
+  color:var(--mut-2);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+h1,h2,h3,h4{font-family:var(--ff-disp);color:#fff;letter-spacing:-.02em}
+button{font-family:var(--ff-body)}
+
+.brand-logo{height:42px;width:42px;object-fit:contain;border-radius:10px;display:block}
+.brand-logo-lg{height:48px;width:48px;margin:0 auto 14px;border-radius:12px}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-disp);font-weight:700;font-size:.85rem;padding:10px 18px;border-radius:11px;cursor:pointer;border:0;transition:.15s}
+.btn-pri{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(37,99,235,.35)}
+.btn-out{background:transparent;color:#fff;border:1px solid var(--line)}
+.btn-out:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(255,77,94,.12);color:var(--alert);border:1px solid rgba(255,77,94,.35)}
+.btn-danger:hover{background:rgba(255,77,94,.2)}
+.btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px}
+
+/* ---------- LOGIN ---------- */
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;
+  background:radial-gradient(900px 600px at 85% -5%, rgba(37,99,235,.18), transparent 60%),
+             radial-gradient(800px 700px at -10% 20%, rgba(245,158,11,.07), transparent 55%),
+             linear-gradient(180deg,var(--navy),var(--navy-mid));}
+.login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:32px}
+.login-card .brand{margin-bottom:18px}
+.login-card h1{font-size:1.4rem;margin-bottom:18px}
+.login-card .error{color:var(--alert);font-size:.85rem;margin-top:10px;min-height:1.2em}
+.error{color:var(--alert);font-size:.85rem;margin-top:8px;min-height:1.2em}
+.success{color:var(--ok);font-size:.85rem;margin-top:8px}
+.link-row{margin-top:16px;text-align:center}
+.link-muted{color:var(--accent);font-size:.85rem;text-decoration:none}
+.link-muted:hover{text-decoration:underline}
+
+/* ---------- FIELDS ---------- */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.78rem;color:var(--mut);margin-bottom:6px;font-family:var(--ff-mono);letter-spacing:.04em}
+.field input,.field select,.field textarea{
+  width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;color:#fff;font-family:var(--ff-body);font-size:.9rem;outline:none;transition:.15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{min-height:80px;resize:vertical}
+.checks{display:flex;flex-wrap:wrap;gap:10px}
+.checks label{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--mut-2);background:rgba(255,255,255,.03);border:1px solid var(--line);padding:7px 12px;border-radius:999px;cursor:pointer}
+.checks input{width:auto}
+.checkbox-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;color:var(--mut-2);font-family:var(--ff-mono)}
+.checkbox-label input{width:auto}
+.field input:disabled{opacity:.7;cursor:not-allowed}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ---------- APP LAYOUT ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:230px;flex:none;background:var(--navy-mid);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  padding:22px 16px;padding-bottom:max(22px,env(safe-area-inset-bottom,22px));
+  position:sticky;top:0;height:100dvh;overflow:hidden;
+}
+.navlinks{
+  display:flex;flex-direction:column;gap:2px;
+  flex:1;overflow-y:auto;min-height:0;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;
+  padding-right:2px;
+}
+.navlinks::-webkit-scrollbar{width:4px}
+.navlinks::-webkit-scrollbar-track{background:transparent}
+.navlinks::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+.sidebar-footer{flex-shrink:0;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.navlink{
+  display:flex;align-items:center;
+  text-align:left;background:transparent;border:0;color:var(--mut-2);font-size:.9rem;font-weight:500;
+  padding:9px 12px;border-radius:10px;cursor:pointer;transition:.15s;font-family:var(--ff-body);
+  text-decoration:none;width:100%;
+}
+.navlink:hover{background:rgba(255,255,255,.05);color:#fff}
+.navlink.active{background:var(--accent-2);color:#fff;font-weight:600}
+/* Navigation sections */
+.nav-sep{height:1px;background:rgba(255,255,255,.08);margin:6px 4px}
+.nav-section-lbl{font-size:.58rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#475569;padding:8px 12px 3px;display:block}
+.sidebar-collapsible-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;cursor:pointer;border-radius:8px;transition:.12s;user-select:none;margin-bottom:2px}
+.sidebar-collapsible-head:hover{background:rgba(255,255,255,.04)}
+.sidebar-section-label{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.18em;color:#475569;text-transform:uppercase}
+.sidebar-section-arrow{font-size:.6rem;color:#475569;transition:transform .2s;line-height:1}
+.sidebar-collapsible-body{overflow:hidden;max-height:0;transition:max-height .28s ease;display:flex;flex-direction:column;gap:4px}
+.sidebar-collapsible-body.open{max-height:500px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:.15s;font-size:.87rem;color:var(--mut-2);border:none;background:none;width:100%;text-align:left;text-decoration:none}
+.sidebar-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.sidebar-item.active{background:rgba(59,130,246,.15);color:#fff;font-weight:600}
+.sidebar-item .ico{width:20px;text-align:center;font-size:1rem;flex-shrink:0}
+.sidebar-item .ico-img{width:16px;height:16px;object-fit:contain;flex-shrink:0;opacity:.7}
+.sidebar-item:hover .ico-img{opacity:1}
+.sidebar-divider{border:none;border-top:1px solid var(--line);margin:8px 0}
+.sidebar-sub{padding-left:22px!important;font-size:.84rem}
+a.sidebar-item{text-decoration:none}
+/* Carte secteur cockpit Résultats */
+.secteur-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;cursor:pointer;transition:border-color .15s,transform .15s;position:relative}
+.secteur-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.secteur-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.commission-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:700}
+.commission-envoyé{background:rgba(59,130,246,.15);color:#60a5fa}
+.commission-attente{background:rgba(139,92,246,.15);color:#a78bfa}
+.commission-recue{background:rgba(34,197,94,.15);color:#4ade80}
+.commission-payée{background:rgba(245,158,11,.15);color:#fbbf24}
+#user-email{font-size:.78rem;color:var(--mut);font-family:var(--ff-mono);word-break:break-all}
+
+.main{flex:1;padding:28px 32px;max-width:1280px;overflow-x:hidden}
+.view{display:none;animation:fade .35s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.view-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.view-head h2{font-size:1.6rem}
+.view-head p{color:var(--mut);font-size:.9rem;margin-top:4px}
+
+/* ---------- DASHBOARD ---------- */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.stat-card .n{font-family:var(--ff-disp);font-size:2rem;font-weight:800;color:#fff}
+.stat-card .l{font-size:.8rem;color:var(--mut);margin-top:4px}
+.dash-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+.panel-block{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.panel-block h3{font-size:1rem;margin-bottom:14px}
+.alert-block{border-color:rgba(255,77,94,.4);background:rgba(255,77,94,.06);margin-bottom:22px}
+.alert-block h3{color:var(--alert)}
+.mini-list{display:flex;flex-direction:column;gap:10px}
+.mini-item{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;border-bottom:1px solid var(--line);padding-bottom:8px}
+.mini-item:last-child{border-bottom:0;padding-bottom:0}
+.mini-item .t{color:var(--mut-2)}
+.mini-item .s{color:var(--mut);font-size:.78rem}
+.empty{color:var(--mut);font-size:.85rem;font-style:italic}
+
+/* ---------- FILTER BAR ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.filters input,.filters select{
+  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--ff-body);outline:none;
+}
+.filters input:focus,.filters select:focus{border-color:var(--accent)}
+.filters input[type="text"]{min-width:200px}
+
+/* ---------- TABLE ---------- */
+.scrollx{overflow-x:auto;border-radius:var(--r)}
+.tbl{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tbl th,.tbl td{padding:12px 14px;text-align:left;font-size:.85rem;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th{font-family:var(--ff-disp);color:#fff;font-weight:600;background:rgba(255,255,255,.03);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+.tbl td{color:var(--mut-2)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl tr.row-rgpd-ko td{color:var(--alert)}
+.tbl tr.row-rgpd-ko td a{color:var(--alert)}
+.tbl tr.row-banned td{color:var(--mut);text-decoration:line-through}
+.tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- BADGES (compléments) ---------- */
+.badge-green{background:rgba(34,197,94,.18);color:#22c55e}
+.badge-red{background:rgba(255,77,94,.18);color:var(--alert)}
+
+/* ---------- ADMINISTRATION ---------- */
+.admin-tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:10px;flex-wrap:wrap}
+.admin-tabs .navlink{border-radius:10px;padding:8px 14px;font-size:.88rem}
+.admin-panel{margin-top:6px}
+.note-admin{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--gold);border-radius:10px;padding:10px 14px;font-size:.85rem;margin:0 0 12px}
+
+/* ---------- POPUP MESSAGE ENTRANT ---------- */
+.incoming-message{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:16px;margin-top:6px}
+.incoming-meta{font-size:.82rem;color:var(--mut);margin-bottom:10px}
+.incoming-content{white-space:pre-wrap;color:var(--mut-2);line-height:1.55}
+.tbl .actions{white-space:nowrap}
+.tbl .nowrap{white-space:nowrap}
+
+/* ---------- BADGES ---------- */
+.badge{display:inline-block;font-size:.74rem;font-weight:600;padding:4px 10px;border-radius:999px;font-family:var(--ff-mono);letter-spacing:.02em;white-space:nowrap}
+.badge-blue{background:rgba(59,130,246,.14);color:var(--accent)}
+.badge-gold{background:rgba(245,158,11,.14);color:var(--gold-light)}
+.badge-green{background:rgba(34,197,94,.14);color:var(--ok)}
+.badge-gray{background:rgba(148,163,184,.14);color:var(--mut)}
+.badge-red{background:rgba(255,77,94,.14);color:var(--alert)}
+.badge-orange{background:rgba(245,158,11,.18);color:#f59e0b}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ---------- PROFIL & AVATAR ---------- */
+.profile-btn{display:flex;align-items:center;gap:10px;background:transparent;border:0;color:#fff;cursor:pointer;padding:6px;border-radius:10px;text-align:left;width:100%;transition:.15s}
+.profile-btn:hover{background:rgba(255,255,255,.05)}
+.avatar{
+  width:36px;height:36px;border-radius:50%;flex:none;
+  background:linear-gradient(135deg,var(--accent-2),var(--accent));
+  background-size:cover;background-position:center;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff-disp);font-weight:800;color:#fff;font-size:.95rem;
+}
+.avatar-lg{width:88px;height:88px;font-size:2rem}
+#user-name{font-size:.85rem;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- OBJECTIFS ---------- */
+.jours-block{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:22px}
+.jours-form{display:flex;align-items:center;gap:10px;flex:none}
+.jours-form input{
+  width:80px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;color:#fff;font-size:.9rem;font-family:var(--ff-body);outline:none;text-align:center;
+}
+.jours-form input:focus{border-color:var(--accent)}
+.gauges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.gauge-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 12px;text-align:center}
+.gauge-card h4{font-size:.88rem;margin:6px 0 2px;line-height:1.2}
+.gauge-values{font-family:var(--ff-mono);font-size:.8rem;color:var(--mut)}
+.gauge-wrap{display:flex;justify-content:center}
+.gauge-svg{width:120px;height:120px}
+.gauge-track,.gauge-fill{fill:none;stroke-width:8;transform:rotate(-90deg);transform-origin:50px 50px}
+.gauge-track{stroke:rgba(255,255,255,.08)}
+.gauge-fill{stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.gauge-text{font-family:var(--ff-disp);font-size:20px;font-weight:800;text-anchor:middle;dominant-baseline:central;fill:#fff}
+.objectif-row{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.objectif-row:last-child{border-bottom:0}
+.objectif-row label{flex:1;font-size:.9rem;color:var(--mut-2)}
+.objectif-row input{width:100px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:#fff;font-size:.88rem;text-align:right;outline:none}
+.objectif-row input:focus{border-color:var(--accent)}
+.objectif-row .unit{font-size:.78rem;color:var(--mut);width:40px}
+
+/* ---------- KANBAN (tâches) ---------- */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.kanban-col{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-height:120px}
+.kanban-col h4{font-size:.85rem;color:#fff;margin-bottom:12px;font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.05em}
+.kanban-card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.kanban-card .title{font-size:.88rem;color:#fff;font-weight:600;margin-bottom:6px}
+.kanban-card .meta{font-size:.76rem;color:var(--mut);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.kanban-card .actions{display:flex;gap:6px;margin-top:10px}
+.overdue{color:var(--alert) !important;font-weight:600}
+
+/* ---------- MODAL ---------- */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(5,9,20,.78);backdrop-filter:blur(6px);display:none;place-items:center;padding:20px;overflow-y:auto}
+.modal.show{display:grid}
+.modal .box{max-width:560px;width:100%;background:var(--navy-mid);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .2s;max-height:90vh;overflow-y:auto}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.modal h3{font-size:1.2rem;margin-bottom:18px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
+.modal-actions .btn{flex-shrink:0}
+/* Pour les modales très denses (contrat), boutons plus compacts */
+#contract-modal .modal-actions .btn{padding:9px 14px;font-size:.85rem}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:1024px){
+  /* Sidebar desktop cachée — navigation via drawer hamburger (index.html) */
+  .main{padding:18px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .dash-grid{grid-template-columns:1fr}
+  .kanban{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}
+  .filters input[type="text"]{min-width:0;width:100%}
+  .view-head{flex-direction:column;align-items:stretch}
+  .view-head-actions{justify-content:flex-end}
+}
+
+/* =========================================================
+   NOUVEAUX COMPOSANTS (assistance, RGPD utilisateur, confetti)
+   ========================================================= */
+
+/* --- Cartes modales utilisant la classe .modal-card --- */
+.modal .modal-card{
+  max-width:560px;width:100%;background:var(--navy-mid);
+  border:1px solid var(--line);border-radius:18px;padding:26px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .2s;
+  max-height:90vh;overflow-y:auto;position:relative;z-index:1;
+}
+
+/* --- En-tête dashboard avec bouton "Mes données" à droite --- */
+.view-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.view-head-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* --- Bouton flottant d'assistance --- */
+.help-fab{
+  position:fixed;right:20px;bottom:20px;z-index:90;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent-2),var(--accent));
+  border:0;color:#fff;cursor:pointer;
+  box-shadow:0 10px 30px rgba(37,99,235,.45);
+  display:grid;place-items:center;transition:.2s;
+}
+.help-fab:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(37,99,235,.55)}
+.help-fab:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+
+/* --- Modale Félicitations (objectif atteint) --- */
+.felicitations-card{
+  text-align:center;
+  border:2px solid var(--gold) !important;
+  box-shadow:0 30px 80px rgba(245,158,11,.4) !important;
+  background:linear-gradient(160deg,var(--navy-mid),#1a2848) !important;
+}
+.felicitations-card h3{font-size:1.6rem;margin:6px 0 10px}
+.confetti-canvas{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+}
+
+/* --- Bouton Bon de commande PDF --- */
+#contract-pdf-btn{margin-right:auto}
+
+/* --- Modale "Mes données" RGPD --- */
+#mydata-content .note{
+  background:rgba(59,130,246,.08);
+  border:1px solid rgba(59,130,246,.35);
+  color:var(--text-body);
+  border-radius:10px;padding:12px 14px;
+  font-size:.85rem;line-height:1.55;
+}
+
+/* --- Adaptation mobile du FAB --- */
+@media(max-width:600px){
+  .help-fab{right:14px;bottom:14px;width:48px;height:48px}
+  .view-head{flex-direction:column;align-items:stretch}
+  .view-head-actions{justify-content:flex-end}
+}
+
+/* --- Signature canvas --- */
+.sig-wrap{
+  position:relative;
+  border:2px dashed rgba(245,158,11,.5);
+  border-radius:12px;
+  padding:6px;
+  background:rgba(255,255,255,.04);
+}
+#sig-canvas{
+  display:block;width:100%;height:160px;
+  background:#fff;border-radius:8px;cursor:crosshair;touch-action:none;
+}
+#sig-clear-btn{position:absolute;top:10px;right:10px;font-size:.78rem;padding:5px 10px}
+
+/* --- TOTP QR --- */
+#totp-qr canvas{background:#fff;padding:10px;border-radius:8px}
+#totp-secret{font-family:var(--ff-mono);font-size:.85rem;letter-spacing:.05em}
+
+/* --- Vue admin "Par utilisateur" : blocs horizontaux --- */
+.per-user-grid{display:flex;flex-direction:column;gap:12px}
+.per-user-row{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  gap:18px;align-items:center;
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--line);
+  border-radius:12px;padding:14px 18px;
+  transition:.2s;
+}
+.per-user-row:hover{border-color:rgba(59,130,246,.4);background:rgba(255,255,255,.04)}
+.pu-identity{display:flex;gap:12px;align-items:center;min-width:0}
+.pu-avatar{
+  width:46px;height:46px;border-radius:50%;flex-shrink:0;
+  background-size:cover;background-position:center;
+  border:2px solid var(--line);
+}
+.pu-avatar-letter{
+  background:linear-gradient(135deg,var(--accent-2),var(--accent));
+  display:grid;place-items:center;color:#fff;
+  font-family:var(--ff-disp);font-weight:700;font-size:1.1rem;
+}
+.pu-name{font-family:var(--ff-disp);font-weight:600;color:#fff;font-size:.95rem}
+.pu-sub{font-size:.78rem}
+.pu-gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mini-gauge{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mg-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:.78rem;line-height:1.2}
+.mg-label{color:var(--mut);font-family:var(--ff-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-values{font-family:var(--ff-disp);font-weight:700;font-size:.82rem;white-space:nowrap}
+.mg-bar{height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.mg-fill{height:100%;border-radius:99px;transition:width .4s ease}
+
+@media(max-width:880px){
+  .per-user-row{grid-template-columns:1fr}
+  .pu-gauges{grid-template-columns:1fr}
+}
+
+/* Modales TOTP au-dessus de la modale Profil (de laquelle elles sont ouvertes) */
+#totp-enroll-modal, #totp-challenge-modal{z-index:110}
+
+/* --- Blocs utilisateurs cliquables (onglet Résultats) --- */
+.per-user-row.clickable{cursor:pointer}
+.per-user-row.clickable:hover{border-color:var(--gold);box-shadow:0 4px 16px rgba(245,158,11,.15)}
+
+/* ── Suivi client : liste des interactions ── */
+.interaction-item{
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px 14px;
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.interaction-item:hover{background:rgba(255,255,255,.07)}
+.interaction-header{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.interaction-type{
+  font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;flex-shrink:0;
+}
+.interaction-type.tel{background:rgba(99,179,237,.15);color:#63b3ed}
+.interaction-type.email{background:rgba(154,230,180,.15);color:#9ae6b4}
+.interaction-type.visite{background:rgba(201,168,76,.15);color:var(--gold)}
+.interaction-type.linkedin{background:rgba(10,102,194,.18);color:#4da3e8}
+.interaction-type.facebook{background:rgba(24,119,242,.18);color:#6fa8f5}
+.interaction-type.autre{background:rgba(255,255,255,.08);color:var(--mut-2)}
+.interaction-type img{width:12px;height:12px;border-radius:2px;vertical-align:middle;margin-right:3px}
+.interaction-date{font-size:.8rem;color:var(--mut-2);margin-left:auto;flex-shrink:0}
+.interaction-objet{font-size:.9rem;font-weight:600;color:#fff}
+.interaction-suite{
+  font-size:.78rem;color:var(--gold);
+  margin-top:4px;
+  display:flex;align-items:center;gap:5px;
+}
+
+
+/* ── MODAL GROUP (encadrés dans les modales) ── */
+.modal-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,.02);
+}
+.modal-group-title {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── AGENDA ── */
+.agenda-nav{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.agenda-nav span{font-weight:700;font-size:1rem;min-width:140px;text-align:center}
+/* Grille mois (7 cols) */
+.agenda-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+/* Grille semaine (5 cols Lun–Ven) */
+.agenda-grid-week{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}
+.agenda-day-header{text-align:center;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:4px 0}
+.agenda-cell{min-height:72px;background:var(--navy-mid);border:1px solid var(--line);border-radius:8px;padding:6px 6px 22px;cursor:pointer;transition:.12s;position:relative}
+.agenda-cell:hover{border-color:var(--accent-2)}
+.agenda-cell.today{border-color:var(--accent-2);background:rgba(59,130,246,.08)}
+.agenda-cell.other-month{opacity:.35}
+.agenda-cell.selected{border-color:var(--gold);background:rgba(245,158,11,.08)}
+.agenda-cell-num{font-size:.72rem;font-weight:700;color:var(--mut-2);margin-bottom:4px}
+.agenda-cell.today .agenda-cell-num{color:var(--accent-2)}
+/* Emojis d'événements (uniquement si événement présent) */
+.agenda-cell-emojis{display:flex;flex-wrap:wrap;gap:2px;line-height:1;margin-bottom:2px}
+.agenda-cell-emojis span{font-size:.9rem;line-height:1}
+/* Boutons ➕/➖ en bas de la cellule */
+.agenda-cell-actions{position:absolute;bottom:3px;right:4px;display:flex;gap:1px;opacity:0;transition:opacity .15s}
+.agenda-cell:hover .agenda-cell-actions{opacity:1}
+.agenda-cell-btn{background:none;border:none;cursor:pointer;font-size:.75rem;padding:1px 3px;color:var(--mut);line-height:1;border-radius:4px;transition:color .12s,background .12s}
+.agenda-cell-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
+/* Toggle vue semaine/mois */
+.agenda-view-toggle{display:flex;gap:3px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;padding:3px;flex-shrink:0}
+.agenda-vbtn{background:transparent;border:none;color:var(--mut);font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:7px;cursor:pointer;transition:.12s;font-family:inherit;white-space:nowrap}
+.agenda-vbtn.active{background:rgba(255,255,255,.1);color:#fff}
+/* DatePicker */
+.agenda-datepicker{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:#fff;font-size:.8rem;cursor:pointer;font-family:inherit;max-width:130px}
+.agenda-datepicker::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5;cursor:pointer}
+/* Panneau jour */
+.agenda-day-panel{background:var(--navy-mid);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px}
+.agenda-day-panel h4{margin:0 0 12px;font-size:.95rem}
+.agenda-ev-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.04);margin-bottom:8px;cursor:pointer}
+.agenda-ev-item:hover{background:rgba(255,255,255,.08)}
+.agenda-ev-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.agenda-ev-dot.rdv{background:var(--gold)}
+.agenda-ev-dot.task{background:var(--accent-2)}
+.agenda-ev-dot.overdue{background:var(--alert)}
+.agenda-ev-title{font-size:.88rem;font-weight:600}
+.agenda-ev-meta{font-size:.75rem;color:var(--mut)}
+/* Alerte conflit dans la modale tâche */
+.task-conflict-alert{background:rgba(255,77,94,.08);border:1px solid rgba(255,77,94,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.82rem;color:#fca5a5;display:none}
+.task-conflict-alert.visible{display:block}
+
+/* ── AGENDA — adaptation mobile ── */
+@media(max-width:600px){
+  .agenda-nav{gap:6px;margin-bottom:12px}
+  .agenda-nav span{min-width:0;flex:1;font-size:.82rem;text-align:center}
+  .agenda-grid,.agenda-grid-week{gap:2px}
+  .agenda-day-header{font-size:.58rem;padding:3px 0;letter-spacing:.03em}
+  .agenda-cell{min-height:52px;padding:4px 3px 20px;border-radius:6px}
+  .agenda-cell-num{font-size:.72rem;margin-bottom:2px;display:block;text-align:center}
+  .agenda-cell-emojis{justify-content:center}
+  .agenda-cell-emojis span{font-size:.78rem}
+  .agenda-cell-actions{opacity:1}
+  .agenda-cell-btn{font-size:.7rem}
+  /* Panneau jour : accent visuel pleine largeur */
+  .agenda-day-panel{border-radius:16px;padding:14px 12px;margin-top:10px;border-color:var(--gold);background:rgba(245,158,11,.04)}
+  .agenda-day-panel h4{font-size:1rem;margin-bottom:10px}
+  .agenda-ev-item{padding:10px;gap:8px}
+  .agenda-ev-title{font-size:.92rem}
+  .agenda-ev-meta{font-size:.78rem}
+  .agenda-view-toggle{order:-1;width:100%}
+  .agenda-vbtn{flex:1;text-align:center}
+  .agenda-datepicker{max-width:none;flex:1}
+  .agenda-nav .btn{min-width:40px;height:40px;font-size:1.1rem;padding:0;display:grid;place-items:center}
+}
