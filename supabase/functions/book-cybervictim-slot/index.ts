@@ -16,7 +16,13 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-const CALENDAR_ID = "sebastien@alonso.biz";
+const CALENDAR_ID = "sebastien@alonso.biz"; // "Travail" (agenda principal) — reçoit l'événement créé
+// Agendas consultés pour la détection de conflits (anti-doublon) — pas
+// d'écriture dessus, uniquement lecture des périodes occupées.
+const FREEBUSY_CALENDAR_IDS = [
+  CALENDAR_ID,
+  "c_c78ef913e5de9edfd3bdd17a6aeb08beec26a02fb5f232ac931344f14c274ca8@group.calendar.google.com", // Iphone Apple
+];
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -67,7 +73,7 @@ Deno.serve(async (req) => {
   // Revérification anti-collision juste avant la création de l'événement.
   let busy;
   try {
-    busy = await getFreeBusy(sa, CALENDAR_ID, start, end);
+    busy = await getFreeBusy(sa, FREEBUSY_CALENDAR_IDS, start, end);
   } catch (e) {
     return json({ error: "google_calendar_error", details: String(e.message || e) }, 502);
   }
