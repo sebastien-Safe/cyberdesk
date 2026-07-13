@@ -304,8 +304,8 @@ window.VictimPDF = (function () {
   // devis: { prestation_label, lines:[{label,montant,inclus?,note?}],
   //          ht, tva, ttc, observations, source, diagnostic_code }
   // ======================================================================
-  function generateQuoteV2(lead, devis) {
-    if (!jsPDF) { alert('jsPDF indisponible.'); return; }
+  function _buildQuoteV2Doc(lead, devis) {
+    if (!jsPDF) throw new Error('jsPDF indisponible.');
     const doc = new jsPDF();
     const ref = `CD-DEV-17C-${todayShort().replace(/-/g, '')}-${(lead.id || '').slice(0, 8).toUpperCase()}`;
 
@@ -427,8 +427,23 @@ window.VictimPDF = (function () {
     drawFooter(doc);
 
     const filename = `${safeFileName(devis.prestation_label || 'Devis')}_${safeFileName(lead.last_name)}_${safeFileName(lead.first_name)}_${todayShort()}_DEVIS.pdf`;
-    doc.save(filename);
-    return filename;
+    return { doc, filename };
+  }
+
+  // Téléchargement local (bouton "Télécharger le PDF" — contrôle avant envoi).
+  function generateQuoteV2(lead, devis) {
+    let built;
+    try { built = _buildQuoteV2Doc(lead, devis); } catch (e) { alert(e.message); return; }
+    built.doc.save(built.filename);
+    return built.filename;
+  }
+
+  // Base64 (sans préfixe data URI) + nom de fichier, pour pièce jointe e-mail
+  // (bouton "Valider et envoyer au client" → Edge Function send-cybervictim-quote).
+  function getQuoteV2PdfBase64(lead, devis) {
+    const built = _buildQuoteV2Doc(lead, devis);
+    const dataUri = built.doc.output('datauristring');
+    return { base64: dataUri.split(',')[1], filename: built.filename };
   }
 
   // ======================================================================
@@ -529,5 +544,5 @@ window.VictimPDF = (function () {
     return filename;
   }
 
-  return { generateQuote, generateQuoteV2, generateReport };
+  return { generateQuote, generateQuoteV2, getQuoteV2PdfBase64, generateReport };
 })();
