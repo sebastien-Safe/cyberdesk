@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss://*.supabase.co blob:;">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberDesk — 🛡 Cybersécurité Clients</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="cyber-clients.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="cyber-toast"></div>
+
+<!-- Modal -->
+<div id="cyber-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title" id="cyber-modal-title">—</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="cyber-modal-body"></div>
+    <div class="modal-foot" id="cyber-modal-foot"></div>
+  </div>
+</div>
+
+<div class="cyber-layout">
+
+  <!-- TOPBAR -->
+  <header class="cyber-topbar">
+    <a href="/index.html" class="cyber-back-btn">← CyberDesk</a>
+    <span class="cyber-topbar-brand">🛡 Cybersec Clients</span>
+    <span class="cyber-topbar-subtitle">Audit & suivi de sécurité</span>
+    <div class="cyber-topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="clearContact();showView('dashboard');loadDashboard()">
+        📊 Dashboard
+      </button>
+      <span id="topbar-contact-name"
+        style="font-size:.78rem;color:var(--mut);font-family:var(--ff-mono)"></span>
+    </div>
+  </header>
+
+  <div class="cyber-body">
+
+    <!-- SIDEBAR CONTACTS -->
+    <aside class="cyber-sidebar">
+      <div class="sidebar-search-wrap">
+        <input class="sidebar-search" id="sidebar-search"
+          placeholder="🔍 Chercher un client…"
+          oninput="filterContacts(this.value)">
+      </div>
+      <div class="sidebar-contact-list" id="sidebar-contacts"></div>
+    </aside>
+
+    <!-- SUBNAV (visible après sélection contact) -->
+    <nav class="cyber-subnav" id="cyber-subnav" style="display:none">
+      <div class="subnav-client">
+        <div class="subnav-client-name" id="subnav-client-name">—</div>
+        <div class="subnav-score" id="sidebar-score">—%</div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px"
+          onclick="clearContact()">✕ Changer</button>
+      </div>
+      <ul class="subnav-menu">
+        <li class="subnav-item active" data-view="audit"
+          onclick="switchSubView('audit',this)">🔍 Audit checklist</li>
+        <li class="subnav-item" data-view="incidents"
+          onclick="switchSubView('incidents',this)">🚨 Incidents</li>
+        <li class="subnav-item" data-view="plan"
+          onclick="switchSubView('plan',this)">📋 Plan d'action</li>
+        <li class="subnav-item" data-view="assistant"
+          onclick="switchSubView('assistant',this)">🤖 Assistant IA</li>
+      </ul>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="cyber-main">
+
+      <!-- Dashboard -->
+      <section id="view-dashboard" class="cyber-view active">
+        <div class="view-header">
+          <h1 class="view-title">🛡 Tableau de bord Cybersécurité</h1>
+          <p class="view-subtitle">Vue globale de la posture de sécurité de vos clients</p>
+        </div>
+        <div id="dashboard-content"></div>
+      </section>
+
+      <!-- Audit -->
+      <section id="view-audit" class="cyber-view">
+        <div class="view-header">
+          <h1 class="view-title">🔍 Audit de sécurité</h1>
+          <p class="view-subtitle" id="audit-subtitle">Référentiel ANSSI / CIS Controls — 23 points de contrôle</p>
+        </div>
+        <div id="audit-content"></div>
+      </section>
+
+      <!-- Incidents -->
+      <section id="view-incidents" class="cyber-view">
+        <div class="view-header">
+          <h1 class="view-title">🚨 Incidents de sécurité</h1>
+          <p class="view-subtitle">Registre des incidents — traçabilité et suivi de résolution</p>
+        </div>
+        <div id="incidents-content"></div>
+      </section>
+
+      <!-- Plan d'action -->
+      <section id="view-plan" class="cyber-view">
+        <div class="view-header">
+          <h1 class="view-title">📋 Plan d'action correctif</h1>
+          <p class="view-subtitle">Actions prioritaires issues de l'audit</p>
+        </div>
+        <div id="plan-content"></div>
+      </section>
+
+      <!-- Assistant IA -->
+      <section id="view-assistant" class="cyber-view">
+        <div class="view-header">
+          <h1 class="view-title">🤖 Assistant Cybersécurité IA</h1>
+          <p class="view-subtitle">Analyse d'incidents, recommandations ANSSI, plans d'action</p>
+        </div>
+        <div id="assistant-content"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="/assets/js/supabase.client.js"></script>
+<script src="cyber-core.js"></script>
+<script src="cyber-dashboard.js"></script>
+<script src="cyber-audit.js"></script>
+<script src="cyber-incidents.js"></script>
+<script src="cyber-plan.js"></script>
+<script src="cyber-assistant.js"></script>
+
+<script>
+function switchSubView(viewId, el) {
+  document.querySelectorAll('.subnav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  showView(viewId);
+  const loaders = {
+    audit:     loadAudit,
+    incidents: loadIncidents,
+    plan:      loadPlan,
+    assistant: loadCyberAssistant,
+  };
+  if (loaders[viewId]) loaders[viewId]();
+}
+
+function filterContacts(q) {
+  const lq = q.toLowerCase();
+  document.querySelectorAll('.sidebar-contact-item').forEach(el => {
+    el.style.display = (el.dataset.search || '').includes(lq) ? '' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>
