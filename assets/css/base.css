@@ -1,0 +1,355 @@
+/* =========================================================
+   CyberDesk — Base CSS
+   Variables globales, reset, utilitaires.
+   Doit être chargé en PREMIER, avant style.css et tous les composants.
+   ========================================================= */
+
+/* ── Variables globales ── */
+:root {
+  --navy:     #0a1628;
+  --navy-mid: #142240;
+  --panel:    #142240;
+  --line:     rgba(255,255,255,.08);
+  --mut:      #94a3b8;
+  --mut-2:    #cbd5e1;
+  --accent:   #3b82f6;
+  --accent-2: #2563eb;
+  --gold:     #f59e0b;
+  --gold-light: #fbbf24;
+  --alert:    #ff4d5e;
+  --ok:       #22c55e;
+  --r:        14px;
+  --ff-disp:  'Sora', sans-serif;
+  --ff-body:  'IBM Plex Sans', sans-serif;
+  --ff-mono:  'IBM Plex Mono', monospace;
+}
+
+/* ── Utilitaire visibilité ── */
+.is-hidden { display: none !important; }
+
+/* ── Boutons ── */
+/* Bouton pleine largeur centré (remplace style="width:100%;justify-content:center") */
+.btn--full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Bouton Centre d'aide (sidebar footer) */
+.btn-help {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: center;
+  font-size: .78rem;
+  border-color: rgba(245,158,11,.4);
+  color: #f59e0b;
+}
+
+/* ── Navigation ── */
+/* Séparateur nav avec marge supérieure */
+.nav-sep--mt { margin-top: 8px; }
+
+/* Lien/bouton nav désactivé (remplace style="opacity:.35;cursor:not-allowed;pointer-events:none") */
+.navlink--disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Badge "bientôt" dans la nav (remplace style="margin-left:auto;font-size:.6rem;...") */
+.badge-soon {
+  margin-left: auto;
+  font-size: .6rem;
+  font-family: monospace;
+  opacity: .7;
+}
+
+/* ── Logo sidebar ── */
+/* remplace style="flex-shrink:0;margin-bottom:22px" sur .brand-logo */
+.brand-logo--sidebar {
+  flex-shrink: 0;
+  margin-bottom: 22px;
+}
+
+/* ── Champ mot de passe avec bouton bascule ── */
+/* remplace style="position:relative" sur le wrapper */
+.field-pw-wrap { position: relative; }
+
+/* remplace style="padding-right:40px;width:100%" sur l'input */
+.input-pw {
+  padding-right: 40px;
+  width: 100%;
+}
+
+/* remplace le long style= sur le bouton toggle visibilité */
+.input-addon-end {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  color: var(--mut);
+}
+
+/* ── Composant collapsible upsell ── */
+/* h3 cliquable dans les blocs upsell/churn */
+.collapsible-head {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Flèche de bascule (remplace arrow.style.cssText dans app.js) */
+.upsell-toggle {
+  font-size: .7rem;
+  color: var(--mut);
+  transition: transform .3s;
+  transform: rotate(-90deg);
+  display: inline-block;
+}
+.upsell-toggle.is-open { transform: rotate(0deg); }
+
+/* Corps collapsible (remplace body.style.cssText dans app.js) */
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease;
+}
+
+/* ── Modale MFA recheck (remplace modal.style.cssText dans app.js) ── */
+.mfa-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(10,22,40,.92);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.mfa-modal__box {
+  background: var(--navy-mid);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+.mfa-modal__icon  { font-size: 2.5rem; margin-bottom: 12px; }
+.mfa-modal__title { font-family: var(--ff-disp); font-size: 1.2rem; color: #fff; margin-bottom: 8px; }
+.mfa-modal__body  { font-size: .85rem; color: var(--mut); margin-bottom: 20px; line-height: 1.6; }
+.mfa-modal__input {
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-family: var(--ff-mono);
+  font-size: 1.2rem;
+  letter-spacing: .2em;
+  text-align: center;
+  outline: none;
+  margin-bottom: 12px;
+}
+.mfa-modal__error {
+  color: var(--alert);
+  font-size: .78rem;
+  margin-bottom: 12px;
+}
+
+/* ── Blocs clause RGPD signée/non-signée ── */
+#clause-signed-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: 8px;
+  font-size: .8rem;
+  color: var(--ok);
+}
+#clause-unsigned-block {
+  display: block;
+  padding: 10px 12px;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 8px;
+  font-size: .8rem;
+  color: var(--gold);
+  margin-top: 8px;
+}
+
+/* ── Mur d'onboarding ── */
+#onboarding-wall {
+  display: flex;
+}
+
+/* ── Bannière renouvellement mot de passe ── */
+#password-renewal-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  background: rgba(245,158,11,.15);
+  border-bottom: 2px solid var(--gold);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Filtre résultats (journal admin) ── */
+#journal-filter-user {
+  display: block;
+}
+
+/* ── Détail disponibilité agenda (grille par jour) ── */
+[id^="avail-"][id$="-detail"] {
+  display: grid;
+}
+
+/* ── Panneau agenda jour ── */
+#agenda-day-panel {
+  display: block;
+}
+
+/* ── Modale agenda settings ── */
+#modal-agenda-settings {
+  display: block;
+}
+
+/* ── Bloc action inline (bouton dans mini-item) ── */
+.btn-action-inline {
+  margin-left: 8px;
+  font-size: .72rem;
+  flex-shrink: 0;
+}
+
+/* ── Lien/texte cliquable churn ── */
+.churn-link { cursor: pointer; }
+
+/* ── Bouton "Interagir" dans alerte échéances ── */
+.btn-interact-alert {
+  margin-left: 8px;
+  font-size: .72rem;
+}
+
+/* ── Modale agenda settings ── */
+#modal-agenda-settings {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.55);
+  overflow-y: auto;
+}
+
+/* ── Filtre utilisateur journal RGPD (admin) ── */
+#journal-filter-user {
+  background: var(--navy-mid);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--txt);
+  font-size: .85rem;
+  outline: none;
+}
+
+/* ── Message fiche en lecture seule ── */
+#c-readonly-msg {
+  background: rgba(245,158,11,.12);
+  border: 1px solid rgba(245,158,11,.35);
+  color: var(--gold);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: .85rem;
+  margin: 10px 0;
+}
+
+/* ── Section suivi contact ── */
+#contact-suivi-section {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
+/* ── Bloc avertissement génération MDP ── */
+#mdp-warn {
+  margin-bottom: 16px;
+  font-size: .82rem;
+}
+
+/* ── Indicateur de force mot de passe ── */
+#cp-strength {
+  margin-top: 6px;
+  font-size: .78rem;
+}
+
+/* ── Erreur concordance mots de passe ── */
+#cp-match-error {
+  font-size: .78rem;
+  color: var(--alert);
+}
+
+/* ── Backdrop aide contextuelle ── */
+#help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 1100;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Modale assistance ── */
+#assistance-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1300;
+  backdrop-filter: blur(2px);
+}
+#assistance-modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: 1301;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  overflow: hidden;
+}
+
+/* ── Overlay tutoriel ── */
+#tuto-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0,0,0,.4);
+  pointer-events: none;
+}
+
+/* ── Bulle tutoriel ── */
+#tuto-bubble {
+  position: fixed;
+  z-index: 1201;
+  width: 320px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  padding: 20px 22px;
+}
