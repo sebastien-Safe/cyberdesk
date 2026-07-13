@@ -118,8 +118,67 @@ function _v17CardHTML(lead) {
       <button class="pcard-edit-btn" onclick="generateVictimQuote('${lead.id}')">📋 Générer le devis</button>
       <button class="pcard-edit-btn" onclick="openTaskTreeModal('${lead.id}')">🗂️ Suivi d'intervention</button>
       <button class="pcard-edit-btn" onclick="generateVictimReport('${lead.id}')">📄 Générer le rapport (PDF simple)</button>
+      <button class="pcard-edit-btn pcard-del-btn" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️ Supprimer</button>
     </div>
   </div>`;
+}
+
+// ── Suppression dossier (confirmation en deux clics) ──
+// 1er clic : le bouton passe en état "armé" (rouge, texte de confirmation).
+// 2e clic dans les 4s sur le même bouton : suppression effective.
+// Sans 2e clic, le bouton revient automatiquement à son état normal.
+let _v17DeleteArmedId = null;
+let _v17DeleteArmedTimeout = null;
+
+function _v17ResetDeleteButton(leadId) {
+  const btn = document.querySelector(`#v17card-${leadId} .pcard-del-btn`);
+  if (btn) { btn.textContent = '🗑️ Supprimer'; btn.classList.remove('armed'); }
+  if (_v17DeleteArmedId === leadId) _v17DeleteArmedId = null;
+}
+
+function confirmDeleteVictimLead(leadId, btn) {
+  if (_v17DeleteArmedId === leadId) {
+    clearTimeout(_v17DeleteArmedTimeout);
+    _v17DeleteArmedId = null;
+    _v17DeleteLead(leadId);
+    return;
+  }
+  if (_v17DeleteArmedId) _v17ResetDeleteButton(_v17DeleteArmedId);
+
+  _v17DeleteArmedId = leadId;
+  btn.textContent = '❗ Confirmer la suppression ?';
+  btn.classList.add('armed');
+  clearTimeout(_v17DeleteArmedTimeout);
+  _v17DeleteArmedTimeout = setTimeout(() => _v17ResetDeleteButton(leadId), 4000);
+}
+
+async function _v17DeleteLead(leadId) {
+  const lead = _v17Leads.find(l => l.id === leadId);
+  if (!lead) return;
+  const btn = document.querySelector(`#v17card-${leadId} .pcard-del-btn`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Suppression…'; }
+
+  try {
+    const { error } = await sb.from('cybervictim_leads').delete().eq('id', leadId);
+    if (error) throw error;
+
+    await logRgpd('victim_lead_supprime', 'Victimes17Cyber', {
+      entityType: 'cybervictim_lead',
+      entityId:   leadId,
+      donnees:    'Suppression dossier victime 17Cyber',
+      criticite:  'Attention',
+      details:    { first_name: lead.first_name, last_name: lead.last_name, ticket_number: lead.ticket_number, pipeline_stage: lead.pipeline_stage },
+    });
+
+    _v17Leads = _v17Leads.filter(l => l.id !== leadId);
+    _v17RenderBoard();
+    _v17UpdateTotal();
+    showCrmToast('🗑️ Dossier supprimé');
+  } catch (e) {
+    alert('Erreur lors de la suppression : ' + e.message);
+    if (btn) { btn.disabled = false; }
+    _v17ResetDeleteButton(leadId);
+  }
 }
 
 // ── DRAG & DROP ──
