@@ -12,9 +12,9 @@
    changent de rôle : --navy/--navy-mid/--panel deviennent des fonds
    clairs, --gold devient le rouge d'accent secondaire. */
 :root {
-  --navy:     #ffffff;
-  --navy-mid: #f6f6f6;
-  --panel:    #f6f6f6;
+  --navy:     #f6f6f6;
+  --navy-mid: #ffffff;
+  --panel:    #ffffff;
   --line:     #dddddd;
   --mut:      #666666;
   --mut-2:    #3a3a3a;
