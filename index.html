@@ -112,7 +112,14 @@
             <div class="diag-chip" data-value="collectivite">🏛️ Collectivité</div>
           </div>
         </div>
-        <div class="diag-field"><label>Ville / Code postal</label><input type="text" id="diag-city" placeholder="Ex : Lyon, 69001"></div>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>Ville / Code postal</label><input type="text" id="diag-city" placeholder="Ex : Lyon, 69001"></div>
+          <div class="diag-field">
+            <label>Année de naissance</label>
+            <input type="number" id="diag-birth-year" placeholder="Ex : 1978" min="1900" step="1">
+            <span id="diag-age-display" class="diag-age-display" style="display:none"></span>
+          </div>
+        </div>
         <div class="diag-notice diag-notice-info">
           🔒 Données confidentielles — usage exclusif à cette prestation (Charte Cybermalveillance, art. 3c).
           Aucune transmission sans consentement RGPD.
@@ -363,6 +370,7 @@
           <div class="diag-field">
             <label>Montant HT <span class="diag-label-hint">(modifiable)</span></label>
             <input type="number" id="quote-ht-override" step="0.01" min="0">
+            <div id="quote-remise-display" class="quote-remise-display" style="display:none"></div>
           </div>
           <div class="diag-field">
             <label>TVA 20 % / Total TTC</label>
