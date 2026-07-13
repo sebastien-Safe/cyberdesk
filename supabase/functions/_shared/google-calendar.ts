@@ -60,21 +60,31 @@ export async function getGoogleAccessToken(sa: ServiceAccount, scope = CALENDAR_
   return data.access_token as string;
 }
 
+// Interroge un ou plusieurs agendas et fusionne leurs périodes occupées —
+// un créneau doit être libre sur TOUS les agendas passés pour être proposé
+// (voir CALENDAR_IDS dans get-available-slots / book-cybervictim-slot :
+// agenda "Travail" + agenda "Iphone Apple", anti-doublon entre les deux).
 export async function getFreeBusy(
   sa: ServiceAccount,
-  calendarId: string,
+  calendarIds: string | string[],
   timeMin: string,
   timeMax: string,
 ): Promise<{ start: string; end: string }[]> {
+  const ids = Array.isArray(calendarIds) ? calendarIds : [calendarIds];
   const token = await getGoogleAccessToken(sa);
   const resp = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ timeMin, timeMax, items: [{ id: calendarId }] }),
+    body: JSON.stringify({ timeMin, timeMax, items: ids.map((id) => ({ id })) }),
   });
   const data = await resp.json();
   if (!resp.ok) throw new Error(`Google freeBusy failed: ${JSON.stringify(data)}`);
-  return data.calendars?.[calendarId]?.busy || [];
+  const merged: { start: string; end: string }[] = [];
+  for (const id of ids) {
+    const busy = data.calendars?.[id]?.busy || [];
+    merged.push(...busy);
+  }
+  return merged;
 }
 
 export async function createCalendarEvent(
