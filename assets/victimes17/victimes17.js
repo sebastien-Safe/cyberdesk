@@ -115,7 +115,7 @@ function _v17CardHTML(lead) {
     </div>
     <div class="pcard-actions">
       <button class="pcard-edit-btn" onclick="openEditVictimLeadModal('${lead.id}')">✏️ Diagnostic</button>
-      <button class="pcard-edit-btn" onclick="generateVictimQuote('${lead.id}')">📋 Générer le devis</button>
+      <button class="pcard-edit-btn" onclick="openQuoteModal('${lead.id}')">📋 Générer le devis</button>
       <button class="pcard-edit-btn" onclick="openTaskTreeModal('${lead.id}')">🗂️ Suivi d'intervention</button>
       <button class="pcard-edit-btn" onclick="generateVictimReport('${lead.id}')">📄 Générer le rapport (PDF simple)</button>
       <button class="pcard-edit-btn pcard-del-btn" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️ Supprimer</button>
@@ -292,11 +292,11 @@ function _diagGoToStep(step) {
   if (step < 1 || step > _diagTotalSteps) return;
   _diagStep = step;
 
-  document.querySelectorAll('.diag-section').forEach((s, i) => {
+  document.querySelectorAll('#victim-lead-modal .diag-section').forEach((s, i) => {
     s.classList.toggle('active', i + 1 === _diagStep);
   });
 
-  document.querySelectorAll('.diag-step').forEach((s, i) => {
+  document.querySelectorAll('#victim-lead-modal .diag-step').forEach((s, i) => {
     s.classList.remove('active', 'done');
     if (i + 1 < _diagStep) s.classList.add('done');
     if (i + 1 === _diagStep) s.classList.add('active');
@@ -405,7 +405,6 @@ function _diagResetForm() {
   });
   document.getElementById('diag-os-victim').value = '';
   document.getElementById('diag-activity-impacted').value = '';
-  document.getElementById('diag-product').value = '';
 
   _diagSelectChip(document.getElementById('chips-victim-type'), 'particulier');
   _diagSelectChip(document.getElementById('chips-attack-type'), null);
@@ -435,7 +434,6 @@ function _diagPrefillForm(lead) {
   _diagSelectChip(document.getElementById('chips-victim-type'), lead.victim_type || 'particulier');
 
   document.getElementById('diag-ticket').value = lead.ticket_number || '';
-  document.getElementById('diag-product').value = lead.product_id || '';
   _diagSelectChip(document.getElementById('chips-attack-type'), lead.attack_type);
   document.getElementById('diag-attack-description').value = lead.attack_description || '';
   document.getElementById('diag-os-victim').value = lead.os_victim || '';
@@ -470,37 +468,48 @@ function _diagPrefillForm(lead) {
   _diagGoToStep(1);
 }
 
-async function _diagPopulateProductSelect() {
-  if (!_v17Products.length) {
-    try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
-  }
-  // La modale doit être affichée avant qu'on peuple le <select> — Safari
-  // peut sinon ne plus réagir aux clics sur un select dont le contenu a
-  // été injecté pendant que son conteneur était encore display:none.
-  requestAnimationFrame(() => {
-    const sel = document.getElementById('diag-product');
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Sélectionner une alerte…</option>' +
-      _v17Products.map(p => `<option value="${p.id}">${escapeHtml(p.alert_type)} — ${formatMoney(p.price_ttc)} TTC</option>`).join('');
-    if (current) sel.value = current;
-  });
+// Dérive automatiquement le "type d'alerte 17Cyber" (product_id, catalogue
+// legacy cybervictim_products) à partir du type d'attaque du diagnostic —
+// remplace l'ancienne sélection manuelle. deni_de_service/autre n'ont pas
+// de correspondance : product_id reste null (colonne nullable), c'est
+// volontaire plutôt que de forcer un choix arbitraire.
+const ATTACK_TYPE_TO_PRODUCT_CODE = {
+  hameconnage:         'hameconnage',
+  violation_compte:    'piratage_compte',
+  ransomware:          'virus_informatique',
+  usurpation_identite: 'fuite_donnees',
+  fraude_telephonique: 'faux_support',
+  arnaque_virement:    'faux_rib',
+  intrusion_reseau:    'virus_informatique',
+};
+
+function _diagDeriveProductId(attackType) {
+  if (!attackType) return null;
+  const code = ATTACK_TYPE_TO_PRODUCT_CODE[attackType];
+  if (!code) return null;
+  const product = _v17Products.find(p => p.code === code);
+  return product ? product.id : null;
 }
 
 async function openVictimLeadModal() {
+  if (!_v17Products.length) {
+    try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
+  }
   document.getElementById('victim-lead-modal-title').textContent = 'Nouveau dossier victime';
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagResetForm();
-  await _diagPopulateProductSelect();
 }
 
-function openEditVictimLeadModal(leadId) {
+async function openEditVictimLeadModal(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
+  if (!_v17Products.length) {
+    try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
+  }
   document.getElementById('victim-lead-modal-title').textContent =
     `Modifier — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagPrefillForm(lead);
-  _diagPopulateProductSelect();
 }
 
 function closeVictimLeadModal() {
@@ -511,19 +520,15 @@ async function saveVictimLead() {
   const firstName = document.getElementById('diag-first-name').value.trim();
   const lastName  = document.getElementById('diag-last-name').value.trim();
   const phone     = document.getElementById('diag-phone').value.trim();
-  const productId = document.getElementById('diag-product').value;
+  const attackType = _diagGetSelectedChip('chips-attack-type');
 
   if (!firstName || !lastName || !phone) {
     alert('Prénom, nom et téléphone sont obligatoires (étape 1).');
     _diagGoToStep(1);
     return;
   }
-  if (!productId) {
-    alert("Sélectionnez le type d'alerte / produit (étape 2).");
-    _diagGoToStep(2);
-    return;
-  }
 
+  const productId = _diagDeriveProductId(attackType);
   const leadId = document.getElementById('vl-id').value || null;
   const btn = document.getElementById('btn-diag-next');
   btn.disabled = true;
@@ -541,7 +546,7 @@ async function saveVictimLead() {
     // Étape 2
     ticket_number:       document.getElementById('diag-ticket').value.trim() || null,
     product_id:          productId,
-    attack_type:         _diagGetSelectedChip('chips-attack-type'),
+    attack_type:         attackType,
     attack_description:  document.getElementById('diag-attack-description').value.trim() || null,
     os_victim:           document.getElementById('diag-os-victim').value || null,
     severity:            _diagGetSelectedChip('chips-severity') || 'moderee',
@@ -607,7 +612,7 @@ function _diagInit() {
   });
   if (btnPrev) btnPrev.addEventListener('click', () => _diagGoToStep(_diagStep - 1));
 
-  document.querySelectorAll('.diag-step').forEach(s => {
+  document.querySelectorAll('#victim-lead-modal .diag-step').forEach(s => {
     s.addEventListener('click', () => {
       const step = parseInt(s.dataset.step, 10);
       if (step <= _diagStep) _diagGoToStep(step);
@@ -633,45 +638,19 @@ function _diagInit() {
   if (btnAddProof) btnAddProof.addEventListener('click', () => _diagAddProofEntry());
 }
 
-// ── Génération devis / rapport (assets/victimes17/victimes17-pdf.js) ──
-async function generateVictimQuote(leadId) {
-  const lead = _v17Leads.find(l => l.id === leadId);
-  if (!lead) return;
-  const product = _v17ProductsById[lead.product_id];
-  if (!product) { alert('Produit introuvable pour ce dossier.'); return; }
-  if (typeof window.VictimPDF === 'undefined') { alert('Générateur PDF indisponible.'); return; }
+// ── Génération devis (modale 3 étapes, assets/victimes17/victimes17-quote.js)
+//    Le devis est composé dans la modale (prestation + options + total),
+//    puis finalisé par _quoteFinalize() qui appelle VictimPDF.generateQuoteV2,
+//    persiste quote_generated_at et journalise l'action RGPD.
 
-  window.VictimPDF.generateQuote(lead, product);
-
-  const { data: updated } = await sb.from('cybervictim_leads')
-    .update({ quote_generated_at: new Date().toISOString() })
-    .eq('id', leadId).select().single();
-  if (updated) Object.assign(lead, updated);
-
-  await logRgpd('victim_devis_genere', 'Victimes17Cyber', {
-    entityType: 'cybervictim_lead',
-    entityId:   leadId,
-    donnees:    'Génération du devis PDF',
-    criticite:  'Info',
-    details:    { product_id: product.id, alert_type: product.alert_type },
-  });
-
-  if (['signalement', 'qualification'].includes(lead.pipeline_stage)) {
-    lead.pipeline_stage = 'devis_envoye';
-    await sb.from('cybervictim_leads').update({ pipeline_stage: 'devis_envoye' }).eq('id', leadId);
-    await logRgpd('victim_etape_modifiee', 'Victimes17Cyber', {
-      entityType: 'cybervictim_lead', entityId: leadId, donnees: 'Changement étape pipeline dossier victime',
-      criticite: 'Info', details: { old_stage: 'qualification', new_stage: 'devis_envoye', via: 'generation_devis' },
-    });
-  }
-  _v17RenderBoard();
-}
-
+// ── Génération rapport (assets/victimes17/victimes17-pdf.js) ──
 async function generateVictimReport(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
-  const product = _v17ProductsById[lead.product_id];
-  if (!product) { alert('Produit introuvable pour ce dossier.'); return; }
+  // product_id peut être null (attack_type sans correspondance dans le
+  // catalogue legacy, ex. deni_de_service/autre) — on utilise alors un
+  // intitulé de repli basé sur le diagnostic plutôt que de bloquer.
+  const product = _v17ProductsById[lead.product_id] || { alert_type: lead.attack_type || 'Incident cybersécurité', code: null };
   if (typeof window.VictimPDF === 'undefined') { alert('Générateur PDF indisponible.'); return; }
 
   window.VictimPDF.generateReport(lead, product);
