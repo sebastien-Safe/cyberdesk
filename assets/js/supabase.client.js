@@ -50,10 +50,10 @@ function showCrmToast(msg) {
   _cdToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
 }
 
-// Journal RGPD minimal — remplace logRgpd() de safecrm.
-// entityType/entityId/donnees/criticite/details : voir table audit_logs
-// (supabase/migrations/001_cyber_schema.sql).
-async function logRgpd(action, module, { entityType, entityId, donnees, criticite = 'Info', details = {} } = {}) {
+// Journal RGPD minimal — remplace logRgpd() de safecrm. Colonnes alignées
+// sur celles utilisées par les Edge Functions (generate-cybervictim-*,
+// purge-cybervictim-data) — voir supabase/migrations/001_cyber_schema.sql.
+async function logRgpd(action, module, { entityType, entityId, donnees, criticite = 'Info', resultat = 'Succès', details = {} } = {}) {
   try {
     const { data: { user } } = await sb.auth.getUser();
     await sb.from('audit_logs').insert({
@@ -61,8 +61,9 @@ async function logRgpd(action, module, { entityType, entityId, donnees, criticit
       module,
       entity_type: entityType || null,
       entity_id: entityId || null,
-      description: donnees || null,
+      donnees_concernees: donnees || null,
       criticite,
+      resultat,
       details,
       user_id: user?.id || null,
     });
