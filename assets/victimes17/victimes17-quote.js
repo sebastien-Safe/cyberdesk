@@ -350,27 +350,30 @@ function _quoteGoToStep(step) {
 
   const btnPrev = document.getElementById('btn-quote-prev');
   const btnNext = document.getElementById('btn-quote-next');
+  const btnDownload = document.getElementById('btn-quote-download');
   btnPrev.style.display = _quoteStep === 1 ? 'none' : '';
   if (_quoteStep === _quoteTotalSteps) {
-    btnNext.textContent = '📄 Générer le devis PDF';
+    btnDownload.style.display = '';
+    btnNext.textContent = '✅ Valider et envoyer au client';
     btnNext.classList.add('btn-diag-save');
     _quoteRenderSummaryLive();
+
+    const lead = _v17Leads.find(l => l.id === _quoteLeadId);
+    const hasEmail = !!(lead && lead.email);
+    document.getElementById('quote-no-email-warning').style.display = hasEmail ? 'none' : '';
+    btnNext.disabled = !hasEmail;
   } else {
+    btnDownload.style.display = 'none';
     btnNext.textContent = 'Suivant →';
     btnNext.classList.remove('btn-diag-save');
+    btnNext.disabled = false;
   }
 }
 
-// ── Finalisation : génération PDF + persistance + journal RGPD ──
-async function _quoteFinalize() {
-  const lead = _v17Leads.find(l => l.id === _quoteLeadId);
-  if (!lead) return;
-  if (!_quoteSelection) { alert("Sélectionnez une prestation (étape 1)."); _quoteGoToStep(1); return; }
-  if (typeof window.VictimPDF === 'undefined' || !window.VictimPDF.generateQuoteV2) {
-    alert('Générateur de devis indisponible.');
-    return;
-  }
-
+// Construit l'objet devis composé (prestation + options + accompagnement +
+// remise) à partir de l'état courant de la modale. Partagé par le
+// téléchargement local et l'envoi au client — même document dans les deux cas.
+function _quoteBuildDevisObject(lead) {
   const ht = parseFloat(document.getElementById('quote-ht-override').value) || 0;
   const tva = ht * _quoteTarifs.tva;
   const ttc = ht + tva;
@@ -378,7 +381,7 @@ async function _quoteFinalize() {
   const remise = Math.round((prixInitial - ht) * 100) / 100;
   const isModified = _quoteIsModifiedFromSuggestion();
 
-  const devis = {
+  return {
     prestation_label: _quoteSelection.label,
     lines,
     prix_initial: prixInitial,
@@ -388,10 +391,28 @@ async function _quoteFinalize() {
     source: isModified ? 'manuel' : 'auto',
     diagnostic_code: lead.attack_type || null,
   };
+}
 
-  const btn = document.getElementById('btn-quote-next');
+function _quoteShowSendStatus(message, type) {
+  const el = document.getElementById('quote-send-status');
+  el.style.display = '';
+  el.className = 'quote-send-status quote-send-status-' + type;
+  el.textContent = message;
+}
+
+// ── Téléchargement local (contrôle avant envoi) ──
+async function _quoteDownloadPdf() {
+  const lead = _v17Leads.find(l => l.id === _quoteLeadId);
+  if (!lead) return;
+  if (!_quoteSelection) { alert("Sélectionnez une prestation (étape 1)."); _quoteGoToStep(1); return; }
+  if (typeof window.VictimPDF === 'undefined' || !window.VictimPDF.generateQuoteV2) {
+    alert('Générateur de devis indisponible.');
+    return;
+  }
+
+  const devis = _quoteBuildDevisObject(lead);
+  const btn = document.getElementById('btn-quote-download');
   btn.disabled = true;
-  btn.textContent = 'Génération…';
 
   try {
     window.VictimPDF.generateQuoteV2(lead, devis);
@@ -404,31 +425,78 @@ async function _quoteFinalize() {
     await logRgpd('victim_devis_genere', 'Victimes17Cyber', {
       entityType: 'cybervictim_lead',
       entityId:   _quoteLeadId,
-      donnees:    'Génération du devis PDF (grille tarifaire 17Cyber)',
+      donnees:    'Téléchargement local du devis PDF (contrôle avant envoi)',
       criticite:  'Info',
       details:    {
         prestation_id: _quoteSelection.id, prestation_label: _quoteSelection.label,
-        prix_initial: prixInitial, remise, ht, ttc, tva,
+        prix_initial: devis.prix_initial, remise: devis.remise, ht: devis.ht, ttc: devis.ttc,
         source: devis.source, diagnostic_code: devis.diagnostic_code,
-        options: Object.keys(_quoteOptions).filter(k => _quoteOptions[k]),
-        accompagnement: Object.keys(_quoteAccompagnement).filter(k => _quoteAccompagnement[k]),
+      },
+    });
+    _quoteShowSendStatus('📄 PDF téléchargé — vérifiez-le avant de valider l\'envoi.', 'info');
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Envoi au client : session Stripe Checkout + e-mail Brevo (PDF joint) ──
+async function _quoteSendToClient() {
+  const lead = _v17Leads.find(l => l.id === _quoteLeadId);
+  if (!lead) return;
+  if (!_quoteSelection) { alert("Sélectionnez une prestation (étape 1)."); _quoteGoToStep(1); return; }
+  if (!lead.email) { alert("Aucun e-mail renseigné pour ce dossier — impossible d'envoyer."); return; }
+  if (typeof window.VictimPDF === 'undefined' || !window.VictimPDF.getQuoteV2PdfBase64) {
+    alert('Générateur de devis indisponible.');
+    return;
+  }
+  if (!confirm(`Envoyer le devis (${document.getElementById('quote-ht-override').value} € HT) et le lien de paiement à ${lead.email} ?`)) return;
+
+  const devis = _quoteBuildDevisObject(lead);
+  const btn = document.getElementById('btn-quote-next');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+  _quoteShowSendStatus('✉️ Génération du devis et de la session de paiement…', 'info');
+
+  try {
+    const { base64, filename } = window.VictimPDF.getQuoteV2PdfBase64(lead, devis);
+    const { data: { session } } = await sb.auth.getSession();
+
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-cybervictim-quote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ lead_id: _quoteLeadId, devis, pdf_base64: base64, pdf_filename: filename }),
+    });
+    const result = await resp.json();
+    if (!resp.ok || result.error) {
+      throw new Error(result.details || result.error || 'Erreur inconnue');
+    }
+
+    if (result.lead) Object.assign(lead, result.lead);
+
+    await logRgpd('victim_devis_envoye', 'Victimes17Cyber', {
+      entityType: 'cybervictim_lead',
+      entityId:   _quoteLeadId,
+      donnees:    'Envoi du devis par e-mail (Brevo) avec lien de paiement Stripe',
+      criticite:  'Info',
+      details:    {
+        prestation_id: _quoteSelection.id, prestation_label: _quoteSelection.label,
+        prix_initial: devis.prix_initial, remise: devis.remise, ht: devis.ht, ttc: devis.ttc,
+        source: devis.source, diagnostic_code: devis.diagnostic_code,
+        recipient: lead.email, stripe_session_id: lead.stripe_session_id,
       },
     });
 
-    if (['signalement', 'qualification'].includes(lead.pipeline_stage)) {
-      lead.pipeline_stage = 'devis_envoye';
-      await sb.from('cybervictim_leads').update({ pipeline_stage: 'devis_envoye' }).eq('id', _quoteLeadId);
-      await logRgpd('victim_etape_modifiee', 'Victimes17Cyber', {
-        entityType: 'cybervictim_lead', entityId: _quoteLeadId, donnees: 'Changement étape pipeline dossier victime',
-        criticite: 'Info', details: { old_stage: 'qualification', new_stage: 'devis_envoye', via: 'generation_devis' },
-      });
-    }
-
     closeQuoteModal();
     _v17RenderBoard();
-    showCrmToast('✅ Devis généré');
+    showCrmToast('✅ Devis envoyé au client');
   } catch (e) {
-    alert('Erreur : ' + e.message);
+    _quoteShowSendStatus('❌ Échec de l\'envoi : ' + e.message, 'error');
   } finally {
     btn.disabled = false;
     _quoteGoToStep(_quoteStep);
@@ -469,11 +537,13 @@ function _quoteInit() {
 
   const btnNext = document.getElementById('btn-quote-next');
   const btnPrev = document.getElementById('btn-quote-prev');
+  const btnDownload = document.getElementById('btn-quote-download');
   btnNext.addEventListener('click', () => {
-    if (_quoteStep === _quoteTotalSteps) _quoteFinalize();
+    if (_quoteStep === _quoteTotalSteps) _quoteSendToClient();
     else _quoteGoToStep(_quoteStep + 1);
   });
   btnPrev.addEventListener('click', () => _quoteGoToStep(_quoteStep - 1));
+  btnDownload.addEventListener('click', () => _quoteDownloadPdf());
 }
 
 _quoteInit();
