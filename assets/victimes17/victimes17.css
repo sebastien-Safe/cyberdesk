@@ -3,6 +3,11 @@
    Réutilise les classes .pcol / .pcard de pipeline.css
    ═══════════════════════════════════════════ */
 
+/* Le board a besoin d'un parent flex pour occuper toute la hauteur
+   (même override que #view-pipeline dans pipeline.css). */
+#view-victimes17 { flex-direction:column; height:100%; min-height:0; }
+#view-victimes17.active { display:flex; }
+
 .v17-ticket-badge {
   display:inline-flex; align-items:center; gap:4px;
   background:rgba(201,162,75,.16); color:var(--gold-light, #f5c563);
