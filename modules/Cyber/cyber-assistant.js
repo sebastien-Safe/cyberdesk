@@ -2,13 +2,9 @@
    CyberDesk — Assistant Cybersécurité IA
    Appel direct à l'Edge Function cyber-ia-assistant (Anthropic
    Claude). Pas de système multi-connecteurs en v1 (voir CLAUDE.md).
+   CYBER_SYSTEM est défini dans assets/js/cyber-ai-system-prompt.js
+   (chargé avant ce fichier — partagé avec l'assistant côté 17Cyber).
    ============================================================ */
-
-const CYBER_SYSTEM =
-  "Tu es un expert en cybersécurité pour TPE/PME françaises, basé sur les référentiels ANSSI et CIS Controls. " +
-  "Tu analyses les risques, proposes des plans d'action correctifs, aides à rédiger des rapports d'incidents " +
-  "et recommandes des solutions concrètes adaptées aux petites structures (budget limité, peu de ressources IT). " +
-  "Réponds en français, de manière structurée, concise et actionnable.";
 
 // Réponses de secours si l'Edge Function est indisponible (clé non
 // configurée, panne réseau…) — évite un écran d'erreur sec.
