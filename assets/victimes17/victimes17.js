@@ -825,8 +825,12 @@ async function generateVictimReport(leadId) {
 async function openTaskTreeModal(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
+  // product_id peut être null (attack_type sans correspondance dans le
+  // catalogue legacy, ex. deni_de_service/autre) — TaskTree.init() gère
+  // déjà un incidentType manquant (repli sur le premier type disponible +
+  // sélecteur dans la modale pour le changer manuellement), donc on ne
+  // bloque plus l'ouverture ici comme avant.
   const product = _v17ProductsById[lead.product_id];
-  if (!product) { alert('Produit introuvable pour ce dossier.'); return; }
   if (typeof window.TaskTree === 'undefined') { alert("Composant d'arbre de tâches indisponible."); return; }
 
   document.getElementById('task-tree-modal-title').textContent =
@@ -837,7 +841,7 @@ async function openTaskTreeModal(leadId) {
     await window.TaskTree.init({
       container: '#task-tree-container',
       leadId,
-      incidentType: product.code,
+      incidentType: product?.code || null,
       os: lead.os_victim || null,
       savedPhases: lead.intervention_tasks?.phases || null,
       onSave: (payload) => _v17SaveTaskTree(leadId, payload),
