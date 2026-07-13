@@ -249,3 +249,68 @@
   .diag-step-label { display:none; }
   .timeline-entry, .proof-entry { grid-template-columns:1fr; }
 }
+
+/* ─── Modale « Devis 17Cyber » (3 étapes) ─── */
+.quote-mode-tabs { display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+.quote-mode-tab {
+  padding:8px 14px; font-size:.8rem; font-weight:600; color:var(--mut);
+  cursor:pointer; border-bottom:2px solid transparent; transition:.12s; margin-bottom:-1px;
+}
+.quote-mode-tab:hover { color:#000091; }
+.quote-mode-tab.active { color:#000091; border-bottom-color:#000091; }
+
+.quote-niveau { margin-bottom:8px; }
+.quote-niveau-summary { cursor:pointer; }
+.quote-prestation-list { display:none; }
+.quote-niveau.open .quote-prestation-list { display:flex; }
+
+.quote-prestation-card {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 12px; border:1px solid var(--line); border-radius:8px;
+  background:#ffffff; cursor:pointer; transition:.12s;
+}
+.quote-prestation-card:hover { border-color:#000091; }
+.quote-prestation-card.selected { border-color:#000091; background:rgba(0,0,145,.06); box-shadow:0 0 0 1px #000091 inset; }
+.quote-prestation-label { font-size:.84rem; color:var(--txt); }
+.quote-prestation-price { font-size:.8rem; font-weight:700; color:#000091; font-family:var(--ff-mono); white-space:nowrap; }
+
+.quote-pack-card {
+  border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+  margin-bottom:10px; cursor:pointer; background:#ffffff; transition:.12s;
+}
+.quote-pack-card:hover { border-color:#000091; }
+.quote-pack-card.selected { border-color:#000091; background:rgba(0,0,145,.06); box-shadow:0 0 0 1px #000091 inset; }
+.quote-pack-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.quote-pack-label { font-size:.88rem; font-weight:700; color:var(--txt); }
+.quote-pack-price { font-size:.85rem; font-weight:700; color:#000091; font-family:var(--ff-mono); }
+.quote-pack-inclus { margin:0; padding-left:18px; font-size:.78rem; color:var(--mut-2); line-height:1.7; }
+
+.quote-check-list { display:flex; flex-direction:column; gap:6px; }
+.quote-check-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 12px; border:1px solid var(--line); border-radius:8px;
+  background:#ffffff; font-size:.82rem; color:var(--mut-2); cursor:pointer;
+}
+.quote-check-item input[type=checkbox] { accent-color:#000091; cursor:pointer; }
+.quote-check-item span:first-of-type { flex:1; }
+.quote-check-price { font-family:var(--ff-mono); font-size:.78rem; color:#000091; font-weight:600; white-space:nowrap; }
+.quote-check-included { cursor:default; background:#f6f6f6; color:var(--mut); }
+.quote-check-included .quote-check-price { color:#18753c; }
+
+.quote-modified-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(179,64,0,.08); border:1px solid rgba(179,64,0,.3); color:#b34000;
+  font-size:.76rem; font-weight:600; padding:6px 12px; border-radius:8px; margin-bottom:12px;
+}
+
+.quote-summary-table { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:14px; }
+.quote-summary-row {
+  display:flex; justify-content:space-between; gap:10px;
+  padding:8px 14px; font-size:.82rem; color:var(--txt); border-bottom:1px solid var(--line);
+}
+.quote-summary-row:last-child { border-bottom:none; }
+.quote-summary-row.quote-summary-included { color:var(--mut); font-style:italic; }
+.quote-summary-row.quote-summary-empty { justify-content:center; color:var(--mut); font-style:italic; }
+
+#quote-ht-override { font-weight:700; font-family:var(--ff-mono); }
+#quote-ttc-display { font-family:var(--ff-mono); background:#f6f6f6; color:var(--mut-2); }
