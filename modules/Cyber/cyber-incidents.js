@@ -38,7 +38,7 @@ async function loadIncidents() {
 
   el.innerHTML = `
     ${graves.length ? `
-      <div style="background:rgba(255,77,94,.08);border:1px solid rgba(255,77,94,.25);
+      <div style="background:rgba(225,0,15,.08);border:1px solid rgba(225,0,15,.3);
         border-radius:var(--r-sm);padding:10px 14px;font-size:.8rem;color:var(--alert);margin-bottom:14px">
         🚨 ${graves.length} incident(s) grave(s) ou critique(s) non résolu(s) — action immédiate requise
       </div>` : ''}
