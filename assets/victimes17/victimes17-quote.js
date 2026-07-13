@@ -289,12 +289,33 @@ function _quoteUpdateTtcDisplay() {
   document.getElementById('quote-ttc-display').value = `${formatMoney(tva)}  /  ${formatMoney(ttc)} TTC`;
 }
 
+// Remise = prix initial (calculé depuis prestation+options+accompagnement) - montant HT
+// final retenu (champ modifiable). Positif = remise accordée, négatif = majoration.
+let _quoteLastComputedTotal = 0;
+
+function _quoteUpdateRemiseDisplay() {
+  const ht = parseFloat(document.getElementById('quote-ht-override').value) || 0;
+  const remise = _quoteLastComputedTotal - ht;
+  const el = document.getElementById('quote-remise-display');
+  if (Math.abs(remise) < 0.005) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  if (remise > 0) {
+    el.className = 'quote-remise-display quote-remise-discount';
+    el.textContent = `↓ Remise accordée : -${formatMoney(remise)} HT (prix initial ${formatMoney(_quoteLastComputedTotal)})`;
+  } else {
+    el.className = 'quote-remise-display quote-remise-surcharge';
+    el.textContent = `↑ Majoration : +${formatMoney(-remise)} HT (prix initial ${formatMoney(_quoteLastComputedTotal)})`;
+  }
+}
+
 function _quoteRenderSummaryLive() {
   if (!_quoteTarifs) return;
   const { total, lines } = _quoteComputeHt();
+  _quoteLastComputedTotal = total;
   const htInput = document.getElementById('quote-ht-override');
   if (!_quoteHtOverridden) htInput.value = total.toFixed(2);
   _quoteUpdateTtcDisplay();
+  _quoteUpdateRemiseDisplay();
 
   const table = document.getElementById('quote-summary-table');
   table.innerHTML = lines.length
@@ -353,12 +374,15 @@ async function _quoteFinalize() {
   const ht = parseFloat(document.getElementById('quote-ht-override').value) || 0;
   const tva = ht * _quoteTarifs.tva;
   const ttc = ht + tva;
-  const { lines } = _quoteComputeHt();
+  const { lines, total: prixInitial } = _quoteComputeHt();
+  const remise = Math.round((prixInitial - ht) * 100) / 100;
   const isModified = _quoteIsModifiedFromSuggestion();
 
   const devis = {
     prestation_label: _quoteSelection.label,
     lines,
+    prix_initial: prixInitial,
+    remise,
     ht, tva, ttc,
     observations: document.getElementById('quote-observations').value.trim(),
     source: isModified ? 'manuel' : 'auto',
@@ -384,7 +408,8 @@ async function _quoteFinalize() {
       criticite:  'Info',
       details:    {
         prestation_id: _quoteSelection.id, prestation_label: _quoteSelection.label,
-        ht, ttc, tva, source: devis.source, diagnostic_code: devis.diagnostic_code,
+        prix_initial: prixInitial, remise, ht, ttc, tva,
+        source: devis.source, diagnostic_code: devis.diagnostic_code,
         options: Object.keys(_quoteOptions).filter(k => _quoteOptions[k]),
         accompagnement: Object.keys(_quoteAccompagnement).filter(k => _quoteAccompagnement[k]),
       },
@@ -430,6 +455,7 @@ function _quoteInit() {
   document.getElementById('quote-ht-override').addEventListener('input', () => {
     _quoteHtOverridden = true;
     _quoteUpdateTtcDisplay();
+    _quoteUpdateRemiseDisplay();
     document.getElementById('quote-modified-badge').style.display = '';
   });
   document.getElementById('quote-o4-text').addEventListener('input', () => _quoteRenderSummaryLive());
