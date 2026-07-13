@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
   const SB_URL = Deno.env.get("SUPABASE_URL")!;
   const SB_ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+  const SB_SR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "unauthorized" }, 401);
@@ -35,7 +35,11 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await sbAnon.auth.getUser();
   if (authErr || !user) return json({ error: "unauthorized" }, 401);
 
-  if (!ANTHROPIC_API_KEY) return json({ error: "not_configured", details: "ANTHROPIC_API_KEY manquant" }, 500);
+  const sbService = createClient(SB_URL, SB_SR);
+  const { data: keyData, error: keyErr } = await sbService.rpc("get_edge_secret", { secret_name: "anthropic_api_key" });
+  const ANTHROPIC_API_KEY = keyErr ? null : (keyData as string | null);
+
+  if (!ANTHROPIC_API_KEY) return json({ error: "not_configured", details: "anthropic_api_key manquant dans le Vault" }, 500);
 
   let body: any;
   try {
