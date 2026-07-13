@@ -159,6 +159,10 @@
   display:block; font-size:.76rem; font-weight:600; color:var(--mut-2); margin-bottom:5px;
 }
 .diag-label-hint { font-weight:400; color:var(--mut); font-size:.7rem; }
+.diag-age-display {
+  display:inline-block; margin-top:5px; font-size:.72rem; font-weight:600;
+  color:#000091; background:rgba(0,0,145,.06); padding:3px 9px; border-radius:20px;
+}
 .diag-field input, .diag-field select, .diag-field textarea {
   width:100%; padding:8px 11px; font-size:.85rem; border:1px solid var(--line);
   border-radius:8px; background:#ffffff; color:var(--txt); font-family:var(--ff-body);
@@ -202,13 +206,38 @@
 .diag-notice-warning { background:rgba(179,64,0,.08);  border:1px solid rgba(179,64,0,.3);   color:#b34000; }
 .diag-notice-success { background:rgba(24,117,60,.08); border:1px solid rgba(24,117,60,.3);  color:#18753c; }
 
-.timeline-entry, .proof-entry {
+.timeline-entry {
   display:grid; gap:8px; align-items:center;
   padding:8px 10px; background:#f6f6f6;
   border:1px solid var(--line); border-radius:8px; margin-bottom:6px;
+  grid-template-columns:150px 1fr auto;
 }
-.timeline-entry { grid-template-columns:150px 1fr auto; }
-.proof-entry { grid-template-columns:170px 1fr auto; }
+.proof-entry {
+  display:flex; flex-direction:column; gap:6px;
+  padding:8px 10px; background:#f6f6f6;
+  border:1px solid var(--line); border-radius:8px; margin-bottom:6px;
+}
+.proof-entry-main { display:grid; gap:8px; align-items:center; grid-template-columns:170px 1fr auto; }
+.proof-entry-file-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.proof-file-btn {
+  display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+  font-size:.74rem; color:#000091; background:rgba(0,0,145,.06);
+  border:1px dashed rgba(0,0,145,.35); border-radius:6px; padding:4px 10px;
+  transition:.12s;
+}
+.proof-file-btn:hover { background:rgba(0,0,145,.12); }
+.proof-entry-file-status { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--mut); }
+.proof-file-chip {
+  background:#ffffff; border:1px solid var(--line); border-radius:6px;
+  padding:3px 8px; color:var(--txt); max-width:200px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+.proof-file-view, .proof-file-remove {
+  background:none; border:none; cursor:pointer; font-size:.8rem;
+  padding:2px 4px; border-radius:4px; color:var(--mut); transition:.1s;
+}
+.proof-file-view:hover { background:rgba(0,0,145,.08); color:#000091; }
+.proof-file-remove:hover { background:rgba(225,0,15,.08); color:#e1000f; }
 .diag-add-btn {
   display:flex; align-items:center; justify-content:center; gap:6px;
   width:100%; padding:7px; font-size:.78rem; color:#000091;
@@ -247,7 +276,7 @@
   .diag-row-2 { grid-template-columns:1fr; }
   .diag-impact-grid { grid-template-columns:repeat(2,1fr); }
   .diag-step-label { display:none; }
-  .timeline-entry, .proof-entry { grid-template-columns:1fr; }
+  .timeline-entry, .proof-entry-main { grid-template-columns:1fr; }
 }
 
 /* ─── Modale « Devis 17Cyber » (3 étapes) ─── */
@@ -314,3 +343,10 @@
 
 #quote-ht-override { font-weight:700; font-family:var(--ff-mono); }
 #quote-ttc-display { font-family:var(--ff-mono); background:#f6f6f6; color:var(--mut-2); }
+
+.quote-remise-display {
+  margin-top:5px; font-size:.72rem; font-family:var(--ff-mono); font-weight:600;
+  padding:4px 8px; border-radius:6px; display:inline-block;
+}
+.quote-remise-display.quote-remise-discount { background:rgba(24,117,60,.1); color:#18753c; }
+.quote-remise-display.quote-remise-surcharge { background:rgba(179,64,0,.1); color:#b34000; }
