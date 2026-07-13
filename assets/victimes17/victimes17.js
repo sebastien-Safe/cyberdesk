@@ -114,11 +114,11 @@ function _v17CardHTML(lead) {
       ${lead.notes ? `<div class="pcard-meta-item" style="margin-top:4px;font-size:.76rem;opacity:.75">📝 ${escapeHtml(lead.notes.slice(0, 80))}${lead.notes.length > 80 ? '…' : ''}</div>` : ''}
     </div>
     <div class="pcard-actions">
-      <button class="pcard-edit-btn" onclick="openEditVictimLeadModal('${lead.id}')">✏️ Diagnostic</button>
-      <button class="pcard-edit-btn" onclick="openQuoteModal('${lead.id}')">📋 Générer le devis</button>
-      <button class="pcard-edit-btn" onclick="openTaskTreeModal('${lead.id}')">🗂️ Suivi d'intervention</button>
-      <button class="pcard-edit-btn" onclick="generateVictimReport('${lead.id}')">📄 Générer le rapport (PDF simple)</button>
-      <button class="pcard-edit-btn pcard-del-btn" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️ Supprimer</button>
+      <button class="pcard-edit-btn" title="Diagnostic" onclick="openEditVictimLeadModal('${lead.id}')">✏️</button>
+      <button class="pcard-edit-btn" title="Générer le devis" onclick="openQuoteModal('${lead.id}')">📋</button>
+      <button class="pcard-edit-btn" title="Suivi d'intervention" onclick="openTaskTreeModal('${lead.id}')">🗂️</button>
+      <button class="pcard-edit-btn" title="Générer le rapport (PDF simple)" onclick="generateVictimReport('${lead.id}')">📄</button>
+      <button class="pcard-edit-btn pcard-del-btn" title="Supprimer" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️</button>
     </div>
   </div>`;
 }
@@ -132,7 +132,7 @@ let _v17DeleteArmedTimeout = null;
 
 function _v17ResetDeleteButton(leadId) {
   const btn = document.querySelector(`#v17card-${leadId} .pcard-del-btn`);
-  if (btn) { btn.textContent = '🗑️ Supprimer'; btn.classList.remove('armed'); }
+  if (btn) { btn.textContent = '🗑️'; btn.title = 'Supprimer'; btn.classList.remove('armed'); }
   if (_v17DeleteArmedId === leadId) _v17DeleteArmedId = null;
 }
 
@@ -146,7 +146,8 @@ function confirmDeleteVictimLead(leadId, btn) {
   if (_v17DeleteArmedId) _v17ResetDeleteButton(_v17DeleteArmedId);
 
   _v17DeleteArmedId = leadId;
-  btn.textContent = '❗ Confirmer la suppression ?';
+  btn.textContent = '❗';
+  btn.title = 'Cliquez à nouveau pour confirmer la suppression';
   btn.classList.add('armed');
   clearTimeout(_v17DeleteArmedTimeout);
   _v17DeleteArmedTimeout = setTimeout(() => _v17ResetDeleteButton(leadId), 4000);
@@ -156,7 +157,7 @@ async function _v17DeleteLead(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
   const btn = document.querySelector(`#v17card-${leadId} .pcard-del-btn`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Suppression…'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; btn.title = 'Suppression…'; }
 
   try {
     const { error } = await sb.from('cybervictim_leads').delete().eq('id', leadId);
