@@ -272,7 +272,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(8.5);
     doc.setTextColor(60, 60, 60);
     const modalites = [
-      "Acompte de 50 % à la signature du présent devis ; solde à la remise du rapport d'intervention.",
+      "Paiement valant pour signature du présent devis.",
       "Moyens de paiement acceptés : virement bancaire ou carte.",
       "Devis gratuit et sans engagement, valable 30 jours à compter de sa date d'émission.",
       "Conformément à l'art. L.221-18 du Code de la consommation, le client particulier dispose d'un délai de rétractation de 14 jours, sauf demande expresse d'exécution immédiate.",
@@ -350,16 +350,27 @@ window.VictimPDF = (function () {
     });
 
     y += 2;
-    const totalRows = [
-      ['TOTAL HT', money(devis.ht)],
-      ['TVA 20 %', money(devis.tva)],
-      ['TOTAL TTC', money(devis.ttc)],
-    ];
+    const hasRemise = Math.abs(devis.remise || 0) >= 0.005;
+    const totalRows = hasRemise
+      ? [
+          ['Prix initial HT', money(devis.prix_initial)],
+          [devis.remise > 0 ? 'Remise accordée' : 'Majoration', (devis.remise > 0 ? '-' : '+') + money(Math.abs(devis.remise))],
+          ['TOTAL HT', money(devis.ht)],
+          ['TVA 20 %', money(devis.tva)],
+          ['TOTAL TTC', money(devis.ttc)],
+        ]
+      : [
+          ['TOTAL HT', money(devis.ht)],
+          ['TVA 20 %', money(devis.tva)],
+          ['TOTAL TTC', money(devis.ttc)],
+        ];
     totalRows.forEach((r, i) => {
       if (y > 265) { doc.addPage(); y = 25; }
       const isTotal = r[0].startsWith('TOTAL TTC');
+      const isRemiseRow = r[0] === 'Remise accordée' || r[0] === 'Majoration';
       doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
-      doc.setTextColor(isTotal ? 3 : 40, isTotal ? 13 : 40, isTotal ? 38 : 40);
+      if (isRemiseRow) doc.setTextColor(devis.remise > 0 ? 24 : 179, devis.remise > 0 ? 117 : 64, devis.remise > 0 ? 60 : 0);
+      else doc.setTextColor(isTotal ? 3 : 40, isTotal ? 13 : 40, isTotal ? 38 : 40);
       doc.text(r[0], 15, y);
       doc.text(r[1], 195, y, { align: 'right' });
       y += 6;
@@ -391,7 +402,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(8.5);
     doc.setTextColor(60, 60, 60);
     const modalites = [
-      "Acompte de 50 % à la signature du présent devis ; solde à la remise du rapport d'intervention.",
+      "Paiement valant pour signature du présent devis.",
       "Moyens de paiement acceptés : virement bancaire ou carte.",
       "Devis gratuit et sans engagement, valable 30 jours à compter de sa date d'émission.",
       "Garantie de reprise de 7 jours si l'incident n'est pas résolu par l'intervention.",
