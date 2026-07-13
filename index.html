@@ -387,6 +387,21 @@
           💶 Devis gratuit et sans engagement · Garantie reprise 7 jours ·
           Facturation possible si intervention réalisée mais incident non résolu.
         </div>
+
+        <div id="quote-no-email-warning" class="diag-notice diag-notice-warning" style="display:none">
+          ⚠️ Aucun e-mail renseigné pour ce dossier — l'envoi par e-mail et le paiement en ligne sont
+          indisponibles. Renseignez un e-mail dans le diagnostic pour activer l'envoi.
+        </div>
+
+        <div id="quote-send-status" class="quote-send-status" style="display:none"></div>
+
+        <div class="diag-field">
+          <label>Contrôle avant envoi</label>
+          <p class="diag-label-hint" style="display:block;margin-bottom:8px">
+            Téléchargez et vérifiez le PDF avant de valider l'envoi au client — rien n'est transmis
+            à la victime tant que vous n'avez pas cliqué sur « Valider et envoyer ».
+          </p>
+        </div>
       </div>
 
     </div><!-- /modal-cyber-body -->
@@ -394,7 +409,10 @@
     <div class="modal-cyber-footer">
       <button type="button" class="btn-diag-ghost" id="btn-quote-prev" style="display:none">← Précédent</button>
       <span class="diag-step-counter" id="quote-step-counter">Étape 1 / 3</span>
-      <button type="button" class="btn-diag-primary" id="btn-quote-next">Suivant →</button>
+      <div class="quote-footer-actions">
+        <button type="button" class="btn-diag-ghost" id="btn-quote-download" style="display:none">📄 Télécharger le PDF</button>
+        <button type="button" class="btn-diag-primary" id="btn-quote-next">Suivant →</button>
+      </div>
     </div>
   </div>
 </div>
