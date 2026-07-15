@@ -21,32 +21,8 @@ body{display:flex;justify-content:center;padding:24px 16px}
 .brand b{color:var(--alert)}
 .subtitle{font-size:.72rem;color:var(--mut);margin-bottom:20px}
 h1{font-family:var(--ff-disp);font-size:1.15rem;margin-bottom:6px;letter-spacing:-.02em}
-.hint{font-size:.85rem;color:var(--mut);margin-bottom:22px;line-height:1.5}
-#state-loading,#state-error,#state-success{text-align:center;padding:30px 10px}
-#state-error{color:var(--alert)}
-#state-success{color:var(--ok)}
-#state-success .icon,#state-error .icon{font-size:2.4rem;display:block;margin-bottom:10px}
-.day-group{margin-bottom:18px}
-.day-label{font-size:.78rem;font-weight:700;color:var(--mut);text-transform:capitalize;margin-bottom:8px}
-.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.slot-btn{
-  padding:9px 6px;border:1px solid var(--line);border-radius:8px;background:#fafafa;
-  color:var(--txt);font-size:.82rem;font-family:var(--ff-body);cursor:pointer;transition:.12s;
-}
-.slot-btn:hover{border-color:var(--accent);background:rgba(0,0,145,.06);color:var(--accent)}
-.already-booked{
-  background:rgba(24,117,60,.08);border:1px solid rgba(24,117,60,.3);color:var(--ok);
-  border-radius:10px;padding:12px 14px;font-size:.85rem;margin-bottom:18px;
-}
-.modal-confirm{position:fixed;inset:0;background:rgba(29,29,27,.55);display:none;align-items:center;justify-content:center;padding:20px}
-.modal-confirm.open{display:flex}
-.modal-confirm .box{background:#fff;border-radius:16px;padding:26px;max-width:360px;width:100%;text-align:center}
-.modal-confirm p{font-size:.9rem;color:var(--txt);margin-bottom:18px;line-height:1.5}
-.modal-actions{display:flex;gap:10px}
-.btn{flex:1;padding:10px;border-radius:8px;border:none;font-size:.85rem;cursor:pointer;font-family:var(--ff-body)}
-.btn-cancel{background:transparent;border:1px solid var(--line);color:var(--mut)}
-.btn-confirm{background:var(--accent);color:#fff;font-weight:700}
-.btn-confirm:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:.85rem;color:var(--mut);margin-bottom:24px;line-height:1.5}
+#gcal-booking-btn{display:flex;justify-content:center}
 </style>
 </head>
 <body>
@@ -54,152 +30,25 @@ h1{font-family:var(--ff-disp);font-size:1.15rem;margin-bottom:6px;letter-spacing
     <div class="brand">S<b>@</b>FE</div>
     <div class="subtitle">Prestataire référencé cybermalveillance.gouv.fr / 17Cyber</div>
     <h1>Réserver un créneau d'intervention</h1>
-    <p class="hint" id="hint">Choisissez un créneau disponible ci-dessous. Vous recevrez une confirmation immédiate.</p>
-
-    <div id="state-loading">Chargement des créneaux disponibles…</div>
-    <div id="state-error" style="display:none"><span class="icon">⚠️</span><span id="error-message"></span></div>
-    <div id="state-success" style="display:none"><span class="icon">✅</span><span id="success-message"></span></div>
-    <div id="slots-container" style="display:none"></div>
+    <p class="hint">Choisissez un créneau disponible dans notre agenda ci-dessous. Vous recevrez une confirmation immédiate par e-mail.</p>
+    <div id="gcal-booking-btn"></div>
   </div>
 
-  <div class="modal-confirm" id="modal-confirm">
-    <div class="box">
-      <p id="confirm-text"></p>
-      <div class="modal-actions">
-        <button class="btn btn-cancel" id="btn-cancel">Annuler</button>
-        <button class="btn btn-confirm" id="btn-confirm">Confirmer</button>
-      </div>
-    </div>
-  </div>
-
+<!-- Google Calendar Appointment Scheduling begin -->
+<link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet">
+<script src="https://calendar.google.com/calendar/scheduling-button-script.js" async></script>
 <script>
-const SB_URL = 'https://rxxciopqqqpsmyisxtcc.supabase.co';
-const SB_ANON_KEY = 'sb_publishable_a0fVnXW4OVIaFuxJhkH8fw_7i3l5wen';
-
-const clientToken = new URLSearchParams(location.search).get('client_token');
-let pendingSlot = null;
-
-function showState(id) {
-  ['state-loading','state-error','state-success','slots-container'].forEach(s => {
-    document.getElementById(s).style.display = (s === id) ? '' : 'none';
-  });
-}
-
-function fmtDay(iso) {
-  return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-}
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
-
-async function loadSlots() {
-  if (!clientToken) { showError("Lien invalide — aucun identifiant de dossier."); return; }
-  try {
-    const resp = await fetch(`${SB_URL}/functions/v1/get-available-slots?client_token=${encodeURIComponent(clientToken)}`, {
-      headers: { apikey: SB_ANON_KEY },
+(function() {
+  window.addEventListener('load', function() {
+    calendar.schedulingButton.load({
+      url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1LpG9E-ewaL7K8UFwHCuPzzsUYkePPP5WiNRzOV4qe9B9jSFvb5JT6oZLIUOWi7PsbaJrhRjsc?gv=true',
+      color: '#000091',
+      label: 'Réserver un rendez-vous',
+      target: document.getElementById('gcal-booking-btn'),
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(mapError(data.error));
-
-    if (data.already_booked_at) {
-      document.getElementById('hint').innerHTML =
-        `<div class="already-booked">✅ Vous avez déjà un rendez-vous confirmé le ${fmtDay(data.already_booked_at)} à ${fmtTime(data.already_booked_at)}. Choisir un nouveau créneau ci-dessous le remplacera.</div>`;
-    }
-
-    renderSlots(data.slots || [], data.duration_minutes);
-  } catch (e) {
-    showError(e.message);
-  }
-}
-
-function renderSlots(slots, duration) {
-  const container = document.getElementById('slots-container');
-  if (!slots.length) {
-    container.innerHTML = '<p style="text-align:center;color:#666;font-size:.85rem">Aucun créneau disponible actuellement — contactez-nous directement.</p>';
-    showState('slots-container');
-    return;
-  }
-
-  const byDay = {};
-  slots.forEach(s => {
-    const dayKey = s.start.slice(0, 10);
-    (byDay[dayKey] = byDay[dayKey] || []).push(s);
   });
-
-  container.innerHTML = Object.entries(byDay).map(([day, daySlots]) => `
-    <div class="day-group">
-      <div class="day-label">${fmtDay(daySlots[0].start)}</div>
-      <div class="slots">
-        ${daySlots.map(s => `<button class="slot-btn" data-start="${s.start}" data-end="${s.end}">${fmtTime(s.start)}</button>`).join('')}
-      </div>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('.slot-btn').forEach(btn => {
-    btn.addEventListener('click', () => openConfirm(btn.dataset.start, btn.dataset.end, duration));
-  });
-
-  showState('slots-container');
-}
-
-function openConfirm(start, end, duration) {
-  pendingSlot = { start, end };
-  document.getElementById('confirm-text').textContent =
-    `Confirmer le rendez-vous du ${fmtDay(start)} à ${fmtTime(start)} (${duration} min) ?`;
-  document.getElementById('modal-confirm').classList.add('open');
-}
-
-async function confirmBooking() {
-  if (!pendingSlot) return;
-  const btn = document.getElementById('btn-confirm');
-  btn.disabled = true;
-  btn.textContent = 'Confirmation…';
-  try {
-    const resp = await fetch(`${SB_URL}/functions/v1/book-cybervictim-slot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: SB_ANON_KEY },
-      body: JSON.stringify({ client_token: clientToken, start: pendingSlot.start, end: pendingSlot.end }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(mapError(data.error));
-
-    document.getElementById('modal-confirm').classList.remove('open');
-    document.getElementById('success-message').textContent =
-      `Rendez-vous confirmé le ${fmtDay(data.start)} à ${fmtTime(data.start)}. Vous allez recevoir une confirmation.`;
-    showState('state-success');
-  } catch (e) {
-    document.getElementById('modal-confirm').classList.remove('open');
-    showError(e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Confirmer';
-  }
-}
-
-function mapError(code) {
-  const messages = {
-    not_found: "Lien invalide ou dossier introuvable.",
-    token_expired: "Ce lien de réservation a expiré — contactez-nous directement.",
-    slot_no_longer_available: "Ce créneau vient d'être pris par quelqu'un d'autre — merci d'en choisir un autre.",
-    slot_in_past: "Ce créneau n'est plus disponible.",
-    calendar_unavailable: "Service de réservation temporairement indisponible.",
-    google_calendar_error: "Service de réservation temporairement indisponible.",
-  };
-  return messages[code] || "Une erreur est survenue — merci de réessayer ou de nous contacter directement.";
-}
-
-function showError(message) {
-  document.getElementById('error-message').textContent = message;
-  showState('state-error');
-}
-
-document.getElementById('btn-cancel').addEventListener('click', () => {
-  document.getElementById('modal-confirm').classList.remove('open');
-  pendingSlot = null;
-});
-document.getElementById('btn-confirm').addEventListener('click', confirmBooking);
-
-loadSlots();
+})();
 </script>
+<!-- end Google Calendar Appointment Scheduling -->
 </body>
 </html>
