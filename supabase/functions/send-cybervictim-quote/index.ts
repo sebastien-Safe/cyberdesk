@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     return json({ error: "stripe_error", details: String(e.message || e) }, 502);
   }
 
-  const bookingUrl = `${SITE_URL}/reserver-creneau.html?client_token=${lead.client_token}`;
+  const bookingUrl = `${SITE_URL}/reserver-creneau.html`;
 
   const htmlContent = `
     <div style="font-family:Arial,sans-serif;color:#1d1d1b;max-width:560px;margin:0 auto;line-height:1.6">
