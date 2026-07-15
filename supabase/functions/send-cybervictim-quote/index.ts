@@ -139,6 +139,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       sender: SENDER,
       to: [{ email: lead.email, name: clientNom }],
+      bcc: [{ email: "cyberdesk@safe-digitalisation.fr", name: "CyberDesk Team" }],
       subject: `Votre devis d'intervention 17Cyber — ${ttc.toFixed(2)} € TTC`,
       htmlContent,
       attachment: [{ content: pdf_base64, name: pdf_filename || "devis-17cyber.pdf" }],
