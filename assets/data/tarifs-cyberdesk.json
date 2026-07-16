@@ -31,7 +31,8 @@
         { "id": "N3-1", "label": "Nettoyage complet PC",                        "ht": 129, "codes_diagnostic": ["ransomware", "intrusion_reseau"] },
         { "id": "N3-2", "label": "Suppression faux support informatique",        "ht": 149, "codes_diagnostic": ["fraude_telephonique"] },
         { "id": "N3-3", "label": "Piratage avec vol de données",                 "ht": 159, "codes_diagnostic": [] },
-        { "id": "N3-4", "label": "Accompagnement dépôt de plainte + preuves",   "ht": 69,  "codes_diagnostic": ["arnaque_virement"] }
+        { "id": "N3-4", "label": "Accompagnement dépôt de plainte + preuves",   "ht": 69,  "codes_diagnostic": ["arnaque_virement"] },
+        { "id": "N3-5", "label": "Exercice du droit RGPD, saisine CNIL",       "ht": 150, "codes_diagnostic": [] }
       ]
     },
     {

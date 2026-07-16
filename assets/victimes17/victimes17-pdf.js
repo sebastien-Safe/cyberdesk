@@ -73,7 +73,7 @@ window.VictimPDF = (function () {
     doc.setTextColor(40, 40, 40);
     const left = [
       PRESTATAIRE.nom, PRESTATAIRE.adresse,
-      `SIRET : ${PRESTATAIRE.siret}`, `Rep. par : ${PRESTATAIRE.representant}`,
+      `SIRET : ${PRESTATAIRE.siret}`,
       PRESTATAIRE.email, PRESTATAIRE.referencement,
     ];
     left.forEach((l, i) => doc.text(l, 15, y + i * 4.5));
@@ -290,7 +290,6 @@ window.VictimPDF = (function () {
     doc.setFontSize(9);
     doc.setTextColor(20, 20, 20);
     doc.text(`Fait à Paris, le ${todayFr()}`, 15, y);
-    doc.text(PRESTATAIRE.representant, 15, y + 6);
 
     drawFooter(doc);
 
@@ -422,7 +421,6 @@ window.VictimPDF = (function () {
     doc.setFontSize(9);
     doc.setTextColor(20, 20, 20);
     doc.text(`Fait à Paris, le ${todayFr()}`, 15, y);
-    doc.text(PRESTATAIRE.representant, 15, y + 6);
 
     drawFooter(doc);
 
