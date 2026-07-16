@@ -89,7 +89,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "bullet",
-    "text": "\"DPO\" : Délégué à la Protection des Données, rôle exercé par Sébastien Alonso (certifié RNCP40652 BC01)."
+    "text": "\"DPO\" : Délégué à la Protection des Données, rôle exercé par Michel Sébastien Alonso (certifié RNCP40652 BC01)."
   },
   {
     "type": "bullet",
@@ -124,7 +124,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
       ],
       [
         "Président & DPO",
-        "Sébastien Alonso"
+        "Michel Sébastien Alonso"
       ],
       [
         "Email",

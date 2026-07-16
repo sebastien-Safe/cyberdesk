@@ -11,7 +11,7 @@ window.VictimPDF = (function () {
     nom:           'S@FE',
     adresse:       '66 avenue des Champs-Élysées, 75008 Paris',
     siret:         '104 699 558 00011',
-    representant:  'Sébastien Alonso, Président',
+    representant:  'Michel Sébastien Alonso, Président',
     email:         'contact@safe-digitalisation.fr',
     site:          'safe-digitalisation.fr',
     referencement: 'Prestataire référencé cybermalveillance.gouv.fr / 17Cyber',

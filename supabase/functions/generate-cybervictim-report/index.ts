@@ -25,7 +25,7 @@ const SAFE = {
   nom: "S@FE SASU",
   adresse: "66 avenue des Champs-Élysées, 75008 Paris",
   siret: "104 699 558 00011",
-  intervenant: "Sébastien Alonso — Président et DPO de S@FE",
+  intervenant: "Michel Sébastien Alonso — Président et DPO de S@FE",
   certification: "RNCP40652 BC01 (Délégué à la Protection des Données)",
   classification: "CONFIDENTIEL — diffusion restreinte au client",
   email: "contact@safe-digitalisation.fr",
