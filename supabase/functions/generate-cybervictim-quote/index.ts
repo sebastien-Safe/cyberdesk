@@ -30,7 +30,6 @@ const SAFE = {
   nom: "S@FE SASU",
   adresse: "66 avenue des Champs-Élysées, 75008 Paris",
   siret: "104 699 558 00011",
-  representant: "Sébastien Alonso — Président de S@FE SASU",
   email: "contact@safe-digitalisation.fr",
   referencement: "Prestataire référencé cybermalveillance.gouv.fr / 17Cyber",
 };
@@ -146,7 +145,6 @@ Deno.serve(async (req) => {
           bullet("Conformément à l'art. L.221-18 du Code de la consommation, le client particulier dispose d'un délai de rétractation de 14 jours, sauf demande expresse d'exécution immédiate."),
 
           p(`Fait à Paris, le ${dateEmission}`, { size: 20 }),
-          p(SAFE.representant, { bold: true, size: 20 }),
 
           ...renderCgsBlocks((allProducts || []) as any),
         ],
