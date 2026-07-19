@@ -428,6 +428,30 @@
   </div>
 </div>
 
+<!-- ================= MODALE PAIEMENT MANUEL (hors Stripe) ================= -->
+<div class="modal" id="manual-payment-modal">
+  <div class="box">
+    <h3 id="manual-payment-modal-title">🏦 Paiement manuel</h3>
+    <div class="diag-field">
+      <label>Montant réglé TTC (€) *</label>
+      <input type="number" id="manual-payment-amount" step="0.01" min="0" placeholder="39.60">
+    </div>
+    <div class="diag-field">
+      <label>Moyen de paiement</label>
+      <select id="manual-payment-method">
+        <option>Virement bancaire</option>
+        <option>Chèque</option>
+        <option>Espèces</option>
+        <option>Autre</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeManualPaymentModal()">Annuler</button>
+      <button class="btn btn-pri" id="manual-payment-save-btn" onclick="saveManualPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= MODALE ASSISTANT IA — DOSSIER VICTIME ================= -->
 <div class="modal" id="victim-ai-modal">
   <div class="box wide">
