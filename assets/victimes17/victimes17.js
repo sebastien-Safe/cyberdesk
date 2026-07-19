@@ -107,7 +107,9 @@ function _v17CardHTML(lead) {
       <div class="v17-alert-badge">${escapeHtml(product.alert_type || '—')}</div>
       ${lead.ticket_number ? `<div class="v17-ticket-badge">🎫 ${escapeHtml(lead.ticket_number)}</div>` : ''}
       <div class="pcard-meta">
-        <div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(product.price_ttc)} TTC</div>
+        ${lead.payment_status === 'paye'
+          ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.amount_paid_ttc)} TTC — payé</div>`
+          : `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(product.price_ttc)} TTC</div>`}
         <div class="pcard-meta-item">📅 ${dateStr}</div>
         ${lead.birth_year ? `<div class="pcard-meta-item">🎂 ${_diagComputeAge(lead.birth_year)} ans</div>` : ''}
         ${lead.task_completion_pct ? `<div class="pcard-meta-item">🗂️ ${lead.task_completion_pct}% tâches</div>` : ''}
@@ -120,6 +122,7 @@ function _v17CardHTML(lead) {
       <button class="pcard-edit-btn" title="Suivi d'intervention" onclick="openTaskTreeModal('${lead.id}')">🗂️</button>
       <button class="pcard-edit-btn" title="Assistant IA" onclick="openVictimAiModal('${lead.id}')">🤖</button>
       <button class="pcard-edit-btn" title="Générer le rapport (PDF simple)" onclick="generateVictimReport('${lead.id}')">📄</button>
+      <button class="pcard-edit-btn" title="Enregistrer un paiement manuel (hors Stripe)" onclick="openManualPaymentModal('${lead.id}')">🏦</button>
       <button class="pcard-edit-btn pcard-del-btn" title="Supprimer" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️</button>
     </div>
   </div>`;
@@ -879,6 +882,79 @@ async function _v17SaveTaskTree(leadId, payload) {
     lead.intervention_tasks = { incident_type: payload.incident_type, os: payload.os, phases: payload.phases, completion_pct: result.completion_pct };
   }
   _v17RenderBoard();
+}
+
+// ── Paiement manuel (hors Stripe : virement, chèque, espèces) ──
+// Complète payment_status/amount_paid_ttc/paid_at directement (les mêmes
+// colonnes que renseigne le webhook Stripe), pour les dossiers réglés par
+// un autre moyen. La méthode choisie est tracée dans internal_notes (pas
+// de colonne dédiée) et dans le journal RGPD.
+let _manualPaymentLeadId = null;
+
+function openManualPaymentModal(leadId) {
+  const lead = _v17Leads.find(l => l.id === leadId);
+  if (!lead) return;
+  _manualPaymentLeadId = leadId;
+
+  document.getElementById('manual-payment-modal-title').textContent =
+    `🏦 Paiement manuel — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
+  document.getElementById('manual-payment-amount').value = lead.amount_paid_ttc || '';
+  document.getElementById('manual-payment-method').value = 'Virement bancaire';
+  document.getElementById('manual-payment-modal').classList.add('show');
+}
+
+function closeManualPaymentModal() {
+  document.getElementById('manual-payment-modal').classList.remove('show');
+  _manualPaymentLeadId = null;
+}
+
+async function saveManualPayment() {
+  const leadId = _manualPaymentLeadId;
+  const lead = _v17Leads.find(l => l.id === leadId);
+  if (!lead) return;
+
+  const amount = parseFloat(document.getElementById('manual-payment-amount').value);
+  const method = document.getElementById('manual-payment-method').value;
+  if (!amount || amount <= 0) { alert('Indiquez un montant TTC valide.'); return; }
+
+  const btn = document.getElementById('manual-payment-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement…';
+
+  const dateStr = new Date().toLocaleDateString('fr-FR');
+  const noteEntry = `[Paiement manuel] ${formatMoney(amount)} TTC via ${method} — ${dateStr}`;
+  const internalNotes = lead.internal_notes ? `${lead.internal_notes}\n${noteEntry}` : noteEntry;
+
+  const payload = {
+    payment_status: 'paye',
+    amount_paid_ttc: amount,
+    paid_at: new Date().toISOString(),
+    internal_notes: internalNotes,
+  };
+
+  try {
+    const { data, error } = await sb.from('cybervictim_leads')
+      .update(payload).eq('id', leadId).select().single();
+    if (error) throw error;
+    Object.assign(lead, data);
+
+    await logRgpd('victim_paiement_manuel_enregistre', 'Victimes17Cyber', {
+      entityType: 'cybervictim_lead',
+      entityId:   leadId,
+      donnees:    'Paiement enregistré manuellement (hors Stripe)',
+      criticite:  'Info',
+      details:    { amount_paid_ttc: amount, method },
+    });
+
+    closeManualPaymentModal();
+    _v17RenderBoard();
+    showCrmToast('✅ Paiement enregistré');
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enregistrer';
+  }
 }
 
 // Attache les listeners de la modale diagnostic une seule fois, au
