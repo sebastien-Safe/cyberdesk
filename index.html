@@ -598,11 +598,14 @@ document.getElementById('forgot-password-form').addEventListener('submit', async
   errEl.textContent = '';
   if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
   btn.disabled = true;
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname,
-  });
+  // Passe par notre propre Edge Function (Brevo) plutôt que
+  // sb.auth.resetPasswordForEmail() : le service e-mail intégré de
+  // Supabase a un quota par défaut trop bas ("email rate limit exceeded"),
+  // et ce changement reste scopé au flux mot de passe oublié — pas de
+  // config SMTP globale touchée sur le projet partagé avec Vente/safe-crm.
+  const { error } = await sb.functions.invoke('cyberdesk-forgot-password', { body: { email } });
   btn.disabled = false;
-  if (error) { errEl.textContent = error.message; return; }
+  if (error) { errEl.textContent = "Une erreur est survenue, réessayez plus tard."; return; }
   errEl.style.color = 'var(--accent)';
   errEl.textContent = "Si un compte existe pour cet e-mail, un lien de réinitialisation vient d'être envoyé.";
 });

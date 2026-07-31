@@ -143,6 +143,9 @@ cyberdesk/
 │   │   ├── cyberdesk-send-audit-email/     ← résultats du quiz mission-cyber.html
 │   │   │                                     (préfixé : "send-audit-email" déjà pris côté Vente,
 │   │   │                                     probablement lié à cyber_audits)
+│   │   ├── cyberdesk-forgot-password/      ← mot de passe oublié, envoi via Brevo
+│   │   │                                     (contourne le service e-mail intégré Supabase,
+│   │   │                                     quota par défaut trop bas — voir section dédiée)
 │   │   ├── deno.json
 │   │   └── import_map.json
 │   └── migrations/
@@ -313,6 +316,7 @@ supabase functions deploy send-cybervictim-quote
 supabase functions deploy cyberdesk-stripe-webhook --no-verify-jwt
 supabase functions deploy cyber-ia-assistant
 supabase functions deploy cyberdesk-send-audit-email
+supabase functions deploy cyberdesk-forgot-password --no-verify-jwt
 ```
 
 ⚠️ Les slugs `stripe-webhook` et `send-audit-email` (sans préfixe) sont
@@ -333,6 +337,7 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 6. cyberdesk-stripe-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
 7. cyber-ia-assistant
 8. cyberdesk-send-audit-email
+9. cyberdesk-forgot-password (`--no-verify-jwt` — appelée avant toute connexion, aucun JWT utilisateur)
 
 ## Assistant IA (cyber-ia-assistant)
 
@@ -373,6 +378,42 @@ dans le navigateur :
   (`action: 'ia_assistant_appel'`, `module: 'CyberDesk'`).
 - Anthropic est déclaré comme sous-traitant dans les CGS
   (`_shared/cgs-content.ts`, section 10.5).
+
+## Mot de passe oublié (cyberdesk-forgot-password)
+
+Le lien « Mot de passe oublié ? » de l'écran de connexion (`index.html`)
+ne passe **pas** par `sb.auth.resetPasswordForEmail()` mais par l'Edge
+Function `cyberdesk-forgot-password` : le service e-mail intégré de
+Supabase a un quota par défaut très bas (constaté en test réel — "email
+rate limit exceeded" après quelques envois), et changer le SMTP du projet
+dans le Dashboard (Authentication → URL Configuration) l'aurait modifié
+pour **tout** le projet partagé, y compris les e-mails d'auth de
+Vente/safe-crm. Ce contournement reste scopé au seul flux mot de passe
+oublié.
+
+**Contrat de l'Edge Function : `POST { email }` → toujours
+`{ success: true }`**, y compris si le compte n'existe pas (pas
+d'énumération de comptes possible) :
+- Déployée avec `--no-verify-jwt` (appelée avant toute connexion, aucun
+  JWT utilisateur disponible — comme `cyberdesk-stripe-webhook`).
+- Génère le lien via `auth.admin.generateLink({ type: 'recovery' })`
+  (service_role, ne déclenche aucun envoi Supabase) puis l'envoie
+  elle-même par e-mail via Brevo (`brevo_api_key` du Vault), expéditeur
+  `noreply@safe-digitalisation.fr` (identique à `send-cybervictim-quote`).
+- Chaque envoi réussi (ou tentative échouée côté Brevo) est journalisé
+  dans `audit_logs` (`action: 'mot_de_passe_oublie_email_envoye'`,
+  `module: 'CyberDesk'`, `entity_type: 'auth_user'`) — preuve d'envoi
+  pour le registre de traitement du module DPO. Aucun log si le compte
+  n'existe pas (aucun e-mail n'est réellement envoyé dans ce cas).
+- **Limite assumée** : endpoint public sans limitation de débit dédiée
+  (au-delà de celle de Brevo) — acceptable en l'état vu le nombre de
+  comptes actuel (un seul, voir `profiles`), à revoir si le nombre de
+  comptes CyberDesk augmente.
+
+Le reste du parcours (redirection vers `index.html`, détection de
+l'événement `PASSWORD_RECOVERY` côté client, saisie du nouveau mot de
+passe via `sb.auth.updateUser()`) est géré directement dans `index.html`,
+inchangé par rapport à un lien Supabase natif.
 
 ## Documents générés (devis / rapports)
 
