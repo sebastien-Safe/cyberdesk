@@ -10,18 +10,7 @@
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { durationForPrestation } from "../_shared/google-calendar.ts";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
 const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
@@ -33,6 +22,14 @@ async function getSecret(sb: ReturnType<typeof createClient>, name: string): Pro
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "bad_method" }, 405);
 

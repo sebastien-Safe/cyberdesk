@@ -13,18 +13,7 @@ import { Document, Packer, Paragraph } from "docx";
 import { h1, h2, p, bullet, infoTable, pricingTable, centered } from "../_shared/docx-helpers.ts";
 import { renderCgsBlocks } from "../_shared/cgs-render.ts";
 import { PRODUCT_TEXTS } from "../_shared/product-texts.ts";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SAFE = {
   nom: "S@FE SASU",
@@ -46,6 +35,14 @@ interface PhaseRecord {
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "bad_method" }, 405);
 
