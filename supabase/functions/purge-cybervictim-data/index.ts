@@ -39,7 +39,7 @@ serve(async (req) => {
       action:      "victim_donnees_purgees",
       entity_type: "cybervictim_lead",
       entity_id:   leadId,
-      module:      "Victimes17Cyber",
+      module:      "CyberDesk",
       criticite:   "Attention",
       details:     { purge_type: purgeType, timestamp: nowIso },
     });
@@ -92,6 +92,7 @@ serve(async (req) => {
     .from("audit_logs")
     .delete()
     .eq("entity_type", "cybervictim_lead")
+    .eq("module", "CyberDesk")
     .lt("created_at", oneYearAgoIso)
     .select("id");
   if (e3) result.errors.push("delete_logs: " + e3.message);

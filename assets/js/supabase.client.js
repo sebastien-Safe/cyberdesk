@@ -1,24 +1,34 @@
 // =========================================================
 // Configuration Supabase — CyberDesk
 // =========================================================
-// 1. Projet Supabase CyberDesk (jamais celui de safecrm) :
-//    Project Settings > API Keys
-// 2. Renseignez les deux valeurs ci-dessous avant déploiement.
+// Projet partagé avec safe-crm (Safe-crm-V2, ref bgkijldrmdhklkadkeua,
+// région Paris) — CyberDesk et le module Vente de safe-crm vivent dans
+// la même base, avec un cloisonnement par module (voir has_module_access()
+// / staff_module_access dans supabase/migrations/008_cyberdesk_on_safecrm.sql
+// et la section "Cohabitation avec safe-crm" de CLAUDE.md).
 //
 // Cette clé "publishable/anon" est conçue pour être publique
 // (protégée par les règles RLS définies dans les migrations) :
-// seuls les comptes utilisateurs créés dans Authentication > Users
-// pourront se connecter et voir les données.
+// seuls les comptes ayant une ligne staff_module_access(module='cyberdesk')
+// (ou is_super_admin()) pourront réellement voir des données CyberDesk.
 //
-// ⚠️ Ne mettez JAMAIS ici la "secret key" / "service_role key" :
-// elle donne un accès administrateur complet et ne doit jamais
-// figurer dans du code public (GitHub, site déployé, etc.).
+// ⚠️ Ne mettez JAMAIS ici la "secret key" / "service_role key" : elle
+// donne un accès administrateur complet à TOUTES les données du projet
+// partagé (y compris safe-crm/Vente), pas seulement à CyberDesk — ne
+// doit jamais figurer dans du code public (GitHub, site déployé, etc.).
 // =========================================================
 
-const SUPABASE_URL = "https://rxxciopqqqpsmyisxtcc.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_a0fVnXW4OVIaFuxJhkH8fw_7i3l5wen";
+const SUPABASE_URL = "https://bgkijldrmdhklkadkeua.supabase.co";
+const SUPABASE_ANON_KEY = "%%SUPABASE_ANON_KEY%%"; // TODO: coller la clé publishable (Dashboard > Project Settings > API Keys) — non récupérée automatiquement (accès secrets bloqué)
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Accès au module CyberDesk (cloisonné de Vente même si auth.users est
+// partagé) — à appeler juste après une connexion réussie, voir index.html.
+async function hasCyberdeskAccess() {
+  const { data, error } = await sb.rpc('has_module_access', { p_module: 'cyberdesk' });
+  return !error && data === true;
+}
 
 // ── Helpers partagés (remplacent les utilitaires du CRM parent safecrm) ──
 
