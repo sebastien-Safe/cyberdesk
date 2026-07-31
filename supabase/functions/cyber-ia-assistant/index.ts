@@ -18,7 +18,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const ANTHROPIC_MODEL = "claude-opus-4-8";
+const ANTHROPIC_MODEL = "claude-sonnet-5";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
