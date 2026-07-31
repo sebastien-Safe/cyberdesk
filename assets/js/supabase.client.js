@@ -19,7 +19,7 @@
 // =========================================================
 
 const SUPABASE_URL = "https://bgkijldrmdhklkadkeua.supabase.co";
-const SUPABASE_ANON_KEY = "%%SUPABASE_ANON_KEY%%"; // TODO: coller la clé publishable (Dashboard > Project Settings > API Keys) — non récupérée automatiquement (accès secrets bloqué)
+const SUPABASE_ANON_KEY = "sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
