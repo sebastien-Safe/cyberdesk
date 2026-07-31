@@ -525,9 +525,24 @@
 // mot de passe (voir l'écouteur PASSWORD_RECOVERY plus bas).
 let inPasswordRecovery = false;
 
+// Persisté (pas une simple variable JS) : un lien de récupération établit
+// une session Supabase valide dès qu'il est cliqué. Si l'utilisateur ferme
+// l'onglet sans avoir choisi de nouveau mot de passe, cette session reste
+// valide en local — sans ce verrou, la rouvrir plus tard donnerait accès à
+// l'app sans jamais repasser par une authentification réelle.
+const PENDING_RECOVERY_KEY = 'cd_pending_recovery';
+
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
   if (inPasswordRecovery) return;
+  if (localStorage.getItem(PENDING_RECOVERY_KEY)) {
+    await sb.auth.signOut();
+    localStorage.removeItem(PENDING_RECOVERY_KEY);
+    showLoginPanel();
+    document.getElementById('login-screen').classList.remove('is-hidden');
+    document.getElementById('app-shell').classList.add('is-hidden');
+    return;
+  }
   const errEl = document.getElementById('login-error');
   if (session) {
     // Même auth.users que safe-crm/Vente : un compte connecté n'a pas
@@ -562,6 +577,10 @@ document.getElementById('login-form').addEventListener('submit', async () => {
   const { error } = await sb.auth.signInWithPassword({ email, password });
   btn.disabled = false;
   if (error) { errEl.textContent = error.message; return; }
+  // Un login explicite au mot de passe l'emporte sur un éventuel lien de
+  // récupération abandonné plus tôt sur cet appareil.
+  localStorage.removeItem(PENDING_RECOVERY_KEY);
+  inPasswordRecovery = false;
   checkSession();
 });
 
@@ -616,6 +635,7 @@ document.getElementById('forgot-password-form').addEventListener('submit', async
 sb.auth.onAuthStateChange((event) => {
   if (event === 'PASSWORD_RECOVERY') {
     inPasswordRecovery = true;
+    localStorage.setItem(PENDING_RECOVERY_KEY, '1');
     document.getElementById('login-panel').classList.add('is-hidden');
     document.getElementById('forgot-password-panel').classList.add('is-hidden');
     document.getElementById('reset-password-panel').classList.remove('is-hidden');
@@ -637,6 +657,7 @@ document.getElementById('reset-password-form').addEventListener('submit', async 
   btn.disabled = false;
   if (error) { errEl.textContent = error.message; return; }
   document.getElementById('reset-password-panel').classList.add('is-hidden');
+  localStorage.removeItem(PENDING_RECOVERY_KEY);
   inPasswordRecovery = false;
   checkSession();
 });
