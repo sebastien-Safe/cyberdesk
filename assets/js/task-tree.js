@@ -223,7 +223,7 @@ window.TaskTree = (function () {
 
       _downloadBase64Docx(result.docx_base64, result.filename);
 
-      if (typeof logRgpd === 'function') await logRgpd('victim_devis_genere', 'Victimes17Cyber', {
+      if (typeof logRgpd === 'function') await logRgpd('victim_devis_genere', 'CyberDesk', {
         entityType: 'cybervictim_lead', entityId: _state.leadId,
         donnees: 'Génération du devis (détail depuis l\'arbre de tâches)', criticite: 'Info',
         details: { incident_type: _state.incidentType, os: _state.os },
@@ -259,7 +259,7 @@ window.TaskTree = (function () {
 
       _downloadBase64Docx(result.docx_base64, result.filename);
 
-      if (typeof logRgpd === 'function') await logRgpd('victim_rapport_genere', 'Victimes17Cyber', {
+      if (typeof logRgpd === 'function') await logRgpd('victim_rapport_genere', 'CyberDesk', {
         entityType: 'cybervictim_lead', entityId: _state.leadId,
         donnees: 'Génération du rapport (arbre de tâches)', criticite: 'Info',
         details: { incident_type: _state.incidentType, os: _state.os, completion_pct: pct },

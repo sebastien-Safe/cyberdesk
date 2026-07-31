@@ -424,7 +424,7 @@ async function _quoteDownloadPdf() {
       .eq('id', _quoteLeadId).select().single();
     if (updated) Object.assign(lead, updated);
 
-    await logRgpd('victim_devis_genere', 'Victimes17Cyber', {
+    await logRgpd('victim_devis_genere', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   _quoteLeadId,
       donnees:    'Téléchargement local du devis PDF (contrôle avant envoi)',
@@ -481,7 +481,7 @@ async function _quoteSendToClient() {
 
     if (result.lead) Object.assign(lead, result.lead);
 
-    await logRgpd('victim_devis_envoye', 'Victimes17Cyber', {
+    await logRgpd('victim_devis_envoye', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   _quoteLeadId,
       donnees:    'Envoi du devis par e-mail (Brevo) avec lien de paiement Stripe',

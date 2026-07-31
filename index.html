@@ -498,7 +498,19 @@
 <script>
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
+  const errEl = document.getElementById('login-error');
   if (session) {
+    // Même auth.users que safe-crm/Vente : un compte connecté n'a pas
+    // accès à CyberDesk pour autant — vérifie le droit par module avant
+    // d'afficher quoi que ce soit.
+    const ok = await hasCyberdeskAccess();
+    if (!ok) {
+      await sb.auth.signOut();
+      if (errEl) errEl.textContent = "Ce compte n'a pas accès à CyberDesk.";
+      document.getElementById('login-screen').classList.remove('is-hidden');
+      document.getElementById('app-shell').classList.add('is-hidden');
+      return;
+    }
     document.getElementById('login-screen').classList.add('is-hidden');
     document.getElementById('app-shell').classList.remove('is-hidden');
     initVictimes17();

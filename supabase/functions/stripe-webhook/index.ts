@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
       await sb.from("audit_logs").insert({
         action: "victim_paiement_confirme",
-        module: "Victimes17Cyber",
+        module: "CyberDesk",
         entity_type: "cybervictim_lead",
         entity_id: leadId,
         donnees_concernees: "Confirmation de paiement Stripe Checkout",

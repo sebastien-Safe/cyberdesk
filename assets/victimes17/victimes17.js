@@ -168,7 +168,7 @@ async function _v17DeleteLead(leadId) {
     const { error } = await sb.from('cybervictim_leads').delete().eq('id', leadId);
     if (error) throw error;
 
-    await logRgpd('victim_lead_supprime', 'Victimes17Cyber', {
+    await logRgpd('victim_lead_supprime', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   leadId,
       donnees:    'Suppression dossier victime 17Cyber',
@@ -240,7 +240,7 @@ async function _v17Drop(event, colId) {
   }
   if (updated) Object.assign(lead, updated);
 
-  await logRgpd('victim_etape_modifiee', 'Victimes17Cyber', {
+  await logRgpd('victim_etape_modifiee', 'CyberDesk', {
     entityType: 'cybervictim_lead',
     entityId:   leadId,
     donnees:    'Changement étape pipeline dossier victime',
@@ -248,7 +248,7 @@ async function _v17Drop(event, colId) {
     details:    { old_stage: oldStage, new_stage: colId },
   });
   if (colId === 'cloture') {
-    await logRgpd('victim_dossier_cloture', 'Victimes17Cyber', {
+    await logRgpd('victim_dossier_cloture', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   leadId,
       donnees:    'Clôture dossier — déclenche les délais de purge RGPD',
@@ -726,7 +726,7 @@ async function saveVictimLead() {
     }
     if (error) throw error;
 
-    await logRgpd(leadId ? 'victim_lead_modifie' : 'victim_lead_cree', 'Victimes17Cyber', {
+    await logRgpd(leadId ? 'victim_lead_modifie' : 'victim_lead_cree', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   data.id,
       donnees:    leadId ? 'Mise à jour diagnostic dossier victime 17Cyber' : 'Création dossier victime 17Cyber (diagnostic complet)',
@@ -806,7 +806,7 @@ async function generateVictimReport(leadId) {
     .eq('id', leadId).select().single();
   if (updated) Object.assign(lead, updated);
 
-  await logRgpd('victim_rapport_genere', 'Victimes17Cyber', {
+  await logRgpd('victim_rapport_genere', 'CyberDesk', {
     entityType: 'cybervictim_lead',
     entityId:   leadId,
     donnees:    'Génération du rapport PDF',
@@ -817,7 +817,7 @@ async function generateVictimReport(leadId) {
   if (lead.pipeline_stage === 'paiement_recu') {
     lead.pipeline_stage = 'rapport_livre';
     await sb.from('cybervictim_leads').update({ pipeline_stage: 'rapport_livre' }).eq('id', leadId);
-    await logRgpd('victim_etape_modifiee', 'Victimes17Cyber', {
+    await logRgpd('victim_etape_modifiee', 'CyberDesk', {
       entityType: 'cybervictim_lead', entityId: leadId, donnees: 'Changement étape pipeline dossier victime',
       criticite: 'Info', details: { old_stage: 'paiement_recu', new_stage: 'rapport_livre', via: 'generation_rapport' },
     });
@@ -938,7 +938,7 @@ async function saveManualPayment() {
     if (error) throw error;
     Object.assign(lead, data);
 
-    await logRgpd('victim_paiement_manuel_enregistre', 'Victimes17Cyber', {
+    await logRgpd('victim_paiement_manuel_enregistre', 'CyberDesk', {
       entityType: 'cybervictim_lead',
       entityId:   leadId,
       donnees:    'Paiement enregistré manuellement (hors Stripe)',

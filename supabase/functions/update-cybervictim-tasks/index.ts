@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
   await sb.from("audit_logs").insert({
     user_id:            user.id,
     action:              "victim_taches_maj",
-    module:               "Victimes17Cyber",
+    module:               "CyberDesk",
     entity_type:          "cybervictim_lead",
     entity_id:            lead_id,
     donnees_concernees:   "Mise à jour de l'arbre de tâches d'intervention",
