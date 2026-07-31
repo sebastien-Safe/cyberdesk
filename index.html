@@ -27,6 +27,29 @@
         <div class="field"><label>Mot de passe</label><input id="login-password" type="password" autocomplete="current-password"></div>
         <button type="submit" class="btn btn-pri btn--full" id="login-btn">Se connecter</button>
         <p class="error" id="login-error"></p>
+        <p class="link-row"><a href="#" class="link-muted" id="forgot-password-link">Mot de passe oublié ?</a></p>
+      </form>
+    </div>
+
+    <div id="forgot-password-panel" class="is-hidden">
+      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Réinitialisation du mot de passe</p>
+      <form id="forgot-password-form" onsubmit="return false">
+        <div class="field"><label>E-mail</label><input id="forgot-email" type="email" autocomplete="username"></div>
+        <button type="submit" class="btn btn-pri btn--full" id="forgot-password-btn">Envoyer le lien de réinitialisation</button>
+        <p class="error" id="forgot-password-error"></p>
+        <p class="link-row"><a href="#" class="link-muted" id="back-to-login-link">← Retour à la connexion</a></p>
+      </form>
+    </div>
+
+    <div id="reset-password-panel" class="is-hidden">
+      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Choisissez un nouveau mot de passe</p>
+      <form id="reset-password-form" onsubmit="return false">
+        <div class="field"><label>Nouveau mot de passe</label><input id="reset-password-new" type="password" autocomplete="new-password"></div>
+        <div class="field"><label>Confirmer le mot de passe</label><input id="reset-password-confirm" type="password" autocomplete="new-password"></div>
+        <button type="submit" class="btn btn-pri btn--full" id="reset-password-btn">Valider le nouveau mot de passe</button>
+        <p class="error" id="reset-password-error"></p>
       </form>
     </div>
   </div>
@@ -496,8 +519,15 @@
 <script src="assets/victimes17/victimes17-ai.js"></script>
 
 <script>
+// Passe à true pendant le parcours "lien de réinitialisation cliqué" pour
+// empêcher checkSession() d'enchaîner automatiquement sur l'app avec la
+// session de récupération avant que l'utilisateur ait choisi un nouveau
+// mot de passe (voir l'écouteur PASSWORD_RECOVERY plus bas).
+let inPasswordRecovery = false;
+
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
+  if (inPasswordRecovery) return;
   const errEl = document.getElementById('login-error');
   if (session) {
     // Même auth.users que safe-crm/Vente : un compte connecté n'a pas
@@ -506,6 +536,7 @@ async function checkSession() {
     const ok = await hasCyberdeskAccess();
     if (!ok) {
       await sb.auth.signOut();
+      showLoginPanel();
       if (errEl) errEl.textContent = "Ce compte n'a pas accès à CyberDesk.";
       document.getElementById('login-screen').classList.remove('is-hidden');
       document.getElementById('app-shell').classList.add('is-hidden');
@@ -515,6 +546,7 @@ async function checkSession() {
     document.getElementById('app-shell').classList.remove('is-hidden');
     initVictimes17();
   } else {
+    showLoginPanel();
     document.getElementById('login-screen').classList.remove('is-hidden');
     document.getElementById('app-shell').classList.add('is-hidden');
   }
@@ -537,6 +569,74 @@ async function logout() {
   await sb.auth.signOut();
   checkSession();
 }
+
+// ── Mot de passe oublié ──────────────────────────────────
+function showLoginPanel() {
+  document.getElementById('forgot-password-panel').classList.add('is-hidden');
+  document.getElementById('reset-password-panel').classList.add('is-hidden');
+  document.getElementById('login-panel').classList.remove('is-hidden');
+}
+
+document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('forgot-email').value = document.getElementById('login-email').value.trim();
+  document.getElementById('forgot-password-error').textContent = '';
+  document.getElementById('login-panel').classList.add('is-hidden');
+  document.getElementById('forgot-password-panel').classList.remove('is-hidden');
+});
+
+document.getElementById('back-to-login-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  showLoginPanel();
+});
+
+document.getElementById('forgot-password-form').addEventListener('submit', async () => {
+  const email = document.getElementById('forgot-email').value.trim();
+  const errEl = document.getElementById('forgot-password-error');
+  const btn   = document.getElementById('forgot-password-btn');
+  errEl.style.color = '';
+  errEl.textContent = '';
+  if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
+  btn.disabled = true;
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  btn.disabled = false;
+  if (error) { errEl.textContent = error.message; return; }
+  errEl.style.color = 'var(--accent)';
+  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de réinitialisation vient d'être envoyé.";
+});
+
+// Lien de réinitialisation cliqué depuis l'e-mail : Supabase redirige vers
+// cette page avec un jeton de récupération dans l'URL et déclenche cet
+// événement une fois la session de récupération établie.
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    inPasswordRecovery = true;
+    document.getElementById('login-panel').classList.add('is-hidden');
+    document.getElementById('forgot-password-panel').classList.add('is-hidden');
+    document.getElementById('reset-password-panel').classList.remove('is-hidden');
+    document.getElementById('login-screen').classList.remove('is-hidden');
+    document.getElementById('app-shell').classList.add('is-hidden');
+  }
+});
+
+document.getElementById('reset-password-form').addEventListener('submit', async () => {
+  const pw1   = document.getElementById('reset-password-new').value;
+  const pw2   = document.getElementById('reset-password-confirm').value;
+  const errEl = document.getElementById('reset-password-error');
+  const btn   = document.getElementById('reset-password-btn');
+  errEl.textContent = '';
+  if (pw1.length < 8) { errEl.textContent = "Le mot de passe doit contenir au moins 8 caractères."; return; }
+  if (pw1 !== pw2) { errEl.textContent = "Les mots de passe ne correspondent pas."; return; }
+  btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: pw1 });
+  btn.disabled = false;
+  if (error) { errEl.textContent = error.message; return; }
+  document.getElementById('reset-password-panel').classList.add('is-hidden');
+  inPasswordRecovery = false;
+  checkSession();
+});
 
 checkSession();
 </script>
