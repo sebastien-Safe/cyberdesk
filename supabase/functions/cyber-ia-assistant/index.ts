@@ -21,6 +21,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CYBER_SYSTEM } from "../_shared/cyber-system-prompt.ts";
 import { pseudonymize } from "../_shared/pii-redact.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { canAccessLead } from "../_shared/lead-access.ts";
 
 const ANTHROPIC_MODEL = "claude-sonnet-5";
 
@@ -111,11 +112,12 @@ Deno.serve(async (req) => {
       "id, first_name, last_name, victim_type, attack_type, attack_description, severity, " +
         "targeted_services, impacted_systems, financial_loss, activity_impacted, " +
         "third_party_data_exposed, os_victim, complaint_status, birth_year, timeline_events, " +
-        "notes, internal_notes",
+        "notes, internal_notes, created_by",
     )
     .eq("id", leadId)
     .maybeSingle();
   if (leadErr || !lead) return json({ error: "lead_not_found" }, 404);
+  if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
   const { data: keyData, error: keyErr } = await sbService.rpc("get_edge_secret", { secret_name: "anthropic_api_key" });
   const ANTHROPIC_API_KEY = keyErr ? null : (keyData as string | null);

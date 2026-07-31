@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CyberDesk — Votre avis</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{
+  --navy:#f6f6f6;--navy-mid:#ffffff;--line:#dddddd;
+  --txt:#1d1d1b;--mut:#666666;--mut-2:#3a3a3a;
+  --ok:#18753c;--alert:#e1000f;
+  --m:#000091;--m2:#1212a5;
+  --r:14px;--ff-disp:'Sora',sans-serif;--ff-body:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;font-family:var(--ff-body),Arial,sans-serif;background:var(--navy);color:var(--mut-2)}
+.wrap{max-width:480px;margin:0 auto;padding:48px 20px;min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.brand{font-family:var(--ff-disp),Arial,sans-serif;font-weight:800;font-size:1.2rem;color:var(--txt);text-align:center;margin-bottom:4px}
+.brand b{color:var(--m)}
+.sub{text-align:center;color:var(--mut);font-size:.85rem;margin-bottom:28px}
+.card{background:var(--navy-mid);border:1px solid var(--line);border-radius:var(--r);padding:26px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card h2{font-family:var(--ff-disp),Arial,sans-serif;font-size:1.1rem;color:var(--txt);margin-bottom:6px}
+.card p.hint{color:var(--mut);font-size:.85rem;margin-bottom:20px}
+.stars{display:flex;justify-content:center;gap:8px;margin-bottom:22px}
+.star{font-size:2.2rem;line-height:1;cursor:pointer;color:#ccc;transition:.1s;background:none;border:none;padding:0}
+.star.active{color:#f5a623}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;font-family:var(--ff-body),Arial,sans-serif;font-size:.9rem;color:var(--txt);resize:vertical;margin-bottom:18px}
+textarea:focus{outline:none;border-color:var(--m)}
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:var(--ff-disp),Arial,sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:.15s}
+.btn-pri{background:linear-gradient(135deg,var(--m),var(--m2));color:#fff}
+.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.msg{text-align:center;font-size:.85rem;margin-top:14px;min-height:1.2em}
+.msg.err{color:var(--alert)}
+.msg.ok{color:var(--ok)}
+.thanks{text-align:center}
+.thanks .ico{font-size:2.6rem;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brand">S<b>@</b>FE — CyberDesk</div>
+  <div class="sub">Votre avis sur notre intervention 17Cyber</div>
+
+  <div class="card" id="form-card">
+    <h2>Comment s'est passée votre prise en charge ?</h2>
+    <p class="hint">Votre retour nous aide à améliorer l'accompagnement des victimes de cyberattaques.</p>
+
+    <div class="stars" id="stars">
+      <button type="button" class="star" data-value="1">★</button>
+      <button type="button" class="star" data-value="2">★</button>
+      <button type="button" class="star" data-value="3">★</button>
+      <button type="button" class="star" data-value="4">★</button>
+      <button type="button" class="star" data-value="5">★</button>
+    </div>
+
+    <textarea id="comment" rows="4" placeholder="Un commentaire à ajouter ? (facultatif)"></textarea>
+
+    <button type="button" class="btn btn-pri" id="submit-btn" onclick="submitReview()">Envoyer mon avis</button>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <div class="card thanks" id="thanks-card" style="display:none">
+    <div class="ico">🙏</div>
+    <h2>Merci pour votre avis !</h2>
+    <p class="hint" style="margin-bottom:0">Il a bien été enregistré.</p>
+  </div>
+</div>
+
+<script>
+// Projet partagé avec safe-crm (Safe-crm-V2) — mêmes valeurs que
+// assets/js/supabase.client.js. Page publique, aucune session requise :
+// la validité vient uniquement du token dans l'URL, vérifié côté serveur
+// par l'Edge Function (--no-verify-jwt, service_role).
+const _SB_URL = 'https://bgkijldrmdhklkadkeua.supabase.co';
+const _SB_ANON_KEY = 'sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32';
+
+const _token = new URLSearchParams(location.search).get('token');
+let _rating = 0;
+
+const starsEl = document.getElementById('stars');
+starsEl.querySelectorAll('.star').forEach(btn => {
+  btn.addEventListener('click', () => {
+    _rating = Number(btn.dataset.value);
+    starsEl.querySelectorAll('.star').forEach(s => {
+      s.classList.toggle('active', Number(s.dataset.value) <= _rating);
+    });
+  });
+});
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg' + (type ? ' ' + type : '');
+}
+
+if (!_token) {
+  document.getElementById('submit-btn').disabled = true;
+  showMsg('Lien invalide — le jeton est manquant.', 'err');
+}
+
+async function submitReview() {
+  if (!_token) return;
+  if (!_rating) { showMsg('Sélectionnez une note avant d\'envoyer.', 'err'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  showMsg('', '');
+
+  try {
+    const r = await fetch(`${_SB_URL}/functions/v1/cyberdesk-submit-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON_KEY },
+      body: JSON.stringify({
+        token: _token,
+        rating: _rating,
+        comment: document.getElementById('comment').value.trim(),
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok && data.success) {
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('thanks-card').style.display = 'block';
+    } else {
+      showMsg('Ce lien n\'est plus valable (déjà utilisé ou expiré).', 'err');
+      btn.disabled = false;
+    }
+  } catch {
+    showMsg('Une erreur est survenue, réessayez plus tard.', 'err');
+    btn.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
