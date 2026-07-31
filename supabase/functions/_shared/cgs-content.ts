@@ -558,7 +558,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "S@FE recourt aux sous-traitants de confiance suivants pour l'hébergement et l'exploitation de son infrastructure : Clever Cloud SAS (Nantes, France — hébergement sites et applications) et Supabase (Francfort, Allemagne — base de données CRM). Tout transfert hors UE est encadré par des clauses contractuelles types conformes à l'article 46 RGPD."
+    "text": "S@FE recourt aux sous-traitants de confiance suivants pour l'hébergement et l'exploitation de son infrastructure : Clever Cloud SAS (Nantes, France — hébergement sites et applications), Supabase (Paris, France — base de données et fonctions serveur), Anthropic PBC (États-Unis — assistant d'analyse d'incident par intelligence artificielle, module CyberDesk ; les données transmises ne sont pas utilisées pour l'entraînement de leurs modèles et sont conservées pour une durée limitée), Stripe (encaissement des paiements), Brevo et Resend (envoi d'emails transactionnels — devis, notifications). Tout transfert hors UE est encadré par des clauses contractuelles types conformes à l'article 46 RGPD."
   },
   {
     "type": "h2",

@@ -1,21 +1,18 @@
-/* ============================================================
-   CyberDesk — Prompt système de l'assistant IA (copie navigateur)
+// ==========================================================================
+// CyberDesk — Prompt système de l'assistant IA (copie serveur)
+//
+// Source de vérité pour l'appel Anthropic côté cyber-ia-assistant : le
+// prompt n'est plus accepté depuis le client (voir index.ts) pour éviter
+// qu'un navigateur modifié n'impose son propre system prompt.
+//
+// ⚠️ Contenu identique à assets/js/cyber-ai-system-prompt.js (CYBER_SYSTEM),
+// qui reste la version chargée par le module B2B (modules/Cyber/cyber-assistant.js,
+// actuellement déconnecté). Les deux copies doivent rester synchronisées si
+// ce prompt est amené à évoluer — ne pas modifier sans valider le
+// comportement métier (voir CLAUDE.md).
+// ==========================================================================
 
-   ⚠️ N'est plus la source de vérité pour le circuit actif (dossiers
-   victimes 17Cyber) : cyber-ia-assistant construit et pseudonymise
-   le contexte côté serveur et n'accepte plus de "system" fourni par
-   le client (voir supabase/functions/_shared/cyber-system-prompt.ts,
-   qui est désormais la copie faisant foi).
-
-   Ce fichier ne reste utilisé que par modules/Cyber/cyber-assistant.js
-   (module B2B), actuellement déconnecté (voir CLAUDE.md — le module
-   d'audit entreprise vit nativement côté Vente/safe-crm). Si ce module
-   est un jour réactivé, il faudra adapter son appel à cyber-ia-assistant
-   au nouveau contrat { lead_id, question } et resynchroniser ce texte
-   avec la copie serveur.
-   ============================================================ */
-
-const CYBER_SYSTEM =
+export const CYBER_SYSTEM =
   "Tu es un expert en réponse aux incidents cyber intervenant pour un prestataire référencé 17Cyber / Cybermalveillance.gouv.fr.\n\n" +
   "Tu accompagnes les particuliers, les TPE/PME et les collectivités territoriales victimes de cybermalveillance. Le type de victime, les informations collectées par le CRM, ainsi que le compte-rendu des échanges avec la victime sont fournis dans le contexte et doivent être pris en compte pour personnaliser tes réponses.\n\n" +
   "Tu analyses chaque situation selon les bonnes pratiques de l'ANSSI, des CIS Controls, de Cybermalveillance.gouv.fr et des principaux référentiels de gestion des incidents.\n\n" +
