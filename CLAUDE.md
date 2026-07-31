@@ -334,18 +334,45 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 7. cyber-ia-assistant
 8. cyberdesk-send-audit-email
 
-## Assistant IA (cyber-assistant.js)
+## Assistant IA (cyber-ia-assistant)
 
-v1 : appel direct à l'API Anthropic Claude via l'Edge Function
-`cyber-ia-assistant`, pas de multi-connecteurs (le système
+v1 : appel direct à l'API Anthropic Claude (`claude-sonnet-5`) via l'Edge
+Function `cyber-ia-assistant`, pas de multi-connecteurs (le système
 `connectors-guard`/`call-ia`/`safe_connectors` de safecrm n'a pas
-été porté — trop couplé au CRM parent).
+été porté — trop couplé au CRM parent ; `call-ia` existe bien côté
+Vente sur le projet partagé, mais c'est un système distinct, non
+réutilisé par CyberDesk).
 
 Multi-connecteurs (Groq, Mistral, Grok) reste une piste V2/V3,
 pas un pré-requis MVP.
 
-Les prompts système sont dans cyber-assistant.js —
-ne pas les modifier sans valider le comportement métier.
+**Le prompt système fait foi en deux endroits, à garder synchronisés :**
+`supabase/functions/_shared/cyber-system-prompt.ts` (source de vérité,
+utilisée par la fonction) et `assets/js/cyber-ai-system-prompt.js` (copie
+navigateur, uniquement utilisée par le module B2B déconnecté). Ne pas
+modifier le contenu sans valider le comportement métier.
+
+**Contrat de l'Edge Function : `POST { lead_id, question }` (pas de
+`system` ni de `message` pré-assemblé accepté depuis le client)** — le
+contexte du dossier est assemblé et pseudonymisé côté serveur, jamais
+dans le navigateur :
+- Garde d'accès : vérifie `has_module_access('cyberdesk')` via RPC avant
+  toute lecture (indispensable sur le projet partagé — un compte Vente
+  authentifié ne doit pas pouvoir interroger un dossier victime).
+- Pseudonymisation (`_shared/pii-redact.ts`) appliquée aux champs texte
+  libre (`attack_description`, `targeted_services`, `financial_loss`,
+  `timeline_events[].description`, `notes`, `internal_notes`, et la
+  question elle-même) avant l'appel à Anthropic : masquage par regex des
+  emails/téléphones/IBAN/numéro de sécurité sociale/numéro de carte, et
+  substitution du nom connu de la victime par « la victime ». **Limite
+  assumée** : un tiers non identifié mentionné nommément dans un champ
+  libre n'est pas détecté (nécessiterait une détection d'entités nommées,
+  hors périmètre v1) — documenté comme risque résiduel dans le registre
+  de traitement CyberDesk (module DPO).
+- Chaque appel est journalisé dans `audit_logs`
+  (`action: 'ia_assistant_appel'`, `module: 'CyberDesk'`).
+- Anthropic est déclaré comme sous-traitant dans les CGS
+  (`_shared/cgs-content.ts`, section 10.5).
 
 ## Documents générés (devis / rapports)
 
