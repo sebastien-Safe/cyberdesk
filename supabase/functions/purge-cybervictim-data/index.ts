@@ -18,8 +18,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 serve(async (req) => {
   if (req.method !== "POST") return new Response("not allowed", { status: 405 });
 
+  // Fail-closed : si PURGE_SECRET n'est pas configuré, refuser plutôt que
+  // de désactiver silencieusement le contrôle (ancien bug : `if (PURGE_SECRET && ...)`
+  // laissait passer n'importe quel appelant quand la variable était vide/absente).
   const PURGE_SECRET = Deno.env.get("PURGE_SECRET");
-  if (PURGE_SECRET && req.headers.get("x-purge-secret") !== PURGE_SECRET) {
+  if (!PURGE_SECRET || req.headers.get("x-purge-secret") !== PURGE_SECRET) {
     return new Response("forbidden", { status: 403 });
   }
 
