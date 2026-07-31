@@ -9,7 +9,37 @@
 // Fournisseur d'envoi : Resend (https://resend.com). Adapter cette fonction
 // si un autre fournisseur est utilisé — le reste du fichier (validation,
 // gabarit HTML) est indépendant du fournisseur.
+//
+// Protections anti-abus (endpoint public, sans compte visiteur) :
+// validation basique du format d'email, et limite de fréquence globale
+// via la table partagée `rate_limits` (compteur par action/fenêtre,
+// déjà utilisée ailleurs sur le projet — pas de nouvelle table créée).
 // ==========================================================================
+import { createClient } from "@supabase/supabase-js";
+
+const RATE_LIMIT_ACTION = "cyberdesk_send_audit_email";
+const RATE_LIMIT_MAX = 30; // par fenêtre
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 heure
+
+async function checkRateLimit(sb: ReturnType<typeof createClient>): Promise<boolean> {
+  const now = Date.now();
+  const { data } = await sb
+    .from("rate_limits")
+    .select("count, window_at")
+    .eq("action", RATE_LIMIT_ACTION)
+    .maybeSingle();
+
+  if (!data || new Date(data.window_at as string).getTime() < now - RATE_LIMIT_WINDOW_MS) {
+    await sb.from("rate_limits").upsert({ action: RATE_LIMIT_ACTION, count: 1, window_at: new Date(now).toISOString() });
+    return true;
+  }
+  if ((data.count as number) >= RATE_LIMIT_MAX) return false;
+
+  await sb.from("rate_limits").update({ count: (data.count as number) + 1 }).eq("action", RATE_LIMIT_ACTION);
+  return true;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
@@ -88,6 +118,14 @@ Deno.serve(async (req) => {
 
   const { to_email, to_name, params } = body;
   if (!to_email || !params) return json({ error: "missing_fields" }, 400);
+  if (!EMAIL_RE.test(String(to_email))) return json({ error: "invalid_email" }, 400);
+
+  const SB_URL = Deno.env.get("SUPABASE_URL")!;
+  const SB_SR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const sbService = createClient(SB_URL, SB_SR);
+
+  const withinLimit = await checkRateLimit(sbService);
+  if (!withinLimit) return json({ error: "rate_limited" }, 429);
 
   const html = buildHtml(params as AuditParams);
 

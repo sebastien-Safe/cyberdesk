@@ -96,6 +96,13 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await sbAnon.auth.getUser();
   if (authErr || !user) return json({ error: "unauthorized" }, 401);
 
+  // Garde d'accès module — indispensable sur le projet Supabase partagé :
+  // un compte Vente authentifié ne doit pas pouvoir agir sur un dossier
+  // victime CyberDesk (les opérations ci-dessous passent par service_role,
+  // qui contourne RLS).
+  const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
+  if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);
+
   let body: any;
   try {
     body = await req.json();
