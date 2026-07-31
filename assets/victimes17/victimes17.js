@@ -259,6 +259,13 @@ async function _v17Drop(event, colId) {
         documents_purge_due_at: updated?.documents_purge_due_at,
       },
     });
+    // Demande d'avis client (assets/js/accounting.js pour l'exploitation
+    // des résultats) — best-effort : une erreur d'envoi ne doit pas
+    // bloquer la clôture du dossier (ex. absence d'e-mail renseigné).
+    if (lead.email) {
+      sb.functions.invoke('cyberdesk-send-review-request', { body: { lead_id: leadId } })
+        .catch(e => console.error('[cyberdesk-send-review-request]', e));
+    }
   }
 
   _v17RenderBoard();
@@ -632,6 +639,7 @@ async function openVictimLeadModal() {
   // à l'insertion dans saveVictimLead().
   _diagUploadLeadId = crypto.randomUUID();
   document.getElementById('victim-lead-modal-title').textContent = 'Nouveau dossier victime';
+  document.getElementById('vl-owner-bar').style.display = 'none';
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagResetForm();
 }
@@ -647,10 +655,48 @@ async function openEditVictimLeadModal(leadId) {
     `Modifier — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagPrefillForm(lead);
+  await _vlPopulateOwnerBar(lead);
 }
 
 function closeVictimLeadModal() {
   document.getElementById('victim-lead-modal').classList.remove('show');
+}
+
+// ── Réattribution du dossier (admin uniquement) ──
+
+async function _vlPopulateOwnerBar(lead) {
+  const bar = document.getElementById('vl-owner-bar');
+  if (!_isAdmin) { bar.style.display = 'none'; return; }
+  const select = document.getElementById('vl-owner-select');
+  const { data, error } = await sb.rpc('cyberdesk_staff_list');
+  if (error) { console.error('[cyberdesk_staff_list]', error); bar.style.display = 'none'; return; }
+  select.innerHTML = '<option value="">Non attribué</option>'
+    + (data || []).map(u => `<option value="${u.user_id}">${escapeHtml(u.email)}</option>`).join('');
+  select.value = lead.created_by || '';
+  bar.style.display = 'flex';
+}
+
+async function reassignLeadOwner() {
+  const leadId = document.getElementById('vl-id').value;
+  if (!leadId) return;
+  const newOwnerId = document.getElementById('vl-owner-select').value || null;
+  try {
+    const { data, error } = await sb.from('cybervictim_leads')
+      .update({ created_by: newOwnerId }).eq('id', leadId).select().single();
+    if (error) throw error;
+    const lead = _v17Leads.find(l => l.id === leadId);
+    if (lead) Object.assign(lead, data);
+    await logRgpd('victim_dossier_reattribue', 'CyberDesk', {
+      entityType: 'cybervictim_lead',
+      entityId:   leadId,
+      donnees:    'Réattribution du dossier à un autre membre du staff',
+      criticite:  'Info',
+      details:    { new_owner: newOwnerId },
+    });
+    showCrmToast('✅ Dossier réattribué');
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  }
 }
 
 async function saveVictimLead() {

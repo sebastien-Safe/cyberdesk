@@ -6,6 +6,7 @@
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
+import { canAccessLead } from "../_shared/lead-access.ts";
 
 const VALID_OS = ["windows", "mac", "ios", "android"];
 
@@ -57,10 +58,11 @@ Deno.serve(async (req) => {
 
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id")
+    .select("id, created_by")
     .eq("id", lead_id)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
+  if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
   const intervention_tasks = {
     incident_type: incident_type || null,

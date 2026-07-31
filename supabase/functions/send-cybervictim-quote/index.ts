@@ -11,6 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { durationForPrestation } from "../_shared/google-calendar.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
 const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
@@ -66,10 +67,11 @@ Deno.serve(async (req) => {
 
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, email, pipeline_stage, client_token")
+    .select("id, first_name, last_name, email, pipeline_stage, client_token, created_by")
     .eq("id", lead_id)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
+  if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
   if (!lead.email) return json({ error: "no_email", details: "Aucun e-mail renseigné pour ce dossier." }, 400);
 
   let stripeKey: string, brevoKey: string;

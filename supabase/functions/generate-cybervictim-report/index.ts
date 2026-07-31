@@ -9,6 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Document, Packer, Paragraph, PageBreak } from "docx";
 import { h1, h2, p, bullet, placeholder, infoTable, chronoTable, centered, ChronoEntry } from "../_shared/docx-helpers.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SAFE = {
   nom: "S@FE SASU",
@@ -112,10 +113,11 @@ Deno.serve(async (req) => {
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, ticket_number, os_victim, intervention_tasks, task_completion_pct, created_at, product_id, cybervictim_products(code, alert_type)")
+    .select("id, first_name, last_name, ticket_number, os_victim, intervention_tasks, task_completion_pct, created_at, product_id, created_by, cybervictim_products(code, alert_type)")
     .eq("id", leadId)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
+  if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
   const product = (lead as any).cybervictim_products || {};
   const it = lead.intervention_tasks || {};

@@ -14,6 +14,7 @@ import { h1, h2, p, bullet, infoTable, pricingTable, centered } from "../_shared
 import { renderCgsBlocks } from "../_shared/cgs-render.ts";
 import { PRODUCT_TEXTS } from "../_shared/product-texts.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SAFE = {
   nom: "S@FE SASU",
@@ -76,10 +77,11 @@ Deno.serve(async (req) => {
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, product_id, cybervictim_products(code, alert_type, price_ht, price_ttc)")
+    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, product_id, created_by, cybervictim_products(code, alert_type, price_ht, price_ttc)")
     .eq("id", leadId)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
+  if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
   const { data: allProducts, error: eProducts } = await sb
     .from("cybervictim_products")

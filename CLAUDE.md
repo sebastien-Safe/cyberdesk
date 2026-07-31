@@ -116,7 +116,9 @@ cyberdesk/
 │   ├── css/                       ← styles communs
 │   └── js/
 │       ├── supabase.client.js     ← client Supabase cyberdesk
-│       └── task-tree.js           ← composant arbre de tâches (Suivi d'intervention)
+│       ├── task-tree.js           ← composant arbre de tâches (Suivi d'intervention)
+│       ├── settings.js            ← modale Paramétrage (fiche profil, 2FA, demande DPO)
+│       └── accounting.js          ← modale Comptable (dashboard KPI, réservée admin)
 ├── modules/
 │   └── Cyber/                     ← module audit B2B (sur table clients propre à CyberDesk)
 │       ├── cyber-core.js          ← fonctions partagées, auth, score
@@ -128,9 +130,10 @@ cyberdesk/
 │       ├── cyber-clients.css
 │       └── module-cyber-clients.html
 ├── mission-cyber.html             ← quiz de diagnostic public (lead-gen)
+├── avis-client.html               ← formulaire public d'avis client (lien à token, post-clôture)
 ├── supabase/
 │   ├── functions/
-│   │   ├── _shared/                        ← docx-helpers, product-texts, cgs-render, cgs-content
+│   │   ├── _shared/                        ← docx-helpers, product-texts, cgs-render, cgs-content, cors, lead-access
 │   │   ├── generate-cybervictim-report/
 │   │   ├── generate-cybervictim-quote/
 │   │   ├── send-cybervictim-quote/         ← envoi devis par email (Brevo) + lien Stripe
@@ -146,11 +149,17 @@ cyberdesk/
 │   │   ├── cyberdesk-forgot-password/      ← mot de passe oublié, envoi via Brevo
 │   │   │                                     (contourne le service e-mail intégré Supabase,
 │   │   │                                     quota par défaut trop bas — voir section dédiée)
+│   │   ├── cyberdesk-dpo-request/          ← demande d'exercice de droits RGPD → email au DPO
+│   │   ├── cyberdesk-send-review-request/  ← envoi du lien d'avis client à la clôture du dossier
+│   │   ├── cyberdesk-submit-review/        ← soumission publique de l'avis (avis-client.html)
 │   │   ├── deno.json
 │   │   └── import_map.json
 │   └── migrations/
 │       ├── 001_cyber_schema.sql … 007_appointment_booking.sql  ← historique projet dédié (supprimé)
-│       └── 008_cyberdesk_on_safecrm.sql   ← schema courant, sur le projet partagé safe-crm
+│       ├── 008_cyberdesk_on_safecrm.sql   ← schema courant, sur le projet partagé safe-crm
+│       ├── 009_settings_dpo_reviews.sql   ← fiche profil, demandes DPO, avis clients
+│       ├── 010_accounting_scope.sql       ← fonctions de reporting cloisonné par utilisateur
+│       └── 011_cyberdesk_leads_ownership.sql ← Kanban cloisonné par créateur de dossier
 ├── .env.example
 ├── CLAUDE.md                              ← ce fichier
 └── README.md
@@ -168,6 +177,9 @@ cyberdesk/
 | `payments` | Paiements, source unique **partagée** avec Vente (`module` = `'cyberdesk'`/`'vente'`), alimentée par trigger depuis `cybervictim_leads` |
 | `v_payments_reporting` | Vue de reporting agrégé sur `payments`, lue par le module admin Vente |
 | `audit_logs` | Journal RGPD **partagé** avec safe-crm (table de safe-crm, pas de CyberDesk) — CyberDesk y écrit avec `module = 'CyberDesk'` |
+| `cyberdesk_user_settings` | Fiche profil (facturation, contrat, photo) par utilisateur — **propre à CyberDesk**, jamais une extension de `profiles` (safe-crm) |
+| `cyberdesk_dpo_requests` | Demandes d'exercice de droits RGPD — **propre à CyberDesk**, intake V1 (voir section dédiée) |
+| `cybervictim_reviews` | Avis clients post-clôture (lien à token, soumission via Edge Function) — **propre à CyberDesk** |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
@@ -192,6 +204,43 @@ client_token UUID                 -- accès espace client sans auth
 client_token_expires_at TIMESTAMPTZ
 created_at TIMESTAMPTZ
 ```
+
+### Cloisonnement du Kanban par utilisateur
+
+Depuis la migration `011_cyberdesk_leads_ownership.sql`, le Kanban
+**n'est plus un espace partagé** : la policy `cyberdesk_leads_access` sur
+`cybervictim_leads` restreint chaque utilisateur standard à ses propres
+dossiers (`created_by = auth.uid()`) ; un admin (`is_admin()`/
+`is_super_admin()`) continue de tout voir/modifier, y compris pour
+réattribuer un dossier.
+
+- `created_by` est renseigné automatiquement à la création par le trigger
+  `trg_cybervictim_set_created_by` (jamais côté client) — aucun code
+  applicatif ne doit l'écrire directement à l'insertion.
+- **Dossiers antérieurs à cette migration** : `created_by` n'a jamais été
+  renseigné avant, ils ont donc tous `created_by = NULL` — invisibles pour
+  le staff standard, visibles uniquement par un admin jusqu'à
+  réattribution manuelle.
+- **Réattribution** : un admin éditant un dossier voit une barre
+  "Propriétaire du dossier" dans la modale (`index.html` #vl-owner-bar,
+  `victimes17.js` `_vlPopulateOwnerBar()`/`reassignLeadOwner()`), peuplée
+  via la fonction `cyberdesk_staff_list()` (migration 010).
+- **Edge Functions** : toutes celles qui agissent sur un `lead_id` précis
+  via un client `service_role` (donc hors RLS) revérifient l'appartenance
+  côté serveur via `_shared/lead-access.ts` (`canAccessLead()`) :
+  `generate-cybervictim-quote`, `generate-cybervictim-report`,
+  `update-cybervictim-tasks`, `cyber-ia-assistant`, `send-cybervictim-quote`,
+  `cyberdesk-send-review-request`. Non concernées (pas de notion de
+  propriétaire applicable) : `cyberdesk-stripe-webhook` (déclenchée par
+  Stripe, aucun JWT utilisateur), `purge-cybervictim-data` (job RGPD
+  s'appliquant à tous les dossiers éligibles, pas à un utilisateur),
+  `cyberdesk-dpo-request`/`cyberdesk-submit-review` (pas liées à un
+  `lead_id`).
+- La modale Comptable (`cyberdesk_reporting_*`, migration 010) reste le
+  bon endroit pour une vue agrégée/globale par un admin — le cloisonnement
+  du Kanban ne la remplace pas, il s'agit de deux mécanismes
+  complémentaires (RLS directe sur la table vs fonctions dédiées au
+  reporting qui lisent aussi `payments`, RLS admin-only par ailleurs).
 
 ### Conventions SQL
 
@@ -317,6 +366,9 @@ supabase functions deploy cyberdesk-stripe-webhook --no-verify-jwt
 supabase functions deploy cyber-ia-assistant
 supabase functions deploy cyberdesk-send-audit-email
 supabase functions deploy cyberdesk-forgot-password --no-verify-jwt
+supabase functions deploy cyberdesk-dpo-request
+supabase functions deploy cyberdesk-send-review-request
+supabase functions deploy cyberdesk-submit-review --no-verify-jwt
 ```
 
 ⚠️ Les slugs `stripe-webhook` et `send-audit-email` (sans préfixe) sont
@@ -338,6 +390,9 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 7. cyber-ia-assistant
 8. cyberdesk-send-audit-email
 9. cyberdesk-forgot-password (`--no-verify-jwt` — appelée avant toute connexion, aucun JWT utilisateur)
+10. cyberdesk-dpo-request (JWT utilisateur normal)
+11. cyberdesk-send-review-request (JWT utilisateur normal)
+12. cyberdesk-submit-review (`--no-verify-jwt` — soumission publique via `avis-client.html`)
 
 ## Assistant IA (cyber-ia-assistant)
 
@@ -415,6 +470,70 @@ l'événement `PASSWORD_RECOVERY` côté client, saisie du nouveau mot de
 passe via `sb.auth.updateUser()`) est géré directement dans `index.html`,
 inchangé par rapport à un lien Supabase natif.
 
+## Paramétrage, RGPD (DPO) et avis clients
+
+**Modale Paramétrage** (`assets/js/settings.js`) : fiche profil par
+utilisateur (`cyberdesk_user_settings`, une ligne par `user_id`, jamais une
+extension de `profiles` — table safe-crm hors périmètre), photo de profil
+(bucket privé `cyberdesk-avatars`, URL signée), et activation de la double
+authentification via le MFA natif de Supabase Auth (`sb.auth.mfa.enroll/
+challenge/verify/unenroll` — pas de table ni de logique custom, l'état 2FA
+n'est jamais dupliqué côté CyberDesk).
+
+**Demande d'exercice de droits RGPD** (bouton dans Paramétrage → Edge
+Function `cyberdesk-dpo-request`, JWT utilisateur normal) : préparation du
+futur module DPO, sans automatisation complète en V1. Enregistre la
+demande dans `cyberdesk_dpo_requests` **et** notifie immédiatement
+`dpo@safe-digitalisation.fr` par e-mail (Brevo) — le délai légal de
+réponse est de 1 mois, une demande invisible tant qu'aucun panneau admin
+dédié n'existe serait trop risquée à manquer. Chaque appel réussi est
+journalisé dans `audit_logs` (`action: 'dpo_demande_exercice_droits'`,
+`module: 'CyberDesk'`).
+
+**Avis clients** (`cybervictim_reviews`) : à la clôture d'un dossier
+(`victimes17.js`, transition vers `pipeline_stage = 'cloture'`), un appel
+best-effort à l'Edge Function `cyberdesk-send-review-request` (JWT
+utilisateur normal) crée une ligne avec un `review_token` valable 60 jours
+et envoie au client un e-mail Brevo contenant le lien
+`avis-client.html?token=...`. La page `avis-client.html` est publique,
+sans authentification, et poste directement (fetch + clé anon) vers
+l'Edge Function `cyberdesk-submit-review` (`--no-verify-jwt`), qui vérifie
+le token côté serveur (service_role) et répond de façon générique en cas
+de token invalide/expiré/déjà utilisé — même logique anti-énumération que
+`cyberdesk-forgot-password`. **Aucune policy RLS `anon`** n'a été ajoutée
+sur `cybervictim_reviews` : contrairement à `client_token` (jamais
+exploité en RLS anon dans ce projet), la soumission passe exclusivement
+par cette Edge Function service_role.
+
+**Modale Comptable** (`assets/js/accounting.js`) : dashboard KPI (Chart.js
+via CDN) **accessible à tout utilisateur connecté**, avec un cloisonnement
+par créateur de dossier (`created_by`) :
+- Un utilisateur standard ne voit que ses propres résultats (dossiers
+  qu'il a créés) — pas de sélecteur affiché.
+- Un admin (`is_admin()`/`is_super_admin()`) voit un sélecteur pour
+  basculer entre "Vue globale" et la vue d'un utilisateur en particulier
+  (liste peuplée via `cyberdesk_staff_list()`).
+
+Le cloisonnement est fait **côté serveur**, par 4 fonctions
+`SECURITY DEFINER` dédiées au reporting (`010_accounting_scope.sql`) :
+`cyberdesk_reporting_leads`, `cyberdesk_reporting_payments`,
+`cyberdesk_reporting_reviews` (chacune `(p_user_id uuid default null)` —
+un non-admin voit toujours `created_by = auth.uid()` quel que soit le
+paramètre passé, seul un admin peut filtrer sur un tiers ou passer `null`
+pour la vue globale) et `cyberdesk_staff_list()` (liste des comptes ayant
+accès au module, admin uniquement). **Volontairement pas une nouvelle
+policy RLS** sur `cybervictim_leads`/`payments`/`cybervictim_reviews` : la
+RLS de ces tables reste large (Kanban partagé, reporting admin Vente sur
+`payments`/`v_payments_reporting` inchangé) — un simple filtre JS aurait
+été contournable puisque ces tables restent lisibles par tout le staff
+`cyberdesk` par ailleurs. `v_payments_reporting` n'est donc plus utilisée
+par la modale Comptable (elle reste réservée au reporting admin de
+Vente) ; l'agrégation par mois du CA se fait désormais côté client à
+partir des lignes brutes renvoyées par `cyberdesk_reporting_payments`.
+Avis clients (`cybervictim_reviews`) rattachés au créateur du dossier via
+une jointure sur `cybervictim_leads.created_by` (la table des avis n'a pas
+de colonne utilisateur propre).
+
 ## Documents générés (devis / rapports)
 
 Le prestataire mentionné dans les PDF/DOCX générés est **"S@FE"**
@@ -439,10 +558,11 @@ usage commercial réel.
 - [ ] Qualification IA automatique à la création du dossier
 - [ ] Timeline live dans l'interface
 - [ ] Coffre de preuves (upload + SHA256)
-- [ ] Tableau de bord KPIs (CA, délais, taux récupération)
+- [x] Tableau de bord KPIs (CA, délais, taux de transformation, avis clients) — modale Comptable, voir section dédiée
 - [ ] Playbooks dynamiques (arbre conditionnel)
 - [ ] Multi-connecteurs IA (Groq, Mistral, Grok)
 - [ ] Paiement Stripe (lien de paiement dossiers victimes)
+- [ ] Panneau admin de traitement des demandes DPO (`cyberdesk_dpo_requests` — intake déjà en place, pas de suivi/statut dans l'UI)
 
 ### V3
 - [ ] Génération courriers (plainte, CNIL, banque, Meta...)
