@@ -134,11 +134,15 @@ cyberdesk/
 │   │   ├── generate-cybervictim-report/
 │   │   ├── generate-cybervictim-quote/
 │   │   ├── send-cybervictim-quote/         ← envoi devis par email (Brevo) + lien Stripe
-│   │   ├── stripe-webhook/                 ← webhook paiement, met à jour cybervictim_leads
+│   │   ├── cyberdesk-stripe-webhook/       ← webhook paiement, met à jour cybervictim_leads
+│   │   │                                     (nom préfixé cyberdesk- : le slug "stripe-webhook"
+│   │   │                                     est déjà pris côté Vente sur le projet partagé)
 │   │   ├── update-cybervictim-tasks/
 │   │   ├── purge-cybervictim-data/
 │   │   ├── cyber-ia-assistant/             ← appel direct Anthropic
-│   │   ├── send-audit-email/               ← résultats du quiz mission-cyber.html
+│   │   ├── cyberdesk-send-audit-email/     ← résultats du quiz mission-cyber.html
+│   │   │                                     (préfixé : "send-audit-email" déjà pris côté Vente,
+│   │   │                                     probablement lié à cyber_audits)
 │   │   ├── deno.json
 │   │   └── import_map.json
 │   └── migrations/
@@ -229,10 +233,26 @@ palier.
 (polymorphe : `module`, `source_type`, `source_id`) est la seule source de
 vérité, alimentée automatiquement par un trigger (`sync_cybervictim_payment`)
 depuis `cybervictim_leads` — aucun changement dans la logique Stripe
-existante (`stripe-webhook`, `send-cybervictim-quote`) ni dans le paiement
-manuel. L'espace client CyberDesk continue de lire `cybervictim_leads`
-directement (jamais `payments`). Le rapport financier admin de Vente lit
-`v_payments_reporting` (réservée à `is_admin()`/`is_super_admin()`).
+existante (`cyberdesk-stripe-webhook`, `send-cybervictim-quote`) ni dans le
+paiement manuel. L'espace client CyberDesk continue de lire
+`cybervictim_leads` directement (jamais `payments`). Le rapport financier
+admin de Vente lit `v_payments_reporting` (réservée à
+`is_admin()`/`is_super_admin()`).
+
+**Secrets Stripe/Brevo/Anthropic — deux espaces de stockage distincts, pas
+de collision, mais attention à la valeur.** Vente utilise déjà des secrets
+Edge Function classiques (`Deno.env.get(...)`) : `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`, `BREVO`. CyberDesk utilise le
+Vault Postgres (`vault.create_secret` + `get_edge_secret()`), noms en
+minuscules : `stripe_secret_key`, `stripe_webhook_secret`,
+`brevo_api_key`, `anthropic_api_key`, `purge_secret` — namespace différent,
+vérifié qu'aucun nom ne collisionne (seul `purge_alert_secret` existait déjà
+dans le Vault, sans rapport). `stripe_secret_key` peut recevoir la **même
+valeur** que le `STRIPE_SECRET_KEY` de Vente (même compte Stripe, cohérent
+avec "un seul système de paiement"). En revanche `stripe_webhook_secret`
+**doit être une valeur différente** : Stripe génère un secret de signature
+par endpoint webhook, et `cyberdesk-stripe-webhook` est un endpoint distinct
+de celui de Vente — le secret de Vente ne fonctionnera pas ici.
 Quand Vente aura son propre flux de vente, il insérera dans `payments`
 avec `module='vente'` — pas de nouvelle migration de structure nécessaire.
 
@@ -260,22 +280,25 @@ depuis une migration CyberDesk.
 
 ### Secrets à configurer dans Supabase Dashboard
 (Settings → Edge Functions → Secrets)
+
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` sont
+**auto-injectées** par Supabase dans toutes les Edge Functions — ne pas
+essayer de les créer manuellement (l'API Management refuse tout secret
+préfixé `SUPABASE_`). Seuls ceux-ci sont à créer :
 ```
-SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
-SUPABASE_ANON_KEY
-ANTHROPIC_API_KEY
 PURGE_SECRET
 RESEND_API_KEY
 AUDIT_EMAIL_FROM
 ```
 Secrets Vault (via `select vault.create_secret(valeur, nom)`, lus par
-`public.get_edge_secret(name)`, réservé à `service_role`) :
+`public.get_edge_secret(name)`, réservé à `service_role`) — namespace
+distinct des secrets Edge Function ci-dessus, voir section Cohabitation :
 ```
 purge_secret
 stripe_secret_key
-stripe_webhook_secret
+stripe_webhook_secret    -- valeur propre à cyberdesk-stripe-webhook, pas celle de Vente
 brevo_api_key
+anthropic_api_key
 ```
 
 ### Déploiement
@@ -287,10 +310,17 @@ supabase functions deploy purge-cybervictim-data
 supabase functions deploy generate-cybervictim-quote
 supabase functions deploy generate-cybervictim-report
 supabase functions deploy send-cybervictim-quote
-supabase functions deploy stripe-webhook --no-verify-jwt
+supabase functions deploy cyberdesk-stripe-webhook --no-verify-jwt
 supabase functions deploy cyber-ia-assistant
-supabase functions deploy send-audit-email
+supabase functions deploy cyberdesk-send-audit-email
 ```
+
+⚠️ Les slugs `stripe-webhook` et `send-audit-email` (sans préfixe) sont
+**déjà pris par des fonctions Vente actives** sur ce projet partagé — ne
+jamais déployer sous ces noms, toujours `cyberdesk-stripe-webhook` /
+`cyberdesk-send-audit-email`. Avant de créer toute nouvelle Edge Function,
+vérifier la liste existante (`list_edge_functions` ou Dashboard) pour
+éviter d'écraser une fonction de Vente.
 
 ### Ordre de déploiement obligatoire
 
@@ -300,9 +330,9 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 3. generate-cybervictim-quote
 4. generate-cybervictim-report
 5. send-cybervictim-quote
-6. stripe-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
+6. cyberdesk-stripe-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
 7. cyber-ia-assistant
-8. send-audit-email
+8. cyberdesk-send-audit-email
 
 ## Assistant IA (cyber-assistant.js)
 
@@ -372,6 +402,10 @@ usage commercial réel.
 - Recréer `audit_logs`, `profiles`, ou toute fonction RLS déjà existante
   côté safe-crm (`is_admin`, `is_super_admin`, `my_contact_id`,
   `get_team_ids`) — toujours vérifier l'existant avant d'ajouter
+- Déployer une Edge Function sans vérifier d'abord la liste des fonctions
+  déjà présentes sur le projet partagé — `stripe-webhook` et
+  `send-audit-email` (sans préfixe) appartiennent à Vente ; les écraser
+  casserait son système de paiement/abonnement en production
 - Committer des credentials ou clés API
 - Désactiver RLS sur une table
 - Mélanger la logique multi-tenant et mono-tenant

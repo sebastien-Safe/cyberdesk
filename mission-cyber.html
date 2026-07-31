@@ -141,11 +141,11 @@ h2,h3{font-family:var(--ff-disp);color:var(--txt);line-height:1.2;letter-spacing
 // assets/js/supabase.client.js. Page publique, pas de gate module
 // nécessaire ici (n'appelle qu'une Edge Function, aucune table protégée).
 const _SB_URL = 'https://bgkijldrmdhklkadkeua.supabase.co';
-const _SB_ANON_KEY = '%%SUPABASE_ANON_KEY%%'; // TODO: coller la clé publishable (Dashboard > Project Settings > API Keys)
+const _SB_ANON_KEY = 'sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32';
 
 async function sendAuditEmail(to_email, to_name, params) {
   try {
-    const r = await fetch(`${_SB_URL}/functions/v1/send-audit-email`, {
+    const r = await fetch(`${_SB_URL}/functions/v1/cyberdesk-send-audit-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON_KEY },
       body: JSON.stringify({ to_email, to_name, params }),

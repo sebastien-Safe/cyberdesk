@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       getSecret(sb, "stripe_webhook_secret"),
     ]);
   } catch (e) {
-    console.error("[stripe-webhook] secrets:", e);
+    console.error("[cyberdesk-stripe-webhook] secrets:", e);
     return new Response("Server misconfigured", { status: 500 });
   }
 
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(rawBody, signature!, webhookSecret);
   } catch (e) {
-    console.error("[stripe-webhook] signature invalide:", e.message);
+    console.error("[cyberdesk-stripe-webhook] signature invalide:", e.message);
     return new Response(`Webhook signature verification failed`, { status: 400 });
   }
 
