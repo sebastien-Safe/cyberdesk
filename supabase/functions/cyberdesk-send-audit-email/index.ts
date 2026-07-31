@@ -16,6 +16,7 @@
 // déjà utilisée ailleurs sur le projet — pas de nouvelle table créée).
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const RATE_LIMIT_ACTION = "cyberdesk_send_audit_email";
 const RATE_LIMIT_MAX = 30; // par fenêtre
@@ -40,18 +41,6 @@ async function checkRateLimit(sb: ReturnType<typeof createClient>): Promise<bool
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
-}
 
 function esc(s: unknown) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -102,6 +91,14 @@ function buildHtml(p: AuditParams): string {
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "bad_method" }, 405);
 

@@ -8,18 +8,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Document, Packer, Paragraph, PageBreak } from "docx";
 import { h1, h2, p, bullet, placeholder, infoTable, chronoTable, centered, ChronoEntry } from "../_shared/docx-helpers.ts";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*", // TODO: restreindre au domaine cyberdesk une fois déployé
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SAFE = {
   nom: "S@FE SASU",
@@ -82,6 +71,14 @@ function buildSectionBullets(phases: PhaseRecord[], field: string): Paragraph[] 
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "bad_method" }, 405);
 
