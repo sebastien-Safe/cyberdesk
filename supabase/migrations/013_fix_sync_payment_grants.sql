@@ -1,0 +1,22 @@
+-- ==========================================================================
+-- CyberDesk — Retire l'exposition RPC inutile de sync_cybervictim_payment
+-- (posée par la migration 008).
+--
+-- C'est un trigger SECURITY DEFINER (returns trigger) jamais destiné à être
+-- appelé directement : PostgreSQL refuse toute invocation hors du
+-- mécanisme de trigger ("trigger functions can only be called as
+-- triggers"), donc le risque pratique est nul. Mais contrairement à
+-- get_edge_secret dans la même migration 008, aucun revoke explicite
+-- n'avait été ajouté après sa création : elle héritait donc du grant
+-- EXECUTE par défaut à PUBLIC, détecté par l'advisor de sécurité
+-- (anon_security_definer_function_executable /
+-- authenticated_security_definer_function_executable). Retiré ici par
+-- hygiène, même pattern que get_edge_secret.
+--
+-- Ne modifie ni la fonction ni le trigger existants — le déclenchement
+-- d'un trigger ne dépend pas du privilège EXECUTE de l'utilisateur
+-- déclencheur sur la fonction, trg_sync_cybervictim_payment continue de
+-- fonctionner normalement sur insert/update de cybervictim_leads.
+-- ==========================================================================
+
+revoke all on function public.sync_cybervictim_payment() from public, anon, authenticated;
