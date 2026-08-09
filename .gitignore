@@ -5,3 +5,10 @@ node_modules/
 *.log
 .claude/
 supabase/.temp/
+
+# Documents internes/confidentiels — jamais dans le dépôt (public sur GitHub)
+17CYBER/
+ANSSI-*.docx
+ANSSI-*.doc
+anssi-*.docx
+anssi-*.doc
