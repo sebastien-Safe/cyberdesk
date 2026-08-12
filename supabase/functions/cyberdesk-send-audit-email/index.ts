@@ -6,9 +6,13 @@
 //
 // POST { to_email, to_name, params } → { success: true }
 //
-// Fournisseur d'envoi : Resend (https://resend.com). Adapter cette fonction
-// si un autre fournisseur est utilisé — le reste du fichier (validation,
-// gabarit HTML) est indépendant du fournisseur.
+// Fournisseur d'envoi : Brevo, via le secret Vault `brevo_api_key`
+// (get_edge_secret) — même mécanisme que send-cybervictim-quote,
+// cyberdesk-forgot-password et cyberdesk-dpo-request. Remplace l'appel
+// direct à Resend (RESEND_API_KEY) utilisé jusqu'ici : c'était le seul
+// point du projet, CyberDesk comme Vente confondus, à ne pas passer par
+// Brevo — un choix isolé fait le jour de la création de cette fonction,
+// jamais réconcilié avec le reste du stack.
 //
 // Protections anti-abus (endpoint public, sans compte visiteur) :
 // validation basique du format d'email, et limite de fréquence globale
@@ -17,6 +21,14 @@
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
+
+const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+
+async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
+  const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
+  if (error || !data) throw new Error(`Secret "${name}" introuvable dans le Vault.`);
+  return data as string;
+}
 
 const RATE_LIMIT_ACTION = "cyberdesk_send_audit_email";
 const RATE_LIMIT_MAX = 30; // par fenêtre
@@ -43,7 +55,7 @@ async function checkRateLimit(sb: ReturnType<typeof createClient>): Promise<bool
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function esc(s: unknown) {
-  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 interface RowResult { question: string; reponse: string; text: string; bg: string; color: string }
@@ -56,38 +68,169 @@ interface AuditParams {
 }
 
 function buildHtml(p: AuditParams): string {
-  const rows = (p.rows || []).map((r) => `
+  const rowsHtml = (p.rows || []).map((r) => `
     <tr>
-      <td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;font-size:12px">${esc(r.question)}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;font-size:12px">${esc(r.reponse)}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">
+      <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-size:13px;width:55%">${esc(r.question)}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-size:13px">${esc(r.reponse)}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;white-space:nowrap">
         <span style="background:${esc(r.bg)};color:${esc(r.color)};padding:2px 9px;border-radius:99px;font-size:11px">${esc(r.text)}</span>
       </td>
     </tr>`).join("");
 
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
-<body style="font-family:Arial,sans-serif;color:#1f2937;font-size:13px;line-height:1.5;max-width:640px;margin:0 auto">
-  <div style="border-bottom:3px solid #06b6d4;padding-bottom:10px;margin-bottom:16px">
-    <div style="font-size:20px;font-weight:900">CyberDesk</div>
-    <div style="font-size:15px;font-weight:700;color:${esc(p.mission_color)}">Diagnostic ${esc(p.mission)}</div>
-    <small style="color:#6b7280">${esc(p.date)}</small>
-  </div>
-  <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-bottom:16px">
-    <div><strong>${esc(p.nom)}</strong> — ${esc(p.entreprise || "—")}</div>
-    <div>${esc(p.email)} ${p.telephone ? "— " + esc(p.telephone) : ""}</div>
-  </div>
-  <div style="text-align:center;padding:16px;border:2px solid ${esc(p.niveau_border)};background:${esc(p.niveau_bg)};border-radius:12px;margin-bottom:16px">
-    <div style="font-size:38px;font-weight:900;color:${esc(p.niveau_color)}">${esc(p.score)}%</div>
-    <div style="font-size:11px;color:#6b7280">Score de sécurité — ${esc(p.niveau)}</div>
-  </div>
-  <table style="width:100%;border-collapse:collapse">
-    <thead><tr><th style="background:#06b6d4;color:#fff;padding:7px 10px;text-align:left;font-size:10px">Question</th><th style="background:#06b6d4;color:#fff;padding:7px 10px;text-align:left;font-size:10px">Réponse</th><th style="background:#06b6d4;color:#fff;padding:7px 10px;text-align:left;font-size:10px">Statut</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div style="margin-top:14px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af">
-    CyberDesk — Rapport généré le ${esc(p.date)} — Conseiller : ${esc(p.conseiller)}
-  </div>
-</body></html>`;
+  const recos = p.recommandations || [];
+  const recoHtml = recos.length
+    ? recos.map((r) => `<li style="margin-bottom:6px;padding-left:4px">${esc(r)}</li>`).join("")
+    : `<li>Un conseiller CyberDesk reviendra vers vous avec des recommandations personnalisées.</li>`;
+
+  const mColor = esc(p.mission_color || "#0a1628");
+  const nBg = esc(p.niveau_bg || "#f8fafc");
+  const nBd = esc(p.niveau_border || "#e2e8f0");
+  const nColor = esc(p.niveau_color || "#0a1628");
+
+  return `<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Votre diagnostic ${esc(p.mission)} — CyberDesk</title>
+<style>
+body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+img{border:0;outline:none;text-decoration:none}
+body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif}
+@media only screen and (max-width:600px){
+  .em-w{width:100%!important}.em-p{padding:24px 16px!important}
+  .score-n{font-size:44px!important}.col-h{display:block!important;width:100%!important}
+}
+</style>
+</head>
+<body>
+<table role="presentation" class="em-w" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6">
+<tr><td align="center" style="padding:24px 16px">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+
+<!-- HEADER -->
+<tr><td style="background:#0a1628;padding:22px 28px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+<td style="vertical-align:middle">
+  <span style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.5px">S<span style="color:#e1000f">@</span>FE</span>
+  <span style="display:block;font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">CyberDesk — Diagnostic public</span>
+</td>
+<td style="text-align:right;vertical-align:middle">
+  <span style="font-size:14px;font-weight:700;color:${mColor}">${esc(p.mission)}</span>
+  <span style="display:block;font-size:11px;color:#94a3b8;margin-top:3px">${esc(p.date)}</span>
+</td>
+</tr></table>
+</td></tr>
+
+<!-- BODY -->
+<tr><td class="em-p" style="padding:32px 28px">
+
+<p style="margin:0 0 8px;font-size:17px;font-weight:700;color:#0a1628">Bonjour ${esc(p.nom)},</p>
+<p style="margin:0 0 24px;font-size:14px;color:#4b5563;line-height:1.6">
+  Voici les résultats de votre diagnostic <strong>${esc(p.mission)}</strong> réalisé via le quiz public CyberDesk.
+</p>
+
+<!-- Score -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="background:${nBg};border:2px solid ${nBd};border-radius:12px;margin-bottom:24px">
+<tr><td style="padding:24px 20px;text-align:center">
+  <span class="score-n" style="display:block;font-size:52px;font-weight:900;color:${nColor};line-height:1">${esc(p.score)}%</span>
+  <span style="display:block;font-size:13px;color:#6b7280;margin-top:6px">Score ${esc(p.mission)} — <strong style="color:${nColor}">${esc(p.niveau)}</strong></span>
+</td></tr>
+</table>
+
+<!-- Coordonnées -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px">
+<tr><td style="padding:14px 16px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr>
+  <td class="col-h" width="50%" style="vertical-align:top;padding-bottom:8px">
+    <span style="display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700">Nom</span>
+    <span style="display:block;font-size:13px;color:#0f172a;margin-top:2px">${esc(p.nom)}</span>
+  </td>
+  <td class="col-h" width="50%" style="vertical-align:top;padding-bottom:8px">
+    <span style="display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700">Entreprise</span>
+    <span style="display:block;font-size:13px;color:#0f172a;margin-top:2px">${esc(p.entreprise || "—")}</span>
+  </td>
+</tr>
+<tr>
+  <td class="col-h" width="50%" style="vertical-align:top">
+    <span style="display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700">E-mail</span>
+    <span style="display:block;font-size:13px;color:#0f172a;margin-top:2px">${esc(p.email)}</span>
+  </td>
+  <td class="col-h" width="50%" style="vertical-align:top">
+    <span style="display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700">Téléphone</span>
+    <span style="display:block;font-size:13px;color:#0f172a;margin-top:2px">${esc(p.telephone || "—")}</span>
+  </td>
+</tr>
+</table>
+</td></tr>
+</table>
+
+<!-- Tableau résultats -->
+<p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#0a1628">Détail des réponses</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;font-size:13px">
+<thead>
+<tr style="background:${mColor}">
+  <th style="padding:9px 12px;text-align:left;color:#fff;font-size:11px;text-transform:uppercase;font-weight:700;width:55%">Question</th>
+  <th style="padding:9px 12px;text-align:left;color:#fff;font-size:11px;text-transform:uppercase;font-weight:700">Réponse</th>
+  <th style="padding:9px 12px;text-align:left;color:#fff;font-size:11px;text-transform:uppercase;font-weight:700">Statut</th>
+</tr>
+</thead>
+<tbody>${rowsHtml}</tbody>
+</table>
+
+<!-- Recommandations -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:24px">
+<tr><td style="padding:16px 18px">
+  <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#166534">Recommandations</p>
+  <ul style="margin:0;padding-left:18px;color:#166534;font-size:13px;line-height:1.7">${recoHtml}</ul>
+</td></tr>
+</table>
+
+<!-- Conseiller -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="background:#f8fafc;border-left:3px solid ${mColor};border-radius:0 8px 8px 0;margin-bottom:24px">
+<tr><td style="padding:14px 16px">
+  <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px">Votre conseiller CyberDesk</p>
+  <p style="margin:0;font-size:14px;color:#0f172a;font-weight:600">${esc(p.conseiller)}</p>
+  <p style="margin:4px 0 0;font-size:13px;color:#4b5563">contact@safe-digitalisation.fr</p>
+</td></tr>
+</table>
+
+<!-- RGPD -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr><td style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px">
+  <p style="margin:0;font-size:11px;color:#1e40af;line-height:1.5">
+    Consentement RGPD recueilli le ${esc(p.date)} dans le cadre du quiz de diagnostic CyberDesk.
+    ${esc(p.nom)} (${esc(p.email)}) autorise CyberDesk à conserver ses coordonnées pour le suivi de ce diagnostic.
+    Données non transmises à des tiers — Art. 13 RGPD.
+  </p>
+</td></tr>
+</table>
+
+</td></tr>
+
+<!-- FOOTER -->
+<tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:18px 28px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+  <td><span style="font-size:11px;color:#9ca3af">CyberDesk · Safe Digitalisation<br>contact@safe-digitalisation.fr</span></td>
+  <td style="text-align:right"><span style="font-size:11px;color:#9ca3af">Rapport généré le ${esc(p.date)}</span></td>
+</tr></table>
+<p style="margin:10px 0 0;font-size:10px;color:#d1d5db;text-align:center">
+  Vous recevez cet email car vous avez complété le quiz de diagnostic CyberDesk.
+  Ce rapport est confidentiel et destiné uniquement à son destinataire.
+</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 }
 
 Deno.serve(async (req) => {
@@ -101,10 +244,6 @@ Deno.serve(async (req) => {
 
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "bad_method" }, 405);
-
-  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  const FROM_EMAIL = Deno.env.get("AUDIT_EMAIL_FROM") || "CyberDesk <onboarding@resend.dev>";
-  if (!RESEND_API_KEY) return json({ error: "not_configured", details: "RESEND_API_KEY manquant" }, 500);
 
   let body: any;
   try {
@@ -124,24 +263,29 @@ Deno.serve(async (req) => {
   const withinLimit = await checkRateLimit(sbService);
   if (!withinLimit) return json({ error: "rate_limited" }, 429);
 
-  const html = buildHtml(params as AuditParams);
+  let brevoKey: string;
+  try {
+    brevoKey = await getSecret(sbService, "brevo_api_key");
+  } catch (e) {
+    return json({ error: "secrets_unavailable", details: String(e.message || e) }, 500);
+  }
 
-  const resendResp = await fetch("https://api.resend.com/emails", {
+  const html = buildHtml(params as AuditParams);
+  const auditParams = params as AuditParams;
+
+  const brevoResp = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
-    },
+    headers: { "api-key": brevoKey, "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: [to_email],
-      subject: `Votre diagnostic cybersécurité — ${params.score ?? ""}%`,
-      html,
+      sender: SENDER,
+      to: [{ email: to_email, name: to_name || to_email }],
+      subject: `Votre diagnostic ${auditParams.mission || "cybersécurité"} — ${auditParams.score ?? ""}% de conformité`,
+      htmlContent: html,
     }),
   });
 
-  if (!resendResp.ok) {
-    const errBody = await resendResp.text();
+  if (!brevoResp.ok) {
+    const errBody = await brevoResp.text();
     return json({ error: "send_failed", details: errBody }, 502);
   }
 

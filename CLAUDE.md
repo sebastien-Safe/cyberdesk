@@ -339,8 +339,6 @@ essayer de les créer manuellement (l'API Management refuse tout secret
 préfixé `SUPABASE_`). Seuls ceux-ci sont à créer :
 ```
 PURGE_SECRET
-RESEND_API_KEY
-AUDIT_EMAIL_FROM
 ```
 Secrets Vault (via `select vault.create_secret(valeur, nom)`, lus par
 `public.get_edge_secret(name)`, réservé à `service_role`) — namespace
