@@ -16,6 +16,10 @@ async function openSettingsModal() {
   document.getElementById('settings-dpo-panel').style.display = 'none';
   document.getElementById('settings-dpo-message').value = '';
   document.getElementById('settings-dpo-error').textContent = '';
+  document.getElementById('settings-password-new').value = '';
+  document.getElementById('settings-password-confirm').value = '';
+  document.getElementById('settings-password-error').textContent = '';
+  document.getElementById('settings-password-success').classList.add('is-hidden');
 
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
@@ -104,6 +108,40 @@ async function uploadAvatar(file) {
     showCrmToast('📸 Photo mise à jour — pensez à Enregistrer');
   } catch (e) {
     alert('Erreur upload photo : ' + e.message);
+  }
+}
+
+// ── Changement de mot de passe (utilisateur déjà connecté) ──
+
+async function changeAccountPassword() {
+  const pw1 = document.getElementById('settings-password-new').value;
+  const pw2 = document.getElementById('settings-password-confirm').value;
+  const errEl = document.getElementById('settings-password-error');
+  const successEl = document.getElementById('settings-password-success');
+  const btn = document.getElementById('settings-password-btn');
+  errEl.textContent = '';
+  successEl.classList.add('is-hidden');
+  if (pw1.length < 8) { errEl.textContent = "Le mot de passe doit contenir au moins 8 caractères."; return; }
+  if (pw1 !== pw2) { errEl.textContent = "Les mots de passe ne correspondent pas."; return; }
+
+  btn.disabled = true;
+  try {
+    const { error } = await sb.auth.updateUser({ password: pw1 });
+    if (error) throw error;
+    document.getElementById('settings-password-new').value = '';
+    document.getElementById('settings-password-confirm').value = '';
+    successEl.classList.remove('is-hidden');
+    showCrmToast('🔑 Mot de passe mis à jour');
+    await logRgpd('mot_de_passe_modifie', 'CyberDesk', {
+      entityType: 'auth_user',
+      entityId:   _settingsUserId,
+      donnees:    'Changement de mot de passe depuis Paramétrage',
+      criticite:  'Info',
+    });
+  } catch (e) {
+    errEl.textContent = 'Erreur : ' + e.message;
+  } finally {
+    btn.disabled = false;
   }
 }
 

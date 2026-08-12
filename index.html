@@ -554,6 +554,17 @@
       </div>
 
       <div class="diag-field">
+        <label>Changer mon mot de passe</label>
+        <div class="diag-row-2">
+          <input type="password" id="settings-password-new" autocomplete="new-password" placeholder="Nouveau mot de passe">
+          <input type="password" id="settings-password-confirm" autocomplete="new-password" placeholder="Confirmer le mot de passe">
+        </div>
+        <button type="button" class="btn btn-out btn-sm" id="settings-password-btn" onclick="changeAccountPassword()" style="margin-top:8px">Mettre à jour le mot de passe</button>
+        <p class="error" id="settings-password-error"></p>
+        <p class="success is-hidden" id="settings-password-success">Mot de passe mis à jour.</p>
+      </div>
+
+      <div class="diag-field">
         <label>Sécurité du compte</label>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
           <div>
@@ -663,22 +674,15 @@
 <script src="assets/js/accounting.js"></script>
 
 <script>
-// Passe à true pendant le parcours "lien de réinitialisation cliqué" pour
-// empêcher checkSession() d'enchaîner automatiquement sur l'app avec la
-// session de récupération avant que l'utilisateur ait choisi un nouveau
-// mot de passe (voir l'écouteur PASSWORD_RECOVERY plus bas).
-let inPasswordRecovery = false;
+// inPasswordRecovery et PENDING_RECOVERY_KEY sont définis dans
+// assets/js/supabase.client.js (chargé avant ce script), avec l'écouteur
+// onAuthStateChange('PASSWORD_RECOVERY') associé — voir ce fichier pour le
+// détail. Les scripts classiques (non-module) partagent le même scope
+// global, donc ces bindings top-level restent accessibles ici tels quels.
 
 // Calculé dans checkSession() une fois la session confirmée — conditionne
 // l'affichage du bouton "Comptable" (assets/js/accounting.js).
 let _isAdmin = false;
-
-// Persisté (pas une simple variable JS) : un lien de récupération établit
-// une session Supabase valide dès qu'il est cliqué. Si l'utilisateur ferme
-// l'onglet sans avoir choisi de nouveau mot de passe, cette session reste
-// valide en local — sans ce verrou, la rouvrir plus tard donnerait accès à
-// l'app sans jamais repasser par une authentification réelle.
-const PENDING_RECOVERY_KEY = 'cd_pending_recovery';
 
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
@@ -785,21 +789,6 @@ document.getElementById('forgot-password-form').addEventListener('submit', async
   if (error) { errEl.textContent = "Une erreur est survenue, réessayez plus tard."; return; }
   errEl.style.color = 'var(--accent)';
   errEl.textContent = "Si un compte existe pour cet e-mail, un lien de réinitialisation vient d'être envoyé.";
-});
-
-// Lien de réinitialisation cliqué depuis l'e-mail : Supabase redirige vers
-// cette page avec un jeton de récupération dans l'URL et déclenche cet
-// événement une fois la session de récupération établie.
-sb.auth.onAuthStateChange((event) => {
-  if (event === 'PASSWORD_RECOVERY') {
-    inPasswordRecovery = true;
-    localStorage.setItem(PENDING_RECOVERY_KEY, '1');
-    document.getElementById('login-panel').classList.add('is-hidden');
-    document.getElementById('forgot-password-panel').classList.add('is-hidden');
-    document.getElementById('reset-password-panel').classList.remove('is-hidden');
-    document.getElementById('login-screen').classList.remove('is-hidden');
-    document.getElementById('app-shell').classList.add('is-hidden');
-  }
 });
 
 document.getElementById('reset-password-form').addEventListener('submit', async () => {

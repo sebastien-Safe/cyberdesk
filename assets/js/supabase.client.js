@@ -23,6 +23,47 @@ const SUPABASE_ANON_KEY = "sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ── Lien de réinitialisation de mot de passe cliqué ──────────────────────
+// Enregistré ici, immédiatement après createClient() et avant tout autre
+// script de la page : dès createClient(), supabase-js détecte en interne le
+// jeton de récupération dans l'URL et notifie les abonnés à
+// onAuthStateChange très tôt (via un setTimeout(0) interne). Si cet
+// écouteur n'était posé que plus tard (ex. dans le script inline
+// d'index.html, après le chargement de 8 autres fichiers <script src>), la
+// notification PASSWORD_RECOVERY partait avant que quiconque ne l'écoute et
+// était perdue silencieusement — la session de récupération restait
+// valide, mais rien ne redirigeait vers l'écran "nouveau mot de passe" :
+// index.html traitait alors le lien reçu comme une connexion normale et
+// donnait directement accès au module.
+//
+// Passe à true pendant le parcours "lien de réinitialisation cliqué" pour
+// empêcher checkSession() (index.html) d'enchaîner automatiquement sur
+// l'app avec la session de récupération avant que l'utilisateur ait choisi
+// un nouveau mot de passe.
+let inPasswordRecovery = false;
+
+// Persisté (pas une simple variable JS) : un lien de récupération établit
+// une session Supabase valide dès qu'il est cliqué. Si l'utilisateur ferme
+// l'onglet sans avoir choisi de nouveau mot de passe, cette session reste
+// valide en local — sans ce verrou, la rouvrir plus tard donnerait accès à
+// l'app sans jamais repasser par une authentification réelle.
+const PENDING_RECOVERY_KEY = 'cd_pending_recovery';
+
+// Lien de réinitialisation cliqué depuis l'e-mail : Supabase redirige vers
+// cette page avec un jeton de récupération dans l'URL et déclenche cet
+// événement une fois la session de récupération établie.
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    inPasswordRecovery = true;
+    localStorage.setItem(PENDING_RECOVERY_KEY, '1');
+    document.getElementById('login-panel').classList.add('is-hidden');
+    document.getElementById('forgot-password-panel').classList.add('is-hidden');
+    document.getElementById('reset-password-panel').classList.remove('is-hidden');
+    document.getElementById('login-screen').classList.remove('is-hidden');
+    document.getElementById('app-shell').classList.add('is-hidden');
+  }
+});
+
 // Accès au module CyberDesk (cloisonné de Vente même si auth.users est
 // partagé) — à appeler juste après une connexion réussie, voir index.html.
 async function hasCyberdeskAccess() {
