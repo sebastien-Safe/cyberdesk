@@ -67,6 +67,10 @@
       "inclus": ["Récupération des comptes", "Suppression accès pirates", "Vérification appareils", "Sécurisation complète", "Rapport"] }
   ],
   "cas_complexe": { "taux_horaire": 75, "label": "Cas complexe — facturation horaire", "codes_diagnostic": ["deni_de_service"] },
+  "deplacement": {
+    "origine_adresse": "66 avenue des Champs-Élysées, 75008 Paris",
+    "aller_retour": true
+  },
   "tva": 0.20,
   "politique": {
     "devis_gratuit": true,

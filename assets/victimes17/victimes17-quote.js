@@ -20,6 +20,8 @@ let _quoteSuggested = null;   // snapshot de la suggestion auto au moment de l'o
 let _quoteOptions = {};       // { O1:bool, O2:bool, O3:bool, O4:bool }
 let _quoteAccompagnement = {}; // { A1:bool, A2:bool, A3:bool }
 let _quoteHtOverridden = false;
+let _quoteO4Result = null;    // { distance_km, amount_ht, city } une fois calculé (cyberdesk-compute-travel-fee), sinon null
+let _quoteTravelFeeSettingsId = null; // id de la ligne cyberdesk_travel_fee_settings (coefficient barème, admin uniquement)
 
 async function _quoteLoadTarifs() {
   if (_quoteTarifs) return _quoteTarifs;
@@ -79,8 +81,12 @@ async function openQuoteModal(leadId) {
   _quoteOptions = { O1: false, O2: false, O3: false, O4: false };
   _quoteAccompagnement = { A1: false, A2: false, A3: false };
   _quoteHtOverridden = false;
+  _quoteO4Result = null;
   document.getElementById('quote-o4-text').value = '';
+  document.getElementById('quote-o4-result').textContent = '';
   document.getElementById('quote-o4-field').style.display = 'none';
+  document.getElementById('quote-o4-admin-coef').style.display = _isAdmin ? '' : 'none';
+  if (_isAdmin) _quoteLoadTravelCoefficient();
   document.getElementById('quote-observations').value = '';
   document.querySelectorAll('#quote-options-container input[type=checkbox]').forEach(cb => cb.checked = false);
   document.querySelectorAll('#quote-accompagnement-container input[type=checkbox]').forEach(cb => cb.checked = false);
@@ -204,11 +210,12 @@ function _quoteRenderOptionsStep() {
   const optContainer = document.getElementById('quote-options-container');
   optContainer.innerHTML = _quoteTarifs.options.map(o => {
     const priceLabel = o.type === 'pourcentage' ? `+${o.valeur} %` : o.type === 'bareme' ? 'à définir' : `+${formatMoney(o.ht)}`;
+    const priceId = o.id === 'O4' ? ' id="quote-o4-price-label"' : '';
     return `
       <label class="quote-check-item">
         <input type="checkbox" class="quote-opt-checkbox" data-id="${o.id}">
         <span>${escapeHtml(o.label)}</span>
-        <span class="quote-check-price">${priceLabel}</span>
+        <span class="quote-check-price"${priceId}>${priceLabel}</span>
       </label>`;
   }).join('');
 
@@ -228,7 +235,10 @@ function _quoteRenderOptionsStep() {
   optContainer.querySelectorAll('.quote-opt-checkbox').forEach(cb => {
     cb.addEventListener('change', () => {
       _quoteOptions[cb.dataset.id] = cb.checked;
-      if (cb.dataset.id === 'O4') document.getElementById('quote-o4-field').style.display = cb.checked ? '' : 'none';
+      if (cb.dataset.id === 'O4') {
+        document.getElementById('quote-o4-field').style.display = cb.checked ? '' : 'none';
+        if (cb.checked && !_quoteO4Result) _quoteComputeO4();
+      }
       _quoteRenderSummaryLive();
     });
   });
@@ -238,6 +248,105 @@ function _quoteRenderOptionsStep() {
       _quoteRenderSummaryLive();
     });
   });
+}
+
+// ── Calcul automatique des frais de déplacement (option O4) ──
+// Appelle cyberdesk-compute-travel-fee (géocodage + itinéraire ORS,
+// précision ville à ville depuis lead.city). Jamais bloquant : en cas
+// d'échec, la case reste au montant manuel (quote-o4-text), comme avant
+// l'introduction de ce calcul. fetch() direct plutôt que sb.functions.
+// invoke() — nécessaire pour lire le code d'erreur JSON même sur une
+// réponse non-2xx (même patron que _quoteSendToClient ci-dessous).
+const _QUOTE_O4_ERROR_MESSAGES = {
+  missing_city: "Aucune ville renseignée sur ce dossier — saisissez le montant manuellement ci-dessous.",
+  city_not_found: "Ville non reconnue par le service d'itinéraire — saisissez le montant manuellement ci-dessous.",
+};
+
+async function _quoteComputeO4() {
+  const resultEl = document.getElementById('quote-o4-result');
+  const priceLabel = document.getElementById('quote-o4-price-label');
+  resultEl.textContent = '⏳ Calcul de la distance…';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/cyberdesk-compute-travel-fee`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ lead_id: _quoteLeadId }),
+    });
+    const result = await resp.json();
+    if (!resp.ok || result.error) {
+      throw new Error(_QUOTE_O4_ERROR_MESSAGES[result.error] || "Calcul automatique indisponible — saisissez le montant manuellement ci-dessous.");
+    }
+
+    _quoteO4Result = { distance_km: result.distance_km, amount_ht: result.amount_ht, city: result.city };
+    // coefficient_eur_km renvoyé par l'Edge Function (valeur DB réellement
+    // appliquée, cf. cyberdesk_travel_fee_settings) — jamais lu depuis
+    // tarifs-cyberdesk.json, qui ne stocke plus cette valeur.
+    resultEl.textContent = `📍 ${_quoteTarifs.deplacement?.origine_adresse || 'S@FE'} → ${result.city} : `
+      + `${result.distance_km} km (aller-retour) × ${formatMoney(result.coefficient_eur_km)}/km = ${formatMoney(result.amount_ht)} HT`;
+    if (priceLabel) priceLabel.textContent = `+${formatMoney(result.amount_ht)}`;
+  } catch (e) {
+    _quoteO4Result = null;
+    resultEl.textContent = '⚠️ ' + (e.message || "Calcul automatique indisponible — saisissez le montant manuellement ci-dessous.");
+  }
+  _quoteRenderSummaryLive();
+}
+
+// ── Réglage admin : coefficient du barème kilométrique ──
+// Ajustable directement depuis la modale devis (cyberdesk_travel_fee_
+// settings, migration 016) plutôt qu'en dur dans le code — republié
+// chaque année par l'administration, pas de déploiement nécessaire pour
+// le mettre à jour. Réservé aux admins (RLS : update réservé à
+// is_admin()/is_super_admin()) ; les autres conseillers ne voient pas ce
+// contrôle mais bénéficient du calcul automatique comme tout le monde.
+async function _quoteLoadTravelCoefficient() {
+  const input = document.getElementById('quote-o4-coef-input');
+  const { data, error } = await sb.from('cyberdesk_travel_fee_settings')
+    .select('id, coefficient_eur_km').order('updated_at', { ascending: false }).limit(1).maybeSingle();
+  if (error || !data) { input.value = ''; return; }
+  _quoteTravelFeeSettingsId = data.id;
+  input.value = data.coefficient_eur_km;
+}
+
+async function _quoteSaveTravelCoefficient() {
+  const input = document.getElementById('quote-o4-coef-input');
+  const btn = document.getElementById('btn-quote-o4-coef-save');
+  const value = parseFloat(input.value);
+  if (!(value >= 0)) { alert('Indiquez un coefficient €/km valide (0 ou plus).'); return; }
+  if (!_quoteTravelFeeSettingsId) { alert('Réglage introuvable — réessayez.'); return; }
+
+  btn.disabled = true;
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('cyberdesk_travel_fee_settings')
+      .update({ coefficient_eur_km: value, updated_by: user.id, updated_at: new Date().toISOString() })
+      .eq('id', _quoteTravelFeeSettingsId);
+    if (error) throw error;
+
+    await logRgpd('tarif_deplacement_coefficient_modifie', 'CyberDesk', {
+      entityType: 'cyberdesk_travel_fee_settings',
+      entityId:   _quoteTravelFeeSettingsId,
+      donnees:    'Modification du coefficient du barème kilométrique (option Déplacement du devis)',
+      criticite:  'Info',
+      details:    { coefficient_eur_km: value },
+    });
+
+    showCrmToast('✅ Coefficient mis à jour');
+    // Un calcul déjà affiché utilisait l'ancienne valeur — on le réinvalide
+    // et on relance si O4 est toujours coché.
+    _quoteO4Result = null;
+    if (_quoteOptions.O4) await _quoteComputeO4();
+    else _quoteRenderSummaryLive();
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── Calcul du total ──
@@ -257,8 +366,13 @@ function _quoteComputeHt() {
       total += m;
       lines.push({ label: `${o.label} (+${o.valeur}%)`, montant: m });
     } else if (o.type === 'bareme') {
-      const detail = document.getElementById('quote-o4-text').value.trim();
-      lines.push({ label: `${o.label}${detail ? ' — ' + detail : ''}`, montant: 0, note: 'à ajouter manuellement' });
+      if (_quoteO4Result) {
+        total += _quoteO4Result.amount_ht;
+        lines.push({ label: `${o.label} — ${_quoteO4Result.distance_km} km (${_quoteO4Result.city})`, montant: _quoteO4Result.amount_ht });
+      } else {
+        const detail = document.getElementById('quote-o4-text').value.trim();
+        lines.push({ label: `${o.label}${detail ? ' — ' + detail : ''}`, montant: 0, note: 'à ajouter manuellement' });
+      }
     }
   });
 

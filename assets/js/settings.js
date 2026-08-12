@@ -37,6 +37,7 @@ async function openSettingsModal() {
 
   await _settingsRefreshAvatar();
   await _settingsRefresh2FAStatus();
+  await _settingsRefreshSubscription();
 }
 
 function closeSettingsModal() {
@@ -247,5 +248,59 @@ async function submitDpoRequest() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Envoyer la demande au DPO';
+  }
+}
+
+// ── Abonnement SaaS (cyberdesk_tenants) ──
+// N'affiche le bloc que pour un utilisateur rattaché à un tenant
+// (tenant_id non nul sur staff_module_access) — un accès accordé hors
+// facturation SaaS (tenant_id NULL) n'a rien à gérer ici.
+
+const _SETTINGS_SUB_STATUS_LABELS = {
+  trialing:   { label: 'Période d\'essai', cls: 'badge-blue' },
+  active:     { label: 'Actif', cls: 'badge-green' },
+  past_due:   { label: 'Paiement en retard', cls: 'badge-orange' },
+  canceled:   { label: 'Résilié', cls: 'badge-red' },
+  unpaid:     { label: 'Impayé', cls: 'badge-red' },
+  incomplete: { label: 'Incomplet', cls: 'badge-gray' },
+};
+
+async function _settingsRefreshSubscription() {
+  const field = document.getElementById('settings-subscription-field');
+  const { data, error } = await sb.rpc('cyberdesk_my_tenant_status');
+  const status = !error && Array.isArray(data) ? data[0] : null;
+  if (!status) { field.style.display = 'none'; return; }
+  field.style.display = '';
+
+  const info = _SETTINGS_SUB_STATUS_LABELS[status.subscription_status] || { label: status.subscription_status, cls: 'badge-gray' };
+  const badge = document.getElementById('settings-subscription-badge');
+  badge.textContent = info.label;
+  badge.className = 'badge ' + info.cls;
+
+  const dateEl = document.getElementById('settings-subscription-date');
+  if (status.subscription_status === 'trialing' && status.trial_ends_at) {
+    dateEl.textContent = 'Essai jusqu\'au ' + new Date(status.trial_ends_at).toLocaleDateString('fr-FR');
+  } else if (status.current_period_end) {
+    dateEl.textContent = 'Renouvellement le ' + new Date(status.current_period_end).toLocaleDateString('fr-FR');
+  } else {
+    dateEl.textContent = '';
+  }
+}
+
+/** Ouvre le portail client Stripe (changement de plan / résiliation en self-service). */
+async function openBillingPortal() {
+  const btn = document.getElementById('settings-subscription-btn');
+  btn.disabled = true;
+  btn.textContent = 'Ouverture…';
+  try {
+    const { data, error } = await sb.functions.invoke('cyberdesk-billing-portal', { body: {} });
+    if (error) throw error;
+    if (!data?.portal_url) throw new Error('lien indisponible.');
+    window.open(data.portal_url, '_blank');
+  } catch (e) {
+    alert('Erreur : ' + (e.message || 'réessayez plus tard.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gérer mon abonnement';
   }
 }

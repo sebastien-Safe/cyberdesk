@@ -390,7 +390,16 @@
         </div>
         <div class="diag-field" id="quote-o4-field" style="display:none">
           <label>Précisions déplacement</label>
-          <input type="text" id="quote-o4-text" placeholder="Ex : Lyon, 15 km — montant à ajouter manuellement si applicable">
+          <div id="quote-o4-result" class="diag-label-hint" style="margin-bottom:8px"></div>
+          <input type="text" id="quote-o4-text" placeholder="Note libre (optionnel)">
+          <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-recalc" onclick="_quoteComputeO4()" style="margin-top:8px">🔄 Recalculer</button>
+          <div id="quote-o4-admin-coef" style="display:none;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
+            <label class="diag-label-hint">Coefficient barème kilométrique (€/km) — admin</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <input type="number" id="quote-o4-coef-input" step="0.001" min="0" style="max-width:120px">
+              <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-coef-save" onclick="_quoteSaveTravelCoefficient()">Enregistrer</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -611,6 +620,17 @@
         </div>
       </div>
 
+      <div class="diag-field" id="settings-subscription-field" style="display:none">
+        <label>Mon abonnement CyberDesk</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
+          <div>
+            <span id="settings-subscription-badge" class="badge badge-gray">—</span>
+            <div id="settings-subscription-date" class="diag-label-hint" style="margin-top:4px"></div>
+          </div>
+          <button type="button" class="btn btn-out btn-sm" id="settings-subscription-btn" onclick="openBillingPortal()">Gérer mon abonnement</button>
+        </div>
+      </div>
+
     </div>
     <div class="modal-actions">
       <button class="btn btn-out" onclick="closeSettingsModal()">Fermer</button>
@@ -654,6 +674,12 @@
         <div id="accounting-reviews-summary" style="display:flex;align-items:center;gap:20px;margin-bottom:14px"></div>
         <div style="max-width:420px;margin-bottom:14px"><canvas id="chart-reviews"></canvas></div>
         <div id="accounting-reviews-list"></div>
+
+        <div id="accounting-tenants-section" style="display:none;margin-top:28px">
+          <h3 style="margin:8px 0 12px">🏢 Abonnements CyberDesk (tenants)</h3>
+          <div id="accounting-tenants-kpi-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
+          <div id="accounting-tenants-list"></div>
+        </div>
 
       </div>
     </div>
@@ -702,9 +728,23 @@ async function checkSession() {
     // d'afficher quoi que ce soit.
     const ok = await hasCyberdeskAccess();
     if (!ok) {
+      // Distingue un abonnement SaaS tenant suspendu (canceled/unpaid) d'un
+      // compte qui n'a simplement jamais eu accès — appelé AVANT signOut()
+      // car cyberdesk_my_tenant_status() s'appuie sur auth.uid(). Un tenant
+      // trialing/active/past_due n'atteint jamais cette branche (has_module_
+      // access reste vrai) — voir migration 015 et CLAUDE.md.
+      let blockedMessage = "Ce compte n'a pas accès à CyberDesk.";
+      try {
+        const { data: subRows } = await sb.rpc('cyberdesk_my_tenant_status');
+        const sub = Array.isArray(subRows) ? subRows[0] : null;
+        if (sub && ['canceled', 'unpaid'].includes(sub.subscription_status)) {
+          blockedMessage = 'Votre abonnement CyberDesk est suspendu — contactez-nous pour le réactiver.';
+        }
+      } catch (e) { /* repli sur le message générique */ }
+
       await sb.auth.signOut();
       showLoginPanel();
-      if (errEl) errEl.textContent = "Ce compte n'a pas accès à CyberDesk.";
+      if (errEl) errEl.textContent = blockedMessage;
       document.getElementById('login-screen').classList.remove('is-hidden');
       document.getElementById('app-shell').classList.add('is-hidden');
       return;

@@ -34,7 +34,11 @@ function _acctChart(id, config) {
 async function openAccountingModal() {
   document.getElementById('accounting-modal').classList.add('show');
   document.getElementById('accounting-user-select').style.display = _isAdmin ? '' : 'none';
-  if (_isAdmin) await _acctPopulateStaffSelect();
+  document.getElementById('accounting-tenants-section').style.display = _isAdmin ? '' : 'none';
+  if (_isAdmin) {
+    await _acctPopulateStaffSelect();
+    await _acctLoadTenants();
+  }
   await _acctLoad();
 }
 
@@ -254,4 +258,58 @@ function _acctRenderReviews(reviews) {
       <div style="font-size:.85rem;margin-top:4px">${escapeHtml(r.comment)}</div>
     </div>
   `).join('');
+}
+
+// ── Abonnements CyberDesk (tenants) — admin uniquement ──
+// Pas de MRR en €  ici : cyberdesk_tenants ne stocke que l'id du Price
+// Stripe (stripe_price_id), pas son montant — calculer un MRR fiable
+// demanderait soit de le dupliquer en base, soit un appel à l'API Stripe
+// depuis le navigateur (à éviter, clé secrète). On affiche donc des
+// compteurs par statut, pas un chiffre d'affaires récurrent estimé.
+// _SETTINGS_SUB_STATUS_LABELS est défini dans settings.js, chargé avant
+// ce fichier (scripts classiques, même scope global) — réutilisé tel quel
+// pour ne pas dupliquer le mapping statut → libellé/couleur.
+
+async function _acctLoadTenants() {
+  const { data, error } = await sb.rpc('cyberdesk_reporting_tenants');
+  if (error) { console.error('[cyberdesk_reporting_tenants]', error); return; }
+  _acctRenderTenants(data || []);
+}
+
+function _acctRenderTenants(tenants) {
+  const counts = { trialing: 0, active: 0, past_due: 0, canceled: 0, unpaid: 0, incomplete: 0 };
+  tenants.forEach(t => { if (t.subscription_status in counts) counts[t.subscription_status]++; });
+
+  document.getElementById('accounting-tenants-kpi-cards').innerHTML = [
+    _acctKpiCard('Tenants actifs', counts.active),
+    _acctKpiCard('En période d\'essai', counts.trialing),
+    _acctKpiCard('Paiement en retard', counts.past_due),
+    _acctKpiCard('Résiliés / impayés', counts.canceled + counts.unpaid),
+  ].join('');
+
+  const listEl = document.getElementById('accounting-tenants-list');
+  if (!tenants.length) {
+    listEl.innerHTML = '<div class="diag-label-hint">Aucun tenant créé pour l\'instant.</div>';
+    return;
+  }
+
+  listEl.innerHTML = tenants.map(t => {
+    const info = _SETTINGS_SUB_STATUS_LABELS[t.subscription_status] || { label: t.subscription_status, cls: 'badge-gray' };
+    const dateLabel = t.subscription_status === 'trialing' && t.trial_ends_at
+      ? 'Essai jusqu\'au ' + new Date(t.trial_ends_at).toLocaleDateString('fr-FR')
+      : t.current_period_end
+        ? 'Renouvellement le ' + new Date(t.current_period_end).toLocaleDateString('fr-FR')
+        : '—';
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:10px 0">
+        <div>
+          <div style="font-weight:600">${escapeHtml(t.name)}</div>
+          <div class="diag-label-hint">${t.member_count} membre${t.member_count > 1 ? 's' : ''} · créé le ${new Date(t.created_at).toLocaleDateString('fr-FR')}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge ${info.cls}">${info.label}</span>
+          <div class="diag-label-hint" style="margin-top:4px">${dateLabel}</div>
+        </div>
+      </div>`;
+  }).join('');
 }

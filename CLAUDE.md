@@ -131,15 +131,18 @@ cyberdesk/
 │       └── module-cyber-clients.html
 ├── mission-cyber.html             ← quiz de diagnostic public (lead-gen)
 ├── avis-client.html               ← formulaire public d'avis client (lien à token, post-clôture)
+├── abonnement-confirme.html       ← retour Stripe Checkout, abonnement SaaS tenant (succès)
+├── abonnement-annule.html         ← retour Stripe Checkout, abonnement SaaS tenant (annulé)
 ├── supabase/
 │   ├── functions/
-│   │   ├── _shared/                        ← docx-helpers, product-texts, cgs-render, cgs-content, cors, lead-access
+│   │   ├── _shared/                        ← docx-helpers, product-texts, cgs-render, cgs-content, cors,
+│   │   │                                     lead-access, travel-fee-config
 │   │   ├── generate-cybervictim-report/
 │   │   ├── generate-cybervictim-quote/
 │   │   ├── send-cybervictim-quote/         ← envoi devis par email (Brevo) + lien Stripe
-│   │   ├── cyberdesk-stripe-webhook/       ← webhook paiement, met à jour cybervictim_leads
-│   │   │                                     (nom préfixé cyberdesk- : le slug "stripe-webhook"
-│   │   │                                     est déjà pris côté Vente sur le projet partagé)
+│   │   ├── cyberdesk-stripe-webhook/       ← webhook paiement dossier victime, met à jour
+│   │   │                                     cybervictim_leads (nom préfixé cyberdesk- : le slug
+│   │   │                                     "stripe-webhook" est déjà pris côté Vente)
 │   │   ├── update-cybervictim-tasks/
 │   │   ├── purge-cybervictim-data/
 │   │   ├── cyber-ia-assistant/             ← appel direct Anthropic
@@ -152,6 +155,12 @@ cyberdesk/
 │   │   ├── cyberdesk-dpo-request/          ← demande d'exercice de droits RGPD → email au DPO
 │   │   ├── cyberdesk-send-review-request/  ← envoi du lien d'avis client à la clôture du dossier
 │   │   ├── cyberdesk-submit-review/        ← soumission publique de l'avis (avis-client.html)
+│   │   ├── cyberdesk-billing-webhook/      ← webhook Stripe, cycle de vie abonnement SaaS tenant
+│   │   │                                     (endpoint + secret de signature distincts de
+│   │   │                                     cyberdesk-stripe-webhook — voir section dédiée)
+│   │   ├── cyberdesk-create-tenant-checkout/ ← admin : crée un tenant + lien Stripe Checkout
+│   │   ├── cyberdesk-billing-portal/       ← lien portail client Stripe (self-service)
+│   │   ├── cyberdesk-compute-travel-fee/   ← frais de déplacement (option O4 devis, itinéraire ORS)
 │   │   ├── deno.json
 │   │   └── import_map.json
 │   └── migrations/
@@ -159,7 +168,12 @@ cyberdesk/
 │       ├── 008_cyberdesk_on_safecrm.sql   ← schema courant, sur le projet partagé safe-crm
 │       ├── 009_settings_dpo_reviews.sql   ← fiche profil, demandes DPO, avis clients
 │       ├── 010_accounting_scope.sql       ← fonctions de reporting cloisonné par utilisateur
-│       └── 011_cyberdesk_leads_ownership.sql ← Kanban cloisonné par créateur de dossier
+│       ├── 011_cyberdesk_leads_ownership.sql ← Kanban cloisonné par créateur de dossier
+│       ├── 012_fix_reporting_anon_grants.sql ← correctif grant anon (reporting 010)
+│       ├── 013_fix_sync_payment_grants.sql   ← correctif grant anon (sync_cybervictim_payment)
+│       ├── 014_fix_has_module_access_grants.sql ← correctif grant anon (has_module_access)
+│       ├── 015_cyberdesk_tenant_billing.sql  ← facturation SaaS des tenants (voir section dédiée)
+│       └── 016_travel_fee_coefficient_setting.sql ← coefficient barème kilométrique ajustable (voir section dédiée)
 ├── .env.example
 ├── CLAUDE.md                              ← ce fichier
 └── README.md
@@ -180,6 +194,9 @@ cyberdesk/
 | `cyberdesk_user_settings` | Fiche profil (facturation, contrat, photo) par utilisateur — **propre à CyberDesk**, jamais une extension de `profiles` (safe-crm) |
 | `cyberdesk_dpo_requests` | Demandes d'exercice de droits RGPD — **propre à CyberDesk**, intake V1 (voir section dédiée) |
 | `cybervictim_reviews` | Avis clients post-clôture (lien à token, soumission via Edge Function) — **propre à CyberDesk** |
+| `cyberdesk_tenants` | Un tenant = un prestataire cyber payant un abonnement SaaS CyberDesk (statut, IDs Stripe) — **propre à CyberDesk**, voir section dédiée |
+| `cyberdesk_tenant_invoices` | Détail des factures Stripe d'un tenant, alimente `payments` par trigger — **propre à CyberDesk** |
+| `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : coefficient €/km du barème kilométrique (option Déplacement du devis), ajustable par un admin — **propre à CyberDesk** |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
@@ -278,8 +295,12 @@ séparément (vision produit : louer chaque module — Paiement, CyberDesk,
 Vente, DPO, SEO, Social... — indépendamment à des clients externes).
 Voir aussi `client_module_settings` (déjà existante côté safe-crm),
 prévue pour gérer l'activation d'un module et son branding pour un
-client externe loueur — pas encore branchée sur CyberDesk, prochain
-palier.
+client externe loueur — **écartée comme point d'accroche pour la
+facturation SaaS des tenants** (voir section dédiée) après inspection de
+son schéma réel : elle est indexée sur `contacts.id` (un contact Vente),
+pas sur un compte `auth.users` qui se connecte à CyberDesk, et ne porte
+aucune colonne de facturation. Reste un palier futur pour un usage
+différent (louer un module à un client externe géré par Vente).
 
 **2. Paiement : une source unique, deux vues.** La table `public.payments`
 (polymorphe : `module`, `source_type`, `source_id`) est la seule source de
@@ -289,7 +310,11 @@ existante (`cyberdesk-stripe-webhook`, `send-cybervictim-quote`) ni dans le
 paiement manuel. L'espace client CyberDesk continue de lire
 `cybervictim_leads` directement (jamais `payments`). Le rapport financier
 admin de Vente lit `v_payments_reporting` (réservée à
-`is_admin()`/`is_super_admin()`).
+`is_admin()`/`is_super_admin()`). Depuis la migration `015_cyberdesk_
+tenant_billing.sql`, un second trigger (`sync_cyberdesk_tenant_invoice`)
+alimente la même table depuis `cyberdesk_tenant_invoices` avec
+`source_type = 'tenant_subscription_invoice'` — même patron, aucun
+changement de structure ni côté Vente.
 
 **Secrets Stripe/Brevo/Anthropic — deux espaces de stockage distincts, pas
 de collision, mais attention à la valeur.** Vente utilise déjà des secrets
@@ -297,14 +322,20 @@ Edge Function classiques (`Deno.env.get(...)`) : `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`, `BREVO`. CyberDesk utilise le
 Vault Postgres (`vault.create_secret` + `get_edge_secret()`), noms en
 minuscules : `stripe_secret_key`, `stripe_webhook_secret`,
+`stripe_billing_webhook_secret`, `stripe_price_id_cyberdesk`,
 `brevo_api_key`, `anthropic_api_key`, `purge_secret` — namespace différent,
 vérifié qu'aucun nom ne collisionne (seul `purge_alert_secret` existait déjà
 dans le Vault, sans rapport). `stripe_secret_key` peut recevoir la **même
 valeur** que le `STRIPE_SECRET_KEY` de Vente (même compte Stripe, cohérent
-avec "un seul système de paiement"). En revanche `stripe_webhook_secret`
-**doit être une valeur différente** : Stripe génère un secret de signature
-par endpoint webhook, et `cyberdesk-stripe-webhook` est un endpoint distinct
-de celui de Vente — le secret de Vente ne fonctionnera pas ici.
+avec "un seul système de paiement" — y compris pour l'abonnement SaaS
+tenant, voir section dédiée : pas de Stripe Connect, un seul compte
+plateforme). En revanche `stripe_webhook_secret` **doit être une valeur
+différente** : Stripe génère un secret de signature par endpoint webhook,
+et `cyberdesk-stripe-webhook` est un endpoint distinct de celui de Vente —
+le secret de Vente ne fonctionnera pas ici. Même règle entre
+`stripe_webhook_secret` et `stripe_billing_webhook_secret` : deux endpoints
+webhook CyberDesk distincts (paiement dossier victime vs. abonnement
+tenant), donc deux secrets de signature distincts, jamais le même.
 Quand Vente aura son propre flux de vente, il insérera dans `payments`
 avec `module='vente'` — pas de nouvelle migration de structure nécessaire.
 
@@ -346,7 +377,10 @@ distinct des secrets Edge Function ci-dessus, voir section Cohabitation :
 ```
 purge_secret
 stripe_secret_key
-stripe_webhook_secret    -- valeur propre à cyberdesk-stripe-webhook, pas celle de Vente
+stripe_webhook_secret            -- valeur propre à cyberdesk-stripe-webhook, pas celle de Vente
+stripe_billing_webhook_secret    -- valeur propre à cyberdesk-billing-webhook, distincte de stripe_webhook_secret
+stripe_price_id_cyberdesk        -- id du Price Stripe de l'abonnement SaaS CyberDesk (un seul plan en v1)
+openrouteservice_api_key         -- géocodage + itinéraire, calcul frais de déplacement (option O4 devis)
 brevo_api_key
 anthropic_api_key
 ```
@@ -367,6 +401,10 @@ supabase functions deploy cyberdesk-forgot-password --no-verify-jwt
 supabase functions deploy cyberdesk-dpo-request
 supabase functions deploy cyberdesk-send-review-request
 supabase functions deploy cyberdesk-submit-review --no-verify-jwt
+supabase functions deploy cyberdesk-billing-webhook --no-verify-jwt
+supabase functions deploy cyberdesk-create-tenant-checkout
+supabase functions deploy cyberdesk-billing-portal
+supabase functions deploy cyberdesk-compute-travel-fee
 ```
 
 ⚠️ Les slugs `stripe-webhook` et `send-audit-email` (sans préfixe) sont
@@ -391,6 +429,74 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 10. cyberdesk-dpo-request (JWT utilisateur normal)
 11. cyberdesk-send-review-request (JWT utilisateur normal)
 12. cyberdesk-submit-review (`--no-verify-jwt` — soumission publique via `avis-client.html`)
+13. cyberdesk-billing-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
+14. cyberdesk-create-tenant-checkout (JWT utilisateur, `is_super_admin()` vérifié en interne)
+15. cyberdesk-billing-portal (JWT utilisateur normal)
+16. cyberdesk-compute-travel-fee (JWT utilisateur normal)
+
+## Facturation SaaS des tenants (cyberdesk-billing-*)
+
+Distinct du paiement des dossiers victimes (`cyberdesk-stripe-webhook` /
+`send-cybervictim-quote`, qui existe depuis la migration 005 et n'est pas
+touché ici) : c'est l'abonnement mensuel que paie le prestataire cyber
+pour utiliser CyberDesk lui-même — vide complet avant la migration
+`015_cyberdesk_tenant_billing.sql` (aucune table `tenants`, aucune
+notion d'essai/abonnement dans le code avant cette migration).
+
+**Modèle Stripe : un seul compte plateforme**, pas de Stripe Connect —
+CyberDesk facture chaque tenant directement, comme le paiement victime
+le fait déjà. `stripe_secret_key` (Vault) est réutilisé tel quel.
+
+**Schéma** : `cyberdesk_tenants` (statut d'abonnement, IDs Stripe, dates
+d'essai/renouvellement) + `cyberdesk_tenant_invoices` (détail des
+factures, synchronisées vers `payments` par trigger, voir Cohabitation).
+`staff_module_access` gagne une colonne `tenant_id` nullable — un accès
+à `tenant_id = NULL` reste un accès hors facturation SaaS (comportement
+historique inchangé). Cardinalité tenant ↔ utilisateur volontairement
+simple en v1 (pas de table de membership séparée) : un seul vrai client
+aujourd'hui, l'auto-invitation de collègues reste un ajout manuel par un
+admin (`staff_module_access` avec le bon `tenant_id`).
+
+**Accès** : `has_module_access()` intègre désormais le statut
+d'abonnement — un accès rattaché à un tenant `canceled`/`unpaid` ne
+passe plus la garde (propagé partout : RLS, guards des Edge Functions,
+`hasCyberdeskAccess()`). `past_due` ne bloque volontairement rien
+(fenêtre de grâce — Stripe relance déjà une carte refusée). `index.html`
+(`checkSession()`) affiche un message distinct (« abonnement suspendu »)
+plutôt que le message générique dans ce cas précis.
+
+**Limite assumée** : un utilisateur dont le tenant passe à
+`canceled`/`unpaid` est déconnecté par `index.html` avant d'atteindre
+Paramétrage — il n'a donc plus, en v1, de bouton dans l'app menant au
+portail Stripe (`cyberdesk-billing-portal`) pour régulariser lui-même.
+La fonction elle-même reste joignable (elle ne vérifie pas
+`has_module_access`, seulement l'existence d'un `tenant_id`), donc un
+lien envoyé à la main par un admin fonctionne — pas d'écran de reprise
+dédié en v1, un contact direct de l'équipe couvre ce cas (un seul client
+aujourd'hui). À revoir si le nombre de tenants augmente.
+
+**Flux v1 (pas d'auto-inscription)** : un admin crée d'abord le compte
+`auth.users` du client (processus manuel inchangé), puis appelle
+`cyberdesk-create-tenant-checkout` (réservée à `is_super_admin()`) qui
+crée le tenant, l'accès `trialing` immédiat, et une Checkout Session
+Stripe (`mode: 'subscription'`) — le lien est transmis à la main au
+client, pas d'envoi automatisé (créer un tenant payant est rare,
+contrairement à l'envoi de devis par dossier victime). Retour Stripe sur
+`abonnement-confirme.html` / `abonnement-annule.html` (pages dédiées,
+copie différente de `paiement-confirme.html`/`paiement-annule.html` qui
+restent spécifiques au paiement dossier victime). `cyberdesk-billing-
+webhook` (secret `stripe_billing_webhook_secret`, distinct de celui de
+`cyberdesk-stripe-webhook`) tient à jour le statut sur tout le cycle de
+vie (essai, paiement, échec, résiliation). Auto-inscription publique et
+invitation self-service de collègues restent hors périmètre v1 (voir
+Feuille de route).
+
+**Vue admin** : section « Abonnements » dans la modale Comptable
+(`assets/js/accounting.js`), alimentée par `cyberdesk_reporting_tenants()`
+— compteurs de tenants par statut, pas un MRR en €
+(`cyberdesk_tenants.stripe_price_id` ne stocke qu'un identifiant Stripe,
+pas un montant ; calculer un MRR fiable demanderait de le dupliquer en
+base ou un appel serveur à l'API Stripe, non fait en v1).
 
 ## Assistant IA (cyber-ia-assistant)
 
@@ -532,6 +638,68 @@ Avis clients (`cybervictim_reviews`) rattachés au créateur du dossier via
 une jointure sur `cybervictim_leads.created_by` (la table des avis n'a pas
 de colonne utilisateur propre).
 
+## Grille tarifaire et devis 17Cyber
+
+`assets/data/tarifs-cyberdesk.json` est la **source unique de vérité
+tarifaire** pour la modale devis à 3 étapes (`victimes17-quote.js`,
+chargée en `fetch()` côté client) : 4 niveaux de prestations (N1-N4),
+des packs, des options, un tarif horaire pour les cas complexes, la
+TVA, et la politique (devis gratuit, garantie de reprise 7 jours). Le
+conseiller peut toujours modifier manuellement le montant HT final
+(`quote-ht-override`) quel que soit le calcul automatique en amont.
+
+**À ne pas confondre avec** `cybervictim_products` (`price_ht`/
+`price_ttc`, un forfait unique par type d'alerte) : cette seconde table
+sert de repli pour les Edge Functions qui régénèrent un devis .docx
+côté serveur sans repasser par la modale (`generate-cybervictim-quote`)
+et alimente le tableau tarifaire des CGS (`cgs-render.ts`). Les deux
+systèmes ne sont pas synchronisés entre eux — un changement de prix
+dans l'un ne se répercute pas sur l'autre.
+
+**Frais de déplacement (option O4) : calcul automatique.** Contrairement
+aux autres options, O4 n'a pas de montant fixe — historiquement une
+case à chiffrer à la main. Depuis l'Edge Function
+`cyberdesk-compute-travel-fee`, cocher O4 déclenche un calcul
+automatique : géocodage de l'adresse S@FE et de la ville du dossier
+(champ `cybervictim_leads.city`) via l'API OpenRouteService, distance
+routière aller-retour, multipliée par un coefficient €/km. **Jamais
+bloquant** : sans ville renseignée, ville non géolocalisée, ou service
+indisponible, la case retombe sur la saisie manuelle d'origine (champ
+texte + montant ajouté à la main dans `quote-ht-override`).
+
+**Coefficient du barème kilométrique — ajustable en base, pas dans le
+code.** Contrairement à l'adresse d'origine et à l'aller-retour
+(statiques, `deplacement` dans `tarifs-cyberdesk.json` +
+`_shared/travel-fee-config.ts`, même patron que `product-texts.ts`), le
+coefficient €/km vit dans une table dédiée à une seule ligne,
+`cyberdesk_travel_fee_settings` (migration `016_travel_fee_coefficient_
+setting.sql`) — défaut `1` tant qu'aucun admin ne l'a modifié. Un admin
+(`is_admin()`/`is_super_admin()`, RLS sur la table) le modifie
+directement depuis la modale devis, dans le bloc de l'option Déplacement
+(`quote-o4-admin-coef`, `victimes17-quote.js` : `_quoteLoadTravelCoefficient()`/
+`_quoteSaveTravelCoefficient()`) — sans déploiement, puisque ce barème
+est republié chaque année (impôts/URSSAF). Chaque modification est
+journalisée dans `audit_logs` (`action: 'tarif_deplacement_coefficient_
+modifie'`). `cyberdesk-compute-travel-fee` lit systématiquement la
+valeur en base (repli sur `TRAVEL_FEE_CONFIG.coefficientEurKm = 1`
+uniquement si la table est vide, ce qui ne devrait pas arriver — la
+migration seede une ligne).
+
+**Limites assumées** :
+- Précision **ville à ville**, pas porte-à-porte — `cybervictim_leads`
+  n'a qu'un champ `city` (texte libre, migration 003), pas d'adresse
+  complète. Approximation jugée suffisante pour une indemnité
+  kilométrique, à revoir si une précision plus fine devient nécessaire.
+- Origine fixe (adresse S@FE), pas de point de départ configurable —
+  cohérent avec un seul lieu d'intervention type aujourd'hui. Seul le
+  coefficient est ajustable en base ; adresse et aller-retour resteraient
+  à changer dans le code si besoin.
+- Réponse de l'API Directions ORS lue de façon défensive (deux formes
+  de payload possibles selon la configuration du compte) — à vérifier
+  avec un appel réel avant mise en production, comme le reste de la
+  grille tarifaire reconstruite par déduction (voir note sur
+  `cybervictim_leads`/`cybervictim_products` plus haut).
+
 ## Documents générés (devis / rapports)
 
 Le prestataire mentionné dans les PDF/DOCX générés est **"S@FE"**
@@ -547,10 +715,18 @@ usage commercial réel.
 - [x] Schema SQL cyberdesk (migration 008, sur le projet partagé safe-crm)
 - [x] Cohabitation multi-module (`staff_module_access`, `payments` partagé)
 - [ ] Edge Functions déployées (sur le nouveau projet bgkijldrmdhklkadkeua)
-- [ ] Multi-tenant (table tenants + tenant_id + RLS)
+- [ ] Multi-tenant (table `tenants` + `tenant_id` + RLS **sur `cybervictim_leads`** — isolation des
+      dossiers par tenant). Distinct de `cyberdesk_tenants` (migration 015, voir section dédiée) :
+      celui-ci ne couvre que la facturation/l'accès (`staff_module_access.tenant_id`), pas
+      l'isolation des données du Kanban — les dossiers restent cloisonnés par `created_by`
+      (migration 011), pas par tenant, tant que cet item reste ouvert.
 - [ ] Espace client (client_token + page publique)
 - [ ] Formulaire web d'entrée (source: formulaire_web)
-- [ ] Location de module à un client externe via `client_module_settings`
+- [ ] Location de module à un client externe via `client_module_settings` (cas d'usage différent de
+      la facturation SaaS tenant ci-dessous — un client géré par Vente, pas un compte auth.users
+      CyberDesk direct)
+- [x] Facturation SaaS des tenants — abonnement Stripe (migration `015_cyberdesk_tenant_billing.sql`,
+      voir section dédiée). Onboarding encore manuel côté admin (pas d'auto-inscription publique).
 
 ### V2
 - [ ] Qualification IA automatique à la création du dossier
@@ -559,7 +735,10 @@ usage commercial réel.
 - [x] Tableau de bord KPIs (CA, délais, taux de transformation, avis clients) — modale Comptable, voir section dédiée
 - [ ] Playbooks dynamiques (arbre conditionnel)
 - [ ] Multi-connecteurs IA (Groq, Mistral, Grok)
-- [ ] Paiement Stripe (lien de paiement dossiers victimes)
+- [x] Paiement Stripe (lien de paiement dossiers victimes) — déjà en place depuis la migration 005
+      (`cyberdesk-stripe-webhook`, `send-cybervictim-quote`) : case cochée à tort par le passé,
+      corrigée après vérification directe du code (ne pas confondre avec la facturation SaaS
+      tenant ci-dessus, qui est un flux Stripe distinct).
 - [ ] Panneau admin de traitement des demandes DPO (`cyberdesk_dpo_requests` — intake déjà en place, pas de suivi/statut dans l'UI)
 
 ### V3
