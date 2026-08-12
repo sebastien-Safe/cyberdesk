@@ -173,7 +173,8 @@ cyberdesk/
 │       ├── 013_fix_sync_payment_grants.sql   ← correctif grant anon (sync_cybervictim_payment)
 │       ├── 014_fix_has_module_access_grants.sql ← correctif grant anon (has_module_access)
 │       ├── 015_cyberdesk_tenant_billing.sql  ← facturation SaaS des tenants (voir section dédiée)
-│       └── 016_travel_fee_coefficient_setting.sql ← coefficient barème kilométrique ajustable (voir section dédiée)
+│       ├── 016_travel_fee_coefficient_setting.sql ← coefficient barème kilométrique ajustable (voir section dédiée)
+│       └── 019_travel_fee_forfait_and_range.sql ← forfaits bas/haut + plage 0,50-0,70 € du coefficient
 ├── .env.example
 ├── CLAUDE.md                              ← ce fichier
 └── README.md
@@ -196,7 +197,7 @@ cyberdesk/
 | `cybervictim_reviews` | Avis clients post-clôture (lien à token, soumission via Edge Function) — **propre à CyberDesk** |
 | `cyberdesk_tenants` | Un tenant = un prestataire cyber payant un abonnement SaaS CyberDesk (statut, IDs Stripe) — **propre à CyberDesk**, voir section dédiée |
 | `cyberdesk_tenant_invoices` | Détail des factures Stripe d'un tenant, alimente `payments` par trigger — **propre à CyberDesk** |
-| `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : coefficient €/km du barème kilométrique (option Déplacement du devis), ajustable par un admin — **propre à CyberDesk** |
+| `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : forfaits bas/haut (€) et coefficient €/km du barème kilométrique (option Déplacement du devis), ajustables par un admin — **propre à CyberDesk** |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
@@ -656,34 +657,42 @@ et alimente le tableau tarifaire des CGS (`cgs-render.ts`). Les deux
 systèmes ne sont pas synchronisés entre eux — un changement de prix
 dans l'un ne se répercute pas sur l'autre.
 
-**Frais de déplacement (option O4) : calcul automatique.** Contrairement
-aux autres options, O4 n'a pas de montant fixe — historiquement une
-case à chiffrer à la main. Depuis l'Edge Function
-`cyberdesk-compute-travel-fee`, cocher O4 déclenche un calcul
-automatique : géocodage de l'adresse S@FE et de la ville du dossier
-(champ `cybervictim_leads.city`) via l'API OpenRouteService, distance
-routière aller-retour, multipliée par un coefficient €/km. **Jamais
-bloquant** : sans ville renseignée, ville non géolocalisée, ou service
-indisponible, la case retombe sur la saisie manuelle d'origine (champ
-texte + montant ajouté à la main dans `quote-ht-override`).
+**Frais de déplacement (option O4) : forfait + calcul automatique au km.**
+Contrairement aux autres options, O4 n'a pas de montant fixe —
+historiquement une case à chiffrer entièrement à la main. Formule :
+`montant HT = forfait (bas ou haut, choisi par le conseiller à chaque
+devis) + distance_km (aller-retour, calculée automatiquement) ×
+coefficient €/km`. Cocher O4 fait apparaître deux boutons radio
+« Forfait bas » / « Forfait haut » (`quote-o4-forfait`, défaut bas) puis
+déclenche le calcul via l'Edge Function `cyberdesk-compute-travel-fee` :
+géocodage de l'adresse S@FE et de la ville du dossier (champ
+`cybervictim_leads.city`) via l'API OpenRouteService, distance routière.
+**Jamais bloquant** : sans ville renseignée, ville non géolocalisée, ou
+service indisponible, la case retombe sur la saisie manuelle d'origine
+(champ texte + montant ajouté à la main dans `quote-ht-override`).
 
-**Coefficient du barème kilométrique — ajustable en base, pas dans le
-code.** Contrairement à l'adresse d'origine et à l'aller-retour
-(statiques, `deplacement` dans `tarifs-cyberdesk.json` +
-`_shared/travel-fee-config.ts`, même patron que `product-texts.ts`), le
-coefficient €/km vit dans une table dédiée à une seule ligne,
-`cyberdesk_travel_fee_settings` (migration `016_travel_fee_coefficient_
-setting.sql`) — défaut `1` tant qu'aucun admin ne l'a modifié. Un admin
-(`is_admin()`/`is_super_admin()`, RLS sur la table) le modifie
-directement depuis la modale devis, dans le bloc de l'option Déplacement
-(`quote-o4-admin-coef`, `victimes17-quote.js` : `_quoteLoadTravelCoefficient()`/
-`_quoteSaveTravelCoefficient()`) — sans déploiement, puisque ce barème
-est republié chaque année (impôts/URSSAF). Chaque modification est
-journalisée dans `audit_logs` (`action: 'tarif_deplacement_coefficient_
-modifie'`). `cyberdesk-compute-travel-fee` lit systématiquement la
-valeur en base (repli sur `TRAVEL_FEE_CONFIG.coefficientEurKm = 1`
-uniquement si la table est vide, ce qui ne devrait pas arriver — la
-migration seede une ligne).
+**Forfaits et coefficient — ajustables en base, pas dans le code.**
+Contrairement à l'adresse d'origine et à l'aller-retour (statiques,
+`deplacement` dans `tarifs-cyberdesk.json` + `_shared/travel-fee-
+config.ts`, même patron que `product-texts.ts`), les trois montants
+vivent dans une table dédiée à une seule ligne,
+`cyberdesk_travel_fee_settings` (migrations `016_travel_fee_coefficient_
+setting.sql` puis `019_travel_fee_forfait_and_range.sql`) :
+`forfait_bas_eur` (défaut 10), `forfait_haut_eur` (défaut 15),
+`coefficient_eur_km` (défaut 0,51, **contraint entre 0,50 et 0,70** —
+plage usuelle du barème kilométrique professionnel, contrainte à la fois
+en base et côté formulaire). Un admin (`is_admin()`/`is_super_admin()`,
+RLS sur la table) modifie les trois valeurs directement depuis la
+modale devis, dans le bloc de l'option Déplacement (`quote-o4-admin-
+coef`, `victimes17-quote.js` : `_quoteLoadTravelFeeSettings()`/
+`_quoteSaveTravelFeeSettings()`) — sans déploiement, puisque le
+coefficient est republié chaque année (impôts/URSSAF) et que les deux
+forfaits sont une politique commerciale, pas une constante technique.
+Chaque modification est journalisée dans `audit_logs`
+(`action: 'tarif_deplacement_reglages_modifies'`).
+`cyberdesk-compute-travel-fee` lit systématiquement les valeurs en base
+(repli sur `TRAVEL_FEE_CONFIG` uniquement si la table est vide, ce qui
+ne devrait pas arriver — la migration 016 seede une ligne).
 
 **Limites assumées** :
 - Précision **ville à ville**, pas porte-à-porte — `cybervictim_leads`
@@ -691,9 +700,12 @@ migration seede une ligne).
   complète. Approximation jugée suffisante pour une indemnité
   kilométrique, à revoir si une précision plus fine devient nécessaire.
 - Origine fixe (adresse S@FE), pas de point de départ configurable —
-  cohérent avec un seul lieu d'intervention type aujourd'hui. Seul le
-  coefficient est ajustable en base ; adresse et aller-retour resteraient
-  à changer dans le code si besoin.
+  cohérent avec un seul lieu d'intervention type aujourd'hui. Seuls les
+  forfaits et le coefficient sont ajustables en base ; adresse et
+  aller-retour resteraient à changer dans le code si besoin.
+- Aucune règle automatique ne détermine le choix forfait bas/haut — au
+  jugement du conseiller à chaque devis (décision produit confirmée), pas
+  de présélection selon la distance ou le type d'intervention en v1.
 - Réponse de l'API Directions ORS lue de façon défensive (deux formes
   de payload possibles selon la configuration du compte) — à vérifier
   avec un appel réel avant mise en production, comme le reste de la

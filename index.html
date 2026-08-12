@@ -390,14 +390,35 @@
         </div>
         <div class="diag-field" id="quote-o4-field" style="display:none">
           <label>Précisions déplacement</label>
+          <div style="display:flex;gap:16px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
+              <input type="radio" name="quote-o4-forfait" value="bas" checked onchange="_quoteOnForfaitChange(this.value)">
+              Forfait bas
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
+              <input type="radio" name="quote-o4-forfait" value="haut" onchange="_quoteOnForfaitChange(this.value)">
+              Forfait haut
+            </label>
+          </div>
           <div id="quote-o4-result" class="diag-label-hint" style="margin-bottom:8px"></div>
           <input type="text" id="quote-o4-text" placeholder="Note libre (optionnel)">
           <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-recalc" onclick="_quoteComputeO4()" style="margin-top:8px">🔄 Recalculer</button>
           <div id="quote-o4-admin-coef" style="display:none;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
-            <label class="diag-label-hint">Coefficient barème kilométrique (€/km) — admin</label>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-              <input type="number" id="quote-o4-coef-input" step="0.001" min="0" style="max-width:120px">
-              <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-coef-save" onclick="_quoteSaveTravelCoefficient()">Enregistrer</button>
+            <label class="diag-label-hint">Réglages tarif déplacement — admin</label>
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:4px">
+              <div>
+                <label class="diag-label-hint">Forfait bas (€)</label>
+                <input type="number" id="quote-o4-forfait-bas-input" step="0.01" min="0" style="max-width:100px">
+              </div>
+              <div>
+                <label class="diag-label-hint">Forfait haut (€)</label>
+                <input type="number" id="quote-o4-forfait-haut-input" step="0.01" min="0" style="max-width:100px">
+              </div>
+              <div>
+                <label class="diag-label-hint">Coefficient (€/km, 0,50-0,70)</label>
+                <input type="number" id="quote-o4-coef-input" step="0.001" min="0.5" max="0.7" style="max-width:100px">
+              </div>
+              <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-coef-save" onclick="_quoteSaveTravelFeeSettings()">Enregistrer</button>
             </div>
           </div>
         </div>
@@ -560,6 +581,14 @@
       <div class="diag-row-2">
         <div class="diag-field"><label>Adresse de facturation</label><input type="text" id="settings-billing-address"></div>
         <div class="diag-field"><label>N° TVA intracommunautaire</label><input type="text" id="settings-tva-number"></div>
+      </div>
+
+      <div class="diag-field">
+        <label>Informations bancaires</label>
+        <div class="diag-row-2">
+          <input type="text" id="settings-bank-iban" placeholder="IBAN" autocomplete="off">
+          <input type="text" id="settings-bank-holder" placeholder="Titulaire du compte" autocomplete="off">
+        </div>
       </div>
 
       <div class="diag-field">

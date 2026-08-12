@@ -1,8 +1,12 @@
 // ==========================================================================
 // CyberDesk — Calcul automatique des frais de déplacement (option O4 du
-// devis 17Cyber) via l'API OpenRouteService (géocodage + itinéraire),
-// multiplié par le barème kilométrique (TRAVEL_FEE_CONFIG).
-// POST { lead_id } → { success, distance_km, amount_ht, city }
+// devis 17Cyber) : forfait de base (choisi par le conseiller à chaque
+// devis) + distance réelle (OpenRouteService, aller-retour) × coefficient
+// du barème kilométrique. Forfaits et coefficient réglables par un admin
+// depuis la modale devis, table cyberdesk_travel_fee_settings (migrations
+// 016/017) — jamais en dur dans le code.
+// POST { lead_id, forfait?: 'bas'|'haut' } (défaut 'bas')
+//   → { success, distance_km, forfait, forfait_eur, coefficient_eur_km, amount_ht, city }
 // Précision ville à ville (champ cybervictim_leads.city, migration 003) —
 // pas d'adresse complète captée dans le formulaire de diagnostic. Distance
 // doublée par défaut (allerRetour) : le barème kilométrique professionnel
@@ -91,6 +95,7 @@ Deno.serve(async (req) => {
   }
   const leadId = body.lead_id;
   if (!leadId) return json({ error: "missing_lead_id" }, 400);
+  const forfait = body.forfait === "haut" ? "haut" : "bas";
 
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
@@ -111,18 +116,21 @@ Deno.serve(async (req) => {
     return json({ error: "secrets_unavailable", details: String(e.message || e) }, 500);
   }
 
-  // Coefficient ajustable par un admin depuis la modale devis (migration
-  // 016, table cyberdesk_travel_fee_settings) — c'est la source de vérité ;
-  // TRAVEL_FEE_CONFIG.coefficientEurKm ne sert plus que de repli défensif
-  // si la table est vide (ne devrait pas arriver, la migration seede une
-  // ligne).
+  // Forfaits + coefficient ajustables par un admin depuis la modale devis
+  // (migrations 016/017, table cyberdesk_travel_fee_settings) — c'est la
+  // source de vérité ; TRAVEL_FEE_CONFIG ne sert plus que de repli
+  // défensif si la table est vide (ne devrait pas arriver, la migration
+  // 016 seede une ligne).
   const { data: settingsRow } = await sb
     .from("cyberdesk_travel_fee_settings")
-    .select("coefficient_eur_km")
+    .select("coefficient_eur_km, forfait_bas_eur, forfait_haut_eur")
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   const coefficientEurKm = settingsRow ? Number(settingsRow.coefficient_eur_km) : TRAVEL_FEE_CONFIG.coefficientEurKm;
+  const forfaitEur = settingsRow
+    ? Number(forfait === "haut" ? settingsRow.forfait_haut_eur : settingsRow.forfait_bas_eur)
+    : (forfait === "haut" ? TRAVEL_FEE_CONFIG.forfaitHautEur : TRAVEL_FEE_CONFIG.forfaitBasEur);
 
   try {
     const [origin, destination] = await Promise.all([
@@ -134,9 +142,17 @@ Deno.serve(async (req) => {
 
     const oneWayMeters = await drivingDistanceMeters(apiKey, origin, destination);
     const distanceKm = Math.round(((oneWayMeters / 1000) * (TRAVEL_FEE_CONFIG.allerRetour ? 2 : 1)) * 10) / 10;
-    const amountHt = Math.round(distanceKm * coefficientEurKm * 100) / 100;
+    const amountHt = Math.round((forfaitEur + distanceKm * coefficientEurKm) * 100) / 100;
 
-    return json({ success: true, distance_km: distanceKm, amount_ht: amountHt, coefficient_eur_km: coefficientEurKm, city });
+    return json({
+      success: true,
+      distance_km: distanceKm,
+      forfait,
+      forfait_eur: forfaitEur,
+      coefficient_eur_km: coefficientEurKm,
+      amount_ht: amountHt,
+      city,
+    });
   } catch (e) {
     return json({ error: "routing_error", details: String(e.message || e) }, 502);
   }
