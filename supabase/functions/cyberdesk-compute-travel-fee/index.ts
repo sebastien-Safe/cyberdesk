@@ -1,12 +1,12 @@
 // ==========================================================================
 // CyberDesk — Calcul automatique des frais de déplacement (option O4 du
-// devis 17Cyber) : forfait de base (choisi par le conseiller à chaque
-// devis) + distance réelle (OpenRouteService, aller-retour) × coefficient
-// du barème kilométrique. Forfaits et coefficient réglables par un admin
-// depuis la modale devis, table cyberdesk_travel_fee_settings (migrations
-// 016/017) — jamais en dur dans le code.
-// POST { lead_id, forfait?: 'bas'|'haut' } (défaut 'bas')
-//   → { success, distance_km, forfait, forfait_eur, coefficient_eur_km, amount_ht, city }
+// devis 17Cyber) : forfait de base + distance réelle (OpenRouteService,
+// aller-retour) × coefficient du barème kilométrique, PAR AGENT — chacun
+// facture son propre barème (coefficient + forfait + adresse de départ),
+// réglé depuis Paramétrage → Profil (cyberdesk_user_settings, migration
+// 024_cyberdesk_travel_fee_per_agent.sql), jamais en dur dans le code et
+// jamais un réglage global partagé.
+// POST { lead_id } → { success, distance_km, forfait_eur, coefficient_eur_km, amount_ht, city }
 // Précision ville à ville (champ cybervictim_leads.city, migration 003) —
 // pas d'adresse complète captée dans le formulaire de diagnostic. Distance
 // doublée par défaut (allerRetour) : le barème kilométrique professionnel
@@ -95,7 +95,6 @@ Deno.serve(async (req) => {
   }
   const leadId = body.lead_id;
   if (!leadId) return json({ error: "missing_lead_id" }, 400);
-  const forfait = body.forfait === "haut" ? "haut" : "bas";
 
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
@@ -116,28 +115,28 @@ Deno.serve(async (req) => {
     return json({ error: "secrets_unavailable", details: String(e.message || e) }, 500);
   }
 
-  // Forfaits + coefficient ajustables par un admin depuis la modale devis
-  // (migrations 016/017, table cyberdesk_travel_fee_settings) — c'est la
-  // source de vérité ; TRAVEL_FEE_CONFIG ne sert plus que de repli
-  // défensif si la table est vide (ne devrait pas arriver, la migration
-  // 016 seede une ligne).
-  const { data: settingsRow } = await sb
-    .from("cyberdesk_travel_fee_settings")
-    .select("coefficient_eur_km, forfait_bas_eur, forfait_haut_eur")
-    .order("updated_at", { ascending: false })
-    .limit(1)
+  // Barème par agent (coefficient + forfait + adresse de départ), réglé
+  // depuis Paramétrage → Profil (migration 024_cyberdesk_travel_fee_per_
+  // agent.sql) — c'est l'agent qui compose CE devis qui est facturé à son
+  // propre barème, pas le créateur du dossier. TRAVEL_FEE_CONFIG ne sert
+  // plus que de repli défensif si l'agent n'a pas encore de ligne
+  // cyberdesk_user_settings (jamais ouvert Paramétrage) ou pas d'adresse
+  // renseignée.
+  const { data: agentSettings } = await sb
+    .from("cyberdesk_user_settings")
+    .select("travel_fee_coefficient_eur_km, travel_fee_forfait_eur, billing_address")
+    .eq("user_id", user.id)
     .maybeSingle();
-  const coefficientEurKm = settingsRow ? Number(settingsRow.coefficient_eur_km) : TRAVEL_FEE_CONFIG.coefficientEurKm;
-  const forfaitEur = settingsRow
-    ? Number(forfait === "haut" ? settingsRow.forfait_haut_eur : settingsRow.forfait_bas_eur)
-    : (forfait === "haut" ? TRAVEL_FEE_CONFIG.forfaitHautEur : TRAVEL_FEE_CONFIG.forfaitBasEur);
+  const coefficientEurKm = agentSettings ? Number(agentSettings.travel_fee_coefficient_eur_km) : TRAVEL_FEE_CONFIG.coefficientEurKm;
+  const forfaitEur = agentSettings ? Number(agentSettings.travel_fee_forfait_eur) : TRAVEL_FEE_CONFIG.forfaitBasEur;
+  const origineAdresse = agentSettings?.billing_address?.trim() || TRAVEL_FEE_CONFIG.origineAdresse;
 
   try {
     const [origin, destination] = await Promise.all([
-      geocode(apiKey, TRAVEL_FEE_CONFIG.origineAdresse),
+      geocode(apiKey, origineAdresse),
       geocode(apiKey, `${city}, France`),
     ]);
-    if (!origin) throw new Error("Adresse d'origine non géolocalisée (config S@FE).");
+    if (!origin) throw new Error("Adresse d'origine non géolocalisée — vérifiez votre adresse dans Paramétrage → Profil → Identification.");
     if (!destination) return json({ error: "city_not_found", details: city }, 422);
 
     const oneWayMeters = await drivingDistanceMeters(apiKey, origin, destination);
@@ -147,7 +146,6 @@ Deno.serve(async (req) => {
     return json({
       success: true,
       distance_km: distanceKm,
-      forfait,
       forfait_eur: forfaitEur,
       coefficient_eur_km: coefficientEurKm,
       amount_ht: amountHt,

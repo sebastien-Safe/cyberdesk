@@ -1,21 +1,21 @@
 // ==========================================================================
 // CyberDesk — Config frais de déplacement (option O4 du devis 17Cyber).
-// Dupliqué depuis assets/data/tarifs-cyberdesk.json (clé "deplacement") :
-// contenu statique partagé entre la modale devis client-side et cette
-// Edge Function, même patron que product-texts.ts — pas de dépendance
-// runtime entre les deux côtés, à garder synchronisé manuellement.
-//
-// coefficientEurKm/forfaitBasEur/forfaitHautEur ici ne sont qu'un repli
-// défensif si la table cyberdesk_travel_fee_settings (migrations 016/017)
-// est vide — les valeurs réellement utilisées sont lues en base par
-// l'Edge Function, ajustables par un admin depuis la modale devis
-// (option Déplacement), sans déploiement.
+// Le coefficient €/km, le forfait et l'adresse de départ sont désormais
+// PAR AGENT (cyberdesk_user_settings, migration
+// 024_cyberdesk_travel_fee_per_agent.sql), réglables librement par
+// chaque agent depuis Paramétrage → Profil → Facturation. Les valeurs
+// ci-dessous ne servent plus que de repli défensif :
+// - si l'agent n'a pas encore de ligne cyberdesk_user_settings (jamais
+//   ouvert Paramétrage) ;
+// - origineAdresse spécifiquement si l'agent n'a pas renseigné d'adresse.
+// aller_retour dans assets/data/tarifs-cyberdesk.json (clé "deplacement")
+// reste la copie client-side de allerRetour — à garder synchronisé
+// manuellement, même patron que product-texts.ts.
 // ==========================================================================
 
 export const TRAVEL_FEE_CONFIG = {
-  origineAdresse: "66 avenue des Champs-Élysées, 75008 Paris",
-  coefficientEurKm: 0.51, // repli seulement — source de vérité : cyberdesk_travel_fee_settings
-  forfaitBasEur: 10,      // repli seulement — idem
-  forfaitHautEur: 15,     // repli seulement — idem
+  origineAdresse: "66 avenue des Champs-Élysées, 75008 Paris", // repli si l'agent n'a pas renseigné son adresse
+  coefficientEurKm: 0.51, // repli seulement — source de vérité : cyberdesk_user_settings.travel_fee_coefficient_eur_km
+  forfaitBasEur: 10,      // repli seulement — source de vérité : cyberdesk_user_settings.travel_fee_forfait_eur
   allerRetour: true,
 };

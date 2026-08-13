@@ -62,7 +62,7 @@
     <span class="cyber-topbar-brand">🛡 CyberDesk</span>
     <span class="cyber-topbar-subtitle">Dossiers victimes 17Cyber</span>
     <div class="cyber-topbar-right" style="margin-left:auto;display:flex;gap:10px;align-items:center">
-      <a href="modules/Cyber/module-cyber-clients.html" class="btn btn-ghost btn-sm">🛡 Audit clients</a>
+      <button class="btn btn-ghost btn-sm" onclick="openReviewsModal()">🛡 Audit clients</button>
       <button class="btn btn-ghost btn-sm" onclick="openAccountingModal()">📊 Comptable</button>
       <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙️ Paramétrage</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
@@ -390,37 +390,10 @@
         </div>
         <div class="diag-field" id="quote-o4-field" style="display:none">
           <label>Précisions déplacement</label>
-          <div style="display:flex;gap:16px;margin-bottom:8px">
-            <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
-              <input type="radio" name="quote-o4-forfait" value="bas" checked onchange="_quoteOnForfaitChange(this.value)">
-              Forfait bas
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
-              <input type="radio" name="quote-o4-forfait" value="haut" onchange="_quoteOnForfaitChange(this.value)">
-              Forfait haut
-            </label>
-          </div>
+          <p class="diag-label-hint" style="display:block;margin-bottom:8px">Calculé avec votre barème personnel (coefficient €/km, forfait et adresse de départ) — modifiable dans Paramétrage → Profil.</p>
           <div id="quote-o4-result" class="diag-label-hint" style="margin-bottom:8px"></div>
           <input type="text" id="quote-o4-text" placeholder="Note libre (optionnel)">
           <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-recalc" onclick="_quoteComputeO4()" style="margin-top:8px">🔄 Recalculer</button>
-          <div id="quote-o4-admin-coef" style="display:none;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
-            <label class="diag-label-hint">Réglages tarif déplacement — admin</label>
-            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:4px">
-              <div>
-                <label class="diag-label-hint">Forfait bas (€)</label>
-                <input type="number" id="quote-o4-forfait-bas-input" step="0.01" min="0" style="max-width:100px">
-              </div>
-              <div>
-                <label class="diag-label-hint">Forfait haut (€)</label>
-                <input type="number" id="quote-o4-forfait-haut-input" step="0.01" min="0" style="max-width:100px">
-              </div>
-              <div>
-                <label class="diag-label-hint">Coefficient (€/km, 0,50-0,70)</label>
-                <input type="number" id="quote-o4-coef-input" step="0.001" min="0.5" max="0.7" style="max-width:100px">
-              </div>
-              <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-coef-save" onclick="_quoteSaveTravelFeeSettings()">Enregistrer</button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -563,101 +536,171 @@
     </div>
     <div class="modal-cyber-body">
 
-      <div class="diag-field">
-        <label>Photo de profil</label>
-        <div style="display:flex;align-items:center;gap:14px">
-          <img id="settings-avatar-preview" src="" alt="Photo de profil"
-            style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--line);display:none">
-          <div id="settings-avatar-placeholder"
-            style="width:64px;height:64px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div>
-          <input type="file" id="settings-avatar-input" accept="image/*" onchange="uploadAvatar(this.files[0])">
-        </div>
+      <div id="settings-tabs" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px">
+        <button type="button" class="btn btn-pri btn-sm" data-tab="profil" onclick="_settingsSwitchTab('profil')">👤 Profil</button>
+        <button type="button" class="btn btn-out btn-sm" data-tab="finances" onclick="_settingsSwitchTab('finances')">💶 Finances</button>
+        <button type="button" class="btn btn-out btn-sm" data-tab="documents" onclick="_settingsSwitchTab('documents')">📁 Documents légaux</button>
       </div>
 
-      <div class="diag-row-2">
-        <div class="diag-field"><label>Raison sociale / Nom de facturation</label><input type="text" id="settings-billing-name"></div>
-        <div class="diag-field"><label>SIRET</label><input type="text" id="settings-siret"></div>
-      </div>
-      <div class="diag-row-2">
-        <div class="diag-field"><label>Adresse de facturation</label><input type="text" id="settings-billing-address"></div>
-        <div class="diag-field"><label>N° TVA intracommunautaire</label><input type="text" id="settings-tva-number"></div>
-      </div>
+      <!-- ── Onglet Profil : Identification + Facturation ── -->
+      <div id="settings-tab-profil" class="settings-tab-panel">
 
-      <div class="diag-field">
-        <label>Informations bancaires</label>
-        <div class="diag-row-2">
-          <input type="text" id="settings-bank-iban" placeholder="IBAN" autocomplete="off">
-          <input type="text" id="settings-bank-holder" placeholder="Titulaire du compte" autocomplete="off">
-        </div>
-      </div>
-
-      <div class="diag-field">
-        <label>Changer mon mot de passe</label>
-        <div class="diag-row-2">
-          <input type="password" id="settings-password-new" autocomplete="new-password" placeholder="Nouveau mot de passe">
-          <input type="password" id="settings-password-confirm" autocomplete="new-password" placeholder="Confirmer le mot de passe">
-        </div>
-        <button type="button" class="btn btn-out btn-sm" id="settings-password-btn" onclick="changeAccountPassword()" style="margin-top:8px">Mettre à jour le mot de passe</button>
-        <p class="error" id="settings-password-error"></p>
-        <p class="success is-hidden" id="settings-password-success">Mot de passe mis à jour.</p>
-      </div>
-
-      <div class="diag-field">
-        <label>Sécurité du compte</label>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
-          <div>
-            <div style="font-weight:600">Double authentification (2FA)</div>
-            <div id="settings-2fa-status" class="diag-label-hint">Vérification…</div>
+        <div class="diag-field">
+          <label>Photo de profil</label>
+          <div style="display:flex;align-items:center;gap:14px">
+            <img id="settings-avatar-preview" src="" alt="Photo de profil"
+              style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--line);display:none">
+            <div id="settings-avatar-placeholder"
+              style="width:64px;height:64px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div>
+            <input type="file" id="settings-avatar-input" accept="image/*" onchange="uploadAvatar(this.files[0])">
           </div>
-          <button type="button" class="btn btn-out btn-sm" id="settings-2fa-btn" onclick="toggle2FA()" disabled>…</button>
         </div>
-        <div id="settings-2fa-enroll-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
-          <p class="diag-label-hint" style="display:block;margin-bottom:8px">
-            Scannez ce QR code avec votre application d'authentification (Google Authenticator, 1Password, Authy...),
-            puis saisissez le code à 6 chiffres généré.
-          </p>
-          <img id="settings-2fa-qr" alt="QR code d'activation 2FA" style="display:block;margin:0 auto 12px;max-width:180px">
+
+        <h3 style="margin:18px 0 10px">Identification</h3>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>Raison sociale / Nom</label><input type="text" id="settings-billing-name"></div>
+          <div class="diag-field"><label>Adresse</label><input type="text" id="settings-billing-address"></div>
+        </div>
+        <p class="diag-label-hint" style="display:block;margin:-6px 0 14px">C'est cette adresse qui sert de point de départ au calcul de l'indemnité kilométrique sur vos devis.</p>
+
+        <h3 style="margin:18px 0 10px">Facturation</h3>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>SIRET</label><input type="text" id="settings-siret"></div>
+          <div class="diag-field"><label>N° TVA intracommunautaire</label><input type="text" id="settings-tva-number"></div>
+        </div>
+        <div class="diag-field">
+          <label>Informations bancaires</label>
           <div class="diag-row-2">
-            <input type="text" id="settings-2fa-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
-            <button type="button" class="btn btn-pri" id="settings-2fa-verify-btn" onclick="verify2FAEnrollment()">Valider</button>
+            <input type="text" id="settings-bank-iban" placeholder="IBAN" autocomplete="off">
+            <input type="text" id="settings-bank-holder" placeholder="Titulaire du compte" autocomplete="off">
           </div>
-          <p class="error" id="settings-2fa-error"></p>
         </div>
+
+        <div class="diag-field">
+          <label>Barème kilométrique (indemnité de déplacement)</label>
+          <div style="border:1px solid var(--line);border-radius:10px;padding:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span class="diag-label-hint">Coefficient €/km</span>
+              <span id="settings-travel-coef-value" style="font-weight:600">0,51 €/km</span>
+            </div>
+            <input type="range" id="settings-travel-coef" min="0.50" max="0.79" step="0.01" value="0.51"
+              oninput="document.getElementById('settings-travel-coef-value').textContent = Number(this.value).toFixed(2).replace('.', ',') + ' €/km'"
+              style="width:100%">
+            <div class="diag-field" style="margin-top:12px;margin-bottom:0">
+              <label>Forfait de base</label>
+              <select id="settings-travel-forfait">
+                <option value="10">10 €</option>
+                <option value="15">15 €</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin:18px 0 10px">Sécurité du compte</h3>
+        <div class="diag-field">
+          <label>Changer mon mot de passe</label>
+          <div class="diag-row-2">
+            <input type="password" id="settings-password-new" autocomplete="new-password" placeholder="Nouveau mot de passe">
+            <input type="password" id="settings-password-confirm" autocomplete="new-password" placeholder="Confirmer le mot de passe">
+          </div>
+          <button type="button" class="btn btn-out btn-sm" id="settings-password-btn" onclick="changeAccountPassword()" style="margin-top:8px">Mettre à jour le mot de passe</button>
+          <p class="error" id="settings-password-error"></p>
+          <p class="success is-hidden" id="settings-password-success">Mot de passe mis à jour.</p>
+        </div>
+        <div class="diag-field">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
+            <div>
+              <div style="font-weight:600">Double authentification (2FA)</div>
+              <div id="settings-2fa-status" class="diag-label-hint">Vérification…</div>
+            </div>
+            <button type="button" class="btn btn-out btn-sm" id="settings-2fa-btn" onclick="toggle2FA()" disabled>…</button>
+          </div>
+          <div id="settings-2fa-enroll-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
+            <p class="diag-label-hint" style="display:block;margin-bottom:8px">
+              Scannez ce QR code avec votre application d'authentification (Google Authenticator, 1Password, Authy...),
+              puis saisissez le code à 6 chiffres généré.
+            </p>
+            <img id="settings-2fa-qr" alt="QR code d'activation 2FA" style="display:block;margin:0 auto 12px;max-width:180px">
+            <div class="diag-row-2">
+              <input type="text" id="settings-2fa-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
+              <button type="button" class="btn btn-pri" id="settings-2fa-verify-btn" onclick="verify2FAEnrollment()">Valider</button>
+            </div>
+            <p class="error" id="settings-2fa-error"></p>
+          </div>
+        </div>
+
+        <h3 style="margin:18px 0 10px">RGPD</h3>
+        <div class="diag-field">
+          <label>Vos droits</label>
+          <button type="button" class="btn btn-out btn-sm" onclick="toggleDpoPanel()">Faire une demande d'exercice de droits</button>
+          <div id="settings-dpo-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
+            <div class="diag-field">
+              <label>Type de demande</label>
+              <select id="settings-dpo-type">
+                <option value="acces">Droit d'accès</option>
+                <option value="rectification">Droit de rectification</option>
+                <option value="effacement">Droit à l'effacement</option>
+                <option value="opposition">Droit d'opposition</option>
+                <option value="portabilite">Droit à la portabilité</option>
+                <option value="limitation">Droit à la limitation du traitement</option>
+              </select>
+            </div>
+            <div class="diag-field">
+              <label>Message <span class="diag-label-hint">(facultatif)</span></label>
+              <textarea id="settings-dpo-message" rows="3" placeholder="Précisez votre demande si besoin…"></textarea>
+            </div>
+            <button type="button" class="btn btn-pri btn-sm" id="settings-dpo-submit-btn" onclick="submitDpoRequest()">Envoyer la demande au DPO</button>
+            <p class="error" id="settings-dpo-error"></p>
+          </div>
+        </div>
+
       </div>
 
-      <div class="diag-field">
-        <label>RGPD — vos droits</label>
-        <button type="button" class="btn btn-out btn-sm" onclick="toggleDpoPanel()">Faire une demande d'exercice de droits</button>
-        <div id="settings-dpo-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
-          <div class="diag-field">
-            <label>Type de demande</label>
-            <select id="settings-dpo-type">
-              <option value="acces">Droit d'accès</option>
-              <option value="rectification">Droit de rectification</option>
-              <option value="effacement">Droit à l'effacement</option>
-              <option value="opposition">Droit d'opposition</option>
-              <option value="portabilite">Droit à la portabilité</option>
-              <option value="limitation">Droit à la limitation du traitement</option>
-            </select>
+      <!-- ── Onglet Finances : abonnement, module Comptable, bordereaux ── -->
+      <div id="settings-tab-finances" class="settings-tab-panel" style="display:none">
+
+        <div class="diag-field" id="settings-subscription-field" style="display:none">
+          <label>Mon abonnement CyberDesk</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
+            <div>
+              <span id="settings-subscription-badge" class="badge badge-gray">—</span>
+              <div id="settings-subscription-date" class="diag-label-hint" style="margin-top:4px"></div>
+            </div>
+            <button type="button" class="btn btn-out btn-sm" id="settings-subscription-btn" onclick="openBillingPortal()">Gérer mon abonnement</button>
           </div>
-          <div class="diag-field">
-            <label>Message <span class="diag-label-hint">(facultatif)</span></label>
-            <textarea id="settings-dpo-message" rows="3" placeholder="Précisez votre demande si besoin…"></textarea>
-          </div>
-          <button type="button" class="btn btn-pri btn-sm" id="settings-dpo-submit-btn" onclick="submitDpoRequest()">Envoyer la demande au DPO</button>
-          <p class="error" id="settings-dpo-error"></p>
         </div>
+
+        <div class="diag-field">
+          <label>Module Comptable</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
+            <div class="diag-label-hint">Indicateurs, dossiers, paiements et rémunération.</div>
+            <button type="button" class="btn btn-out btn-sm" onclick="_settingsOpenAccounting()">Ouvrir le Comptable</button>
+          </div>
+        </div>
+
+        <h3 style="margin:18px 0 10px">Bordereaux de commissionnement</h3>
+        <p class="diag-label-hint" style="display:block;margin-bottom:10px">Un bordereau PDF est généré automatiquement à chaque commission réglée. Vous seul (et un administrateur) y avez accès.</p>
+        <div id="settings-commission-docs-list"></div>
+
       </div>
 
-      <div class="diag-field" id="settings-subscription-field" style="display:none">
-        <label>Mon abonnement CyberDesk</label>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
-          <div>
-            <span id="settings-subscription-badge" class="badge badge-gray">—</span>
-            <div id="settings-subscription-date" class="diag-label-hint" style="margin-top:4px"></div>
+      <!-- ── Onglet Documents légaux : contrat partenaire ── -->
+      <div id="settings-tab-documents" class="settings-tab-panel" style="display:none">
+
+        <div class="diag-field">
+          <label>Statut de rémunération</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
+            <div>
+              <span id="settings-contract-badge" class="badge badge-gray">Non signé</span>
+              <div id="settings-contract-detail" class="diag-label-hint" style="margin-top:4px"></div>
+            </div>
+            <button type="button" class="btn btn-out btn-sm" id="settings-contract-btn" onclick="openPartnerContractModal('voluntary')">Signer / Changer de statut</button>
           </div>
-          <button type="button" class="btn btn-out btn-sm" id="settings-subscription-btn" onclick="openBillingPortal()">Gérer mon abonnement</button>
         </div>
+
+        <h3 style="margin:18px 0 10px">Mon contrat</h3>
+        <div id="settings-contract-doc-panel" class="diag-label-hint">Signez un statut de rémunération pour voir votre contrat ici.</div>
+
       </div>
 
     </div>
@@ -699,10 +742,19 @@
           <div><canvas id="chart-attack-type"></canvas></div>
         </div>
 
-        <h3 style="margin:8px 0 12px">⭐ Avis clients</h3>
-        <div id="accounting-reviews-summary" style="display:flex;align-items:center;gap:20px;margin-bottom:14px"></div>
-        <div style="max-width:420px;margin-bottom:14px"><canvas id="chart-reviews"></canvas></div>
-        <div id="accounting-reviews-list"></div>
+        <div id="accounting-commission-section" style="margin-top:28px">
+          <h3 style="margin:8px 0 12px">💶 Rémunération partenaires</h3>
+          <div id="accounting-commission-rates" style="display:none;margin-bottom:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
+            <div class="diag-label-hint" style="margin-bottom:8px;display:block">Barème (% du CA HT) — admin uniquement</div>
+            <div class="diag-row-2">
+              <div class="diag-field"><label>Mandataire (%)</label><input type="number" step="0.01" min="0" max="100" id="accounting-rate-mandataire"></div>
+              <div class="diag-field"><label>Associé SEP (%)</label><input type="number" step="0.01" min="0" max="100" id="accounting-rate-associe_sep"></div>
+            </div>
+            <button type="button" class="btn btn-pri btn-sm" onclick="_acctSaveRates()" style="margin-top:8px">Enregistrer le barème</button>
+          </div>
+          <div id="accounting-commission-kpi-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
+          <div id="accounting-commission-list"></div>
+        </div>
 
         <div id="accounting-tenants-section" style="display:none;margin-top:28px">
           <h3 style="margin:8px 0 12px">🏢 Abonnements CyberDesk (tenants)</h3>
@@ -718,6 +770,100 @@
   </div>
 </div>
 
+<!-- ================= MODALE AUDIT CLIENTS — AVIS & NPS ================= -->
+<div class="modal" id="reviews-modal">
+  <div class="box wide">
+    <div class="modal-cyber-header">
+      <div class="modal-cyber-title">
+        <span class="modal-cyber-icon">🛡</span>
+        <span>Audit clients — Avis & NPS</span>
+      </div>
+      <button class="modal-cyber-close" type="button" onclick="closeReviewsModal()">&times;</button>
+    </div>
+    <div class="modal-cyber-body">
+      <div id="reviews-scope-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+        <div id="reviews-scope-label" style="font-weight:600"></div>
+        <select id="reviews-user-select" style="display:none" onchange="_rvOnScopeChange()">
+          <option value="">Vue globale</option>
+        </select>
+      </div>
+      <div id="reviews-loading" class="pipeline-loading"><div class="pipeline-spinner"></div> Chargement…</div>
+      <div id="reviews-content" style="display:none">
+
+        <div id="reviews-kpi-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:10px"></div>
+        <div class="diag-label-hint" style="display:block;margin-bottom:20px">
+          Score adapté à partir des notes 1-5 ★ (5★ = promoteur, 4★ = passif, 1-3★ = détracteur) — ce n'est pas un NPS® standard (qui repose sur une question de recommandation notée sur 10).
+        </div>
+
+        <div style="max-width:420px;margin-bottom:14px"><canvas id="chart-reviews-audit"></canvas></div>
+        <h3 style="margin:8px 0 12px">💬 Avis avec commentaire</h3>
+        <div id="reviews-list"></div>
+
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeReviewsModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODALE SIGNATURE — CONTRAT PARTENAIRE ================= -->
+<div class="modal" id="partner-contract-modal">
+  <div class="box wide">
+    <div class="modal-cyber-header">
+      <div class="modal-cyber-title">
+        <span class="modal-cyber-icon">✍️</span>
+        <span>Contrat partenaire — Rémunération</span>
+      </div>
+    </div>
+    <div class="modal-cyber-body">
+
+      <div class="diag-field">
+        <label>Statut contractuel</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+            <input type="radio" name="pc-status" id="pc-status-mandataire" onchange="_pcSelectStatus('mandataire')">
+            Mandataire — <span id="pc-pct-mandataire">0.00</span>% du CA HT (commission facturée)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+            <input type="radio" name="pc-status" id="pc-status-associe_sep" onchange="_pcSelectStatus('associe_sep')">
+            Associé SEP — <span id="pc-pct-associe_sep">0.00</span>% du CA HT (quote-part versée automatiquement)
+          </label>
+        </div>
+      </div>
+
+      <div class="diag-field">
+        <label>Document contractuel</label>
+        <pre id="pc-contract-text" style="white-space:pre-wrap;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:220px;overflow-y:auto">Choisissez un statut pour afficher le contrat correspondant.</pre>
+      </div>
+
+      <div class="diag-field">
+        <label>Signature</label>
+        <canvas id="pc-signature-canvas" width="480" height="140" style="width:100%;max-width:480px;height:140px;border:1px solid var(--line);border-radius:10px;touch-action:none;background:#fff"></canvas>
+        <button type="button" class="btn btn-out btn-sm" onclick="_pcClearSignature()" style="margin-top:8px">Effacer la signature</button>
+      </div>
+
+      <p class="error" id="pc-error"></p>
+
+      <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()" disabled>Continuer</button>
+
+      <div id="pc-otp-panel" style="display:none;margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
+        <p class="diag-label-hint" style="display:block;margin-bottom:8px">
+          Un code de confirmation à 6 chiffres vient de vous être envoyé par e-mail.
+        </p>
+        <div class="diag-row-2">
+          <input type="text" id="pc-otp-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
+          <button type="button" class="btn btn-pri" id="pc-verify-btn" onclick="_pcSubmitSignature()">Valider la signature</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-out" id="pc-cancel-btn" onclick="closePartnerContractModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/js/supabase.client.js"></script>
 <script src="assets/js/cyber-ai-system-prompt.js"></script>
 <script src="assets/js/task-tree.js"></script>
@@ -727,6 +873,9 @@
 <script src="assets/victimes17/victimes17-ai.js"></script>
 <script src="assets/js/settings.js"></script>
 <script src="assets/js/accounting.js"></script>
+<script src="assets/js/audit-clients.js"></script>
+<script src="assets/js/partner-contract-content.js"></script>
+<script src="assets/js/partner-contract.js"></script>
 
 <script>
 // inPasswordRecovery et PENDING_RECOVERY_KEY sont définis dans
@@ -779,23 +928,53 @@ async function checkSession() {
       return;
     }
     document.getElementById('login-screen').classList.add('is-hidden');
-    document.getElementById('app-shell').classList.remove('is-hidden');
-    initVictimes17();
 
     // Conditionne l'affichage du sélecteur "vue d'un utilisateur en
     // particulier" dans la modale Comptable (assets/js/accounting.js) —
     // le cloisonnement réel des données est fait côté serveur par les
-    // fonctions cyberdesk_reporting_*() (migration 010), pas ici.
+    // fonctions cyberdesk_reporting_*() (migration 010), pas ici. Résolu
+    // ici (avant l'entrée dans l'app) car aussi nécessaire pour le filet
+    // de sécurité is_super_admin() du gate contrat ci-dessous.
     const [{ data: isAdminData }, { data: isSuperAdminData }] = await Promise.all([
       sb.rpc('is_admin'),
       sb.rpc('is_super_admin'),
     ]);
     _isAdmin = isAdminData === true || isSuperAdminData === true;
+    const isSuperAdmin = isSuperAdminData === true;
+
+    // Gate "contrat partenaire" (Mandataire/Associé SEP, cyberdesk_partner_
+    // contracts) — désactivé par défaut (cyberdesk_feature_flags.contract_
+    // gate), à activer une fois le parcours de signature validé en
+    // conditions réelles. is_super_admin() bypass toujours ce gate : un bug
+    // dans le parcours de signature ne doit jamais verrouiller la seule
+    // personne capable de corriger le problème en base.
+    let contractOk = true;
+    if (!isSuperAdmin) {
+      const { data: contractRows } = await sb.rpc('cyberdesk_my_contract_status');
+      const contract = Array.isArray(contractRows) ? contractRows[0] : null;
+      const gateEnabled = contract?.gate_enabled === true;
+      const hasValidContract = contract?.remuneration_status && contract?.doc_version === PARTNER_CONTRACT_VERSION;
+      contractOk = !gateEnabled || hasValidContract;
+    }
+
+    if (!contractOk) {
+      document.getElementById('app-shell').classList.add('is-hidden');
+      await openPartnerContractModal('gate');
+      return;
+    }
+
+    document.getElementById('app-shell').classList.remove('is-hidden');
+    initVictimes17();
   } else {
     showLoginPanel();
     document.getElementById('login-screen').classList.remove('is-hidden');
     document.getElementById('app-shell').classList.add('is-hidden');
   }
+}
+
+/** Appelé par partner-contract.js après une signature réussie en mode 'gate' — réévalue le gate et entre dans l'app si désormais valide. */
+async function continueAfterContractSigned() {
+  await checkSession();
 }
 
 document.getElementById('login-form').addEventListener('submit', async () => {

@@ -20,9 +20,7 @@ let _quoteSuggested = null;   // snapshot de la suggestion auto au moment de l'o
 let _quoteOptions = {};       // { O1:bool, O2:bool, O3:bool, O4:bool }
 let _quoteAccompagnement = {}; // { A1:bool, A2:bool, A3:bool }
 let _quoteHtOverridden = false;
-let _quoteO4Result = null;    // { distance_km, forfait, forfait_eur, coefficient_eur_km, amount_ht, city } une fois calculé (cyberdesk-compute-travel-fee), sinon null
-let _quoteO4Forfait = 'bas';  // 'bas'|'haut' — choix du conseiller à chaque devis (10€/15€ par défaut, réglable par un admin)
-let _quoteTravelFeeSettingsId = null; // id de la ligne cyberdesk_travel_fee_settings (forfaits + coefficient barème, admin uniquement)
+let _quoteO4Result = null;    // { distance_km, forfait_eur, coefficient_eur_km, amount_ht, city } une fois calculé (cyberdesk-compute-travel-fee, barème de l'agent connecté), sinon null
 
 async function _quoteLoadTarifs() {
   if (_quoteTarifs) return _quoteTarifs;
@@ -83,13 +81,9 @@ async function openQuoteModal(leadId) {
   _quoteAccompagnement = { A1: false, A2: false, A3: false };
   _quoteHtOverridden = false;
   _quoteO4Result = null;
-  _quoteO4Forfait = 'bas';
   document.getElementById('quote-o4-text').value = '';
   document.getElementById('quote-o4-result').textContent = '';
   document.getElementById('quote-o4-field').style.display = 'none';
-  document.querySelectorAll('input[name="quote-o4-forfait"]').forEach(r => r.checked = r.value === 'bas');
-  document.getElementById('quote-o4-admin-coef').style.display = _isAdmin ? '' : 'none';
-  if (_isAdmin) _quoteLoadTravelFeeSettings();
   document.getElementById('quote-observations').value = '';
   document.querySelectorAll('#quote-options-container input[type=checkbox]').forEach(cb => cb.checked = false);
   document.querySelectorAll('#quote-accompagnement-container input[type=checkbox]').forEach(cb => cb.checked = false);
@@ -265,11 +259,6 @@ const _QUOTE_O4_ERROR_MESSAGES = {
   city_not_found: "Ville non reconnue par le service d'itinéraire — saisissez le montant manuellement ci-dessous.",
 };
 
-function _quoteOnForfaitChange(value) {
-  _quoteO4Forfait = value === 'haut' ? 'haut' : 'bas';
-  if (_quoteOptions.O4) _quoteComputeO4();
-}
-
 async function _quoteComputeO4() {
   const resultEl = document.getElementById('quote-o4-result');
   const priceLabel = document.getElementById('quote-o4-price-label');
@@ -284,7 +273,7 @@ async function _quoteComputeO4() {
         'Authorization': `Bearer ${session.access_token}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ lead_id: _quoteLeadId, forfait: _quoteO4Forfait }),
+      body: JSON.stringify({ lead_id: _quoteLeadId }),
     });
     const result = await resp.json();
     if (!resp.ok || result.error) {
@@ -292,94 +281,22 @@ async function _quoteComputeO4() {
     }
 
     _quoteO4Result = {
-      distance_km: result.distance_km, forfait: result.forfait, forfait_eur: result.forfait_eur,
+      distance_km: result.distance_km, forfait_eur: result.forfait_eur,
       coefficient_eur_km: result.coefficient_eur_km, amount_ht: result.amount_ht, city: result.city,
     };
-    // forfait_eur/coefficient_eur_km renvoyés par l'Edge Function (valeurs
-    // DB réellement appliquées, cf. cyberdesk_travel_fee_settings) —
-    // jamais lus depuis tarifs-cyberdesk.json, qui ne les stocke plus.
-    resultEl.textContent = `📍 ${_quoteTarifs.deplacement?.origine_adresse || 'S@FE'} → ${result.city} : `
+    // Barème (forfait + coefficient) propre à l'agent connecté, réglé
+    // dans Paramétrage → Profil → Facturation — renvoyé par l'Edge
+    // Function (cyberdesk_user_settings), jamais lu depuis tarifs-
+    // cyberdesk.json ni un réglage global.
+    resultEl.textContent = `📍 ${result.city} : `
       + `forfait ${formatMoney(result.forfait_eur)} + ${result.distance_km} km (aller-retour) × ${formatMoney(result.coefficient_eur_km)}/km `
-      + `= ${formatMoney(result.amount_ht)} HT`;
+      + `= ${formatMoney(result.amount_ht)} HT — barème de votre profil (Paramétrage)`;
     if (priceLabel) priceLabel.textContent = `+${formatMoney(result.amount_ht)}`;
   } catch (e) {
     _quoteO4Result = null;
     resultEl.textContent = '⚠️ ' + (e.message || "Calcul automatique indisponible — saisissez le montant manuellement ci-dessous.");
   }
   _quoteRenderSummaryLive();
-}
-
-// ── Réglages admin : forfaits + coefficient du barème kilométrique ──
-// Ajustables directement depuis la modale devis (cyberdesk_travel_fee_
-// settings, migrations 016/017) plutôt qu'en dur dans le code — le
-// coefficient est republié chaque année par l'administration, pas de
-// déploiement nécessaire pour mettre à jour l'un ou l'autre. Réservé aux
-// admins (RLS : update réservé à is_admin()/is_super_admin()) ; les
-// autres conseillers ne voient pas ce contrôle, seulement le choix de
-// forfait (bas/haut) et le calcul automatique.
-const _QUOTE_COEF_MIN = 0.5;
-const _QUOTE_COEF_MAX = 0.7;
-
-async function _quoteLoadTravelFeeSettings() {
-  const coefInput = document.getElementById('quote-o4-coef-input');
-  const basInput = document.getElementById('quote-o4-forfait-bas-input');
-  const hautInput = document.getElementById('quote-o4-forfait-haut-input');
-  const { data, error } = await sb.from('cyberdesk_travel_fee_settings')
-    .select('id, coefficient_eur_km, forfait_bas_eur, forfait_haut_eur')
-    .order('updated_at', { ascending: false }).limit(1).maybeSingle();
-  if (error || !data) { coefInput.value = ''; basInput.value = ''; hautInput.value = ''; return; }
-  _quoteTravelFeeSettingsId = data.id;
-  coefInput.value = data.coefficient_eur_km;
-  basInput.value = data.forfait_bas_eur;
-  hautInput.value = data.forfait_haut_eur;
-}
-
-async function _quoteSaveTravelFeeSettings() {
-  const coefInput = document.getElementById('quote-o4-coef-input');
-  const basInput = document.getElementById('quote-o4-forfait-bas-input');
-  const hautInput = document.getElementById('quote-o4-forfait-haut-input');
-  const btn = document.getElementById('btn-quote-o4-coef-save');
-
-  const coefficient = parseFloat(coefInput.value);
-  const forfaitBas = parseFloat(basInput.value);
-  const forfaitHaut = parseFloat(hautInput.value);
-  if (!(coefficient >= _QUOTE_COEF_MIN && coefficient <= _QUOTE_COEF_MAX)) {
-    alert(`Le coefficient €/km doit être compris entre ${_QUOTE_COEF_MIN} et ${_QUOTE_COEF_MAX}.`);
-    return;
-  }
-  if (!(forfaitBas >= 0) || !(forfaitHaut >= 0)) { alert('Indiquez des forfaits valides (0 ou plus).'); return; }
-  if (!_quoteTravelFeeSettingsId) { alert('Réglage introuvable — réessayez.'); return; }
-
-  btn.disabled = true;
-  try {
-    const { data: { user } } = await sb.auth.getUser();
-    const { error } = await sb.from('cyberdesk_travel_fee_settings')
-      .update({
-        coefficient_eur_km: coefficient, forfait_bas_eur: forfaitBas, forfait_haut_eur: forfaitHaut,
-        updated_by: user.id, updated_at: new Date().toISOString(),
-      })
-      .eq('id', _quoteTravelFeeSettingsId);
-    if (error) throw error;
-
-    await logRgpd('tarif_deplacement_reglages_modifies', 'CyberDesk', {
-      entityType: 'cyberdesk_travel_fee_settings',
-      entityId:   _quoteTravelFeeSettingsId,
-      donnees:    'Modification des réglages de tarification déplacement (forfaits et/ou coefficient du barème kilométrique)',
-      criticite:  'Info',
-      details:    { coefficient_eur_km: coefficient, forfait_bas_eur: forfaitBas, forfait_haut_eur: forfaitHaut },
-    });
-
-    showCrmToast('✅ Réglages mis à jour');
-    // Un calcul déjà affiché utilisait les anciennes valeurs — on le
-    // réinvalide et on relance si O4 est toujours coché.
-    _quoteO4Result = null;
-    if (_quoteOptions.O4) await _quoteComputeO4();
-    else _quoteRenderSummaryLive();
-  } catch (e) {
-    alert('Erreur : ' + e.message);
-  } finally {
-    btn.disabled = false;
-  }
 }
 
 // ── Calcul du total ──
@@ -402,7 +319,7 @@ function _quoteComputeHt() {
       if (_quoteO4Result) {
         total += _quoteO4Result.amount_ht;
         lines.push({
-          label: `${o.label} — forfait ${_quoteO4Result.forfait} + ${_quoteO4Result.distance_km} km (${_quoteO4Result.city})`,
+          label: `${o.label} — ${_quoteO4Result.distance_km} km aller-retour (${_quoteO4Result.city})`,
           montant: _quoteO4Result.amount_ht,
         });
       } else {

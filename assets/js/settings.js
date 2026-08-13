@@ -12,6 +12,7 @@ let _settings2faFactorId = null; // facteur en cours d'enrôlement, pas encore v
 /** Ouvre la modale Paramétrage et charge la fiche profil de l'utilisateur courant. */
 async function openSettingsModal() {
   document.getElementById('settings-modal').classList.add('show');
+  _settingsSwitchTab('profil');
   document.getElementById('settings-2fa-enroll-panel').style.display = 'none';
   document.getElementById('settings-dpo-panel').style.display = 'none';
   document.getElementById('settings-dpo-message').value = '';
@@ -33,11 +34,71 @@ async function openSettingsModal() {
   document.getElementById('settings-billing-address').value = settings?.billing_address || '';
   document.getElementById('settings-siret').value = settings?.siret || '';
   document.getElementById('settings-tva-number').value = settings?.tva_number || '';
+  document.getElementById('settings-bank-iban').value = settings?.bank_iban || '';
+  document.getElementById('settings-bank-holder').value = settings?.bank_account_holder || '';
+  const travelCoef = settings?.travel_fee_coefficient_eur_km ?? 0.51;
+  document.getElementById('settings-travel-coef').value = travelCoef;
+  document.getElementById('settings-travel-coef-value').textContent = Number(travelCoef).toFixed(2).replace('.', ',') + ' €/km';
+  document.getElementById('settings-travel-forfait').value = String(settings?.travel_fee_forfait_eur ?? 10);
   _settingsPhotoPath = settings?.photo_path || null;
 
   await _settingsRefreshAvatar();
   await _settingsRefresh2FAStatus();
   await _settingsRefreshSubscription();
+  await _settingsRefreshContractStatus();
+  _settingsRenderCommissionDocsPlaceholder();
+}
+
+// ── Onglets (Profil / Finances / Documents légaux) ──
+// Simple bascule d'affichage, aucun état à recharger entre onglets — les
+// données sont toutes chargées une fois à l'ouverture de la modale.
+
+function _settingsSwitchTab(tab) {
+  ['profil', 'finances', 'documents'].forEach(t => {
+    document.getElementById(`settings-tab-${t}`).style.display = t === tab ? 'block' : 'none';
+    document.querySelector(`#settings-tabs button[data-tab="${t}"]`).className = 'btn btn-sm ' + (t === tab ? 'btn-pri' : 'btn-out');
+  });
+}
+
+/** Ferme Paramétrage et ouvre le Comptable — accès raccourci depuis l'onglet Finances. */
+function _settingsOpenAccounting() {
+  closeSettingsModal();
+  openAccountingModal();
+}
+
+// Génération PDF des bordereaux de commissionnement pas encore implémentée
+// (cyberdesk_commission_ledger, migration 019/023, suit déjà le statut/
+// montant — la génération PDF avec mentions obligatoires reste à faire).
+// Placeholder honnête plutôt qu'une liste vide sans explication.
+function _settingsRenderCommissionDocsPlaceholder() {
+  document.getElementById('settings-commission-docs-list').innerHTML =
+    '<div class="diag-label-hint">Génération automatique des bordereaux PDF — bientôt disponible.</div>';
+}
+
+// ── Statut de rémunération (Mandataire / Associé SEP) ──
+// cf. cyberdesk_partner_contracts / cyberdesk_my_contract_status() —
+// statut/taux dérivés de la dernière signature, jamais éditables
+// directement (voir partner-contract.js).
+
+const _SETTINGS_CONTRACT_LABELS = {
+  mandataire: 'Mandataire',
+  associe_sep: 'Associé SEP',
+};
+
+async function _settingsRefreshContractStatus() {
+  const badge = document.getElementById('settings-contract-badge');
+  const detail = document.getElementById('settings-contract-detail');
+  const { data, error } = await sb.rpc('cyberdesk_my_contract_status');
+  const status = !error && Array.isArray(data) ? data[0] : null;
+  if (!status || !status.remuneration_status) {
+    badge.textContent = 'Non signé';
+    badge.className = 'badge badge-gray';
+    detail.textContent = '';
+    return;
+  }
+  badge.textContent = `${_SETTINGS_CONTRACT_LABELS[status.remuneration_status] || status.remuneration_status} — ${Number(status.remuneration_pct).toFixed(2)}%`;
+  badge.className = 'badge badge-green';
+  detail.textContent = 'Signé le ' + new Date(status.signed_at).toLocaleDateString('fr-FR');
 }
 
 function closeSettingsModal() {
@@ -56,6 +117,10 @@ async function saveUserSettings() {
       billing_address: document.getElementById('settings-billing-address').value.trim() || null,
       siret: document.getElementById('settings-siret').value.trim() || null,
       tva_number: document.getElementById('settings-tva-number').value.trim() || null,
+      bank_iban: document.getElementById('settings-bank-iban').value.trim() || null,
+      bank_account_holder: document.getElementById('settings-bank-holder').value.trim() || null,
+      travel_fee_coefficient_eur_km: Number(document.getElementById('settings-travel-coef').value),
+      travel_fee_forfait_eur: Number(document.getElementById('settings-travel-forfait').value),
       photo_path: _settingsPhotoPath,
       updated_at: new Date().toISOString(),
     };

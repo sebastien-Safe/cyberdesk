@@ -5,10 +5,12 @@
 // entre la vue globale et celle d'un utilisateur en particulier.
 //
 // Le cloisonnement est fait côté serveur par des fonctions SECURITY
-// DEFINER dédiées (cyberdesk_reporting_leads/payments/reviews, migration
+// DEFINER dédiées (cyberdesk_reporting_leads/payments, migration
 // 010_accounting_scope.sql) — jamais par un simple filtre JS, puisque la
 // RLS de cybervictim_leads reste volontairement ouverte à tout le staff
 // pour le Kanban partagé.
+// cyberdesk_reporting_reviews (même migration, même patron) est utilisée
+// par la modale « Audit clients » (assets/js/audit-clients.js), pas ici.
 // =========================================================
 
 const PIPELINE_STAGES = ['signalement', 'qualification', 'devis_envoye', 'paiement_recu', 'rapport_livre', 'cloture'];
@@ -35,9 +37,11 @@ async function openAccountingModal() {
   document.getElementById('accounting-modal').classList.add('show');
   document.getElementById('accounting-user-select').style.display = _isAdmin ? '' : 'none';
   document.getElementById('accounting-tenants-section').style.display = _isAdmin ? '' : 'none';
+  document.getElementById('accounting-commission-rates').style.display = _isAdmin ? '' : 'none';
   if (_isAdmin) {
     await _acctPopulateStaffSelect();
     await _acctLoadTenants();
+    await _acctLoadRates();
   }
   await _acctLoad();
 }
@@ -46,10 +50,14 @@ function closeAccountingModal() {
   document.getElementById('accounting-modal').classList.remove('show');
 }
 
+let _acctStaffEmailById = {};
+
 async function _acctPopulateStaffSelect() {
   const select = document.getElementById('accounting-user-select');
   const { data, error } = await sb.rpc('cyberdesk_staff_list');
   if (error) { console.error('[cyberdesk_staff_list]', error); return; }
+  _acctStaffEmailById = {};
+  (data || []).forEach(u => { _acctStaffEmailById[u.user_id] = u.email; });
   select.innerHTML = '<option value="">Vue globale</option>'
     + (data || []).map(u => `<option value="${u.user_id}">${escapeHtml(u.email)}</option>`).join('');
   select.value = _acctScopeUserId;
@@ -67,14 +75,14 @@ async function _acctLoad() {
   const scopeParam = _acctScopeUserId || null;
 
   try {
-    const [{ data: leads, error: eLeads }, { data: payments, error: ePay }, { data: reviews, error: eRev }] = await Promise.all([
+    const [{ data: leads, error: eLeads }, { data: payments, error: ePay }, { data: commission, error: eCom }] = await Promise.all([
       sb.rpc('cyberdesk_reporting_leads', { p_user_id: scopeParam }),
       sb.rpc('cyberdesk_reporting_payments', { p_user_id: scopeParam }),
-      sb.rpc('cyberdesk_reporting_reviews', { p_user_id: scopeParam }),
+      sb.rpc('cyberdesk_reporting_commission', { p_user_id: scopeParam }),
     ]);
     if (eLeads) throw eLeads;
     if (ePay) throw ePay;
-    if (eRev) throw eRev;
+    if (eCom) throw eCom;
 
     _acctRenderScopeLabel();
     _acctRenderKpiCards(leads || [], payments || []);
@@ -82,7 +90,7 @@ async function _acctLoad() {
     _acctRenderRevenueChart(payments || []);
     _acctRenderSourceChart(leads || []);
     _acctRenderAttackTypeChart(leads || []);
-    _acctRenderReviews(reviews || []);
+    _acctRenderCommission(commission || []);
 
     document.getElementById('accounting-loading').style.display = 'none';
     document.getElementById('accounting-content').style.display = 'block';
@@ -223,43 +231,6 @@ function _acctRenderAttackTypeChart(leads) {
   });
 }
 
-function _acctRenderReviews(reviews) {
-  const summaryEl = document.getElementById('accounting-reviews-summary');
-  const listEl = document.getElementById('accounting-reviews-list');
-  const count = reviews.length;
-  const avg = count ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / count : 0;
-
-  summaryEl.innerHTML = count
-    ? `<div style="font-size:2rem;font-weight:700">${avg.toFixed(1)} / 5</div>
-       <div class="diag-label-hint">${count} avis reçu${count > 1 ? 's' : ''}</div>`
-    : `<div class="diag-label-hint">Aucun avis reçu pour l'instant.</div>`;
-
-  const distribution = [1, 2, 3, 4, 5].map(n => reviews.filter(r => r.rating === n).length);
-  _acctChart('chart-reviews', {
-    type: 'bar',
-    data: {
-      labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
-      datasets: [{ label: 'Avis', data: distribution, backgroundColor: '#18753c' }],
-    },
-    options: {
-      responsive: true,
-      indexAxis: 'y',
-      plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } },
-      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
-    },
-  });
-
-  const withComments = reviews
-    .filter(r => r.comment)
-    .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
-  listEl.innerHTML = withComments.map(r => `
-    <div style="border-bottom:1px solid var(--line);padding:10px 0">
-      <div>${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-      <div style="font-size:.85rem;margin-top:4px">${escapeHtml(r.comment)}</div>
-    </div>
-  `).join('');
-}
-
 // ── Abonnements CyberDesk (tenants) — admin uniquement ──
 // Pas de MRR en €  ici : cyberdesk_tenants ne stocke que l'id du Price
 // Stripe (stripe_price_id), pas son montant — calculer un MRR fiable
@@ -312,4 +283,92 @@ function _acctRenderTenants(tenants) {
         </div>
       </div>`;
   }).join('');
+}
+
+// ── Rémunération partenaires (cyberdesk_commission_ledger) ──
+// Visible par tout utilisateur (ses propres lignes, cf. RLS/RPC scope déjà
+// géré comme pour leads/payments/reviews) ; barème et progression de
+// statut réservés à l'admin (cyberdesk_remuneration_rates,
+// cyberdesk_update_commission_status — vérifié côté serveur, pas seulement
+// masqué côté UI).
+
+const _ACCT_COMMISSION_STATUS_LABELS = {
+  a_facturer: { label: 'À facturer', cls: 'badge-orange' },
+  facturee:   { label: 'Facturée', cls: 'badge-blue' },
+  payee:      { label: 'Payée', cls: 'badge-green' },
+  a_verser:   { label: 'À verser', cls: 'badge-orange' },
+  verse:      { label: 'Versé', cls: 'badge-green' },
+};
+const _ACCT_COMMISSION_NEXT = {
+  a_facturer: { status: 'facturee', label: 'Marquer facturée' },
+  facturee:   { status: 'payee', label: 'Marquer payée' },
+  a_verser:   { status: 'verse', label: 'Marquer versée' },
+};
+
+async function _acctLoadRates() {
+  const { data, error } = await sb.from('cyberdesk_remuneration_rates').select('status, pct');
+  if (error) { console.error('[cyberdesk_remuneration_rates]', error); return; }
+  (data || []).forEach(r => {
+    const input = document.getElementById(`accounting-rate-${r.status}`);
+    if (input) input.value = Number(r.pct).toFixed(2);
+  });
+}
+
+async function _acctSaveRates() {
+  const mandataire = parseFloat(document.getElementById('accounting-rate-mandataire').value);
+  const associeSep = parseFloat(document.getElementById('accounting-rate-associe_sep').value);
+  if (isNaN(mandataire) || isNaN(associeSep) || mandataire < 0 || associeSep < 0) {
+    alert('Saisissez des pourcentages valides.');
+    return;
+  }
+  const { error } = await sb.from('cyberdesk_remuneration_rates').upsert([
+    { status: 'mandataire', pct: mandataire, updated_at: new Date().toISOString() },
+    { status: 'associe_sep', pct: associeSep, updated_at: new Date().toISOString() },
+  ]);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  showCrmToast('✅ Barème mis à jour');
+}
+
+function _acctRenderCommission(rows) {
+  const totalDue = rows.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
+  const enAttente = rows.filter(r => ['a_facturer', 'a_verser'].includes(r.status)).length;
+  const regle = rows.filter(r => ['payee', 'verse'].includes(r.status)).length;
+
+  document.getElementById('accounting-commission-kpi-cards').innerHTML = [
+    _acctKpiCard('Total dû', formatMoney(totalDue)),
+    _acctKpiCard('En attente', enAttente),
+    _acctKpiCard('Réglé', regle),
+  ].join('');
+
+  const listEl = document.getElementById('accounting-commission-list');
+  if (!rows.length) {
+    listEl.innerHTML = '<div class="diag-label-hint">Aucune commission pour l\'instant.</div>';
+    return;
+  }
+
+  listEl.innerHTML = rows
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .map(r => {
+      const info = _ACCT_COMMISSION_STATUS_LABELS[r.status] || { label: r.status, cls: 'badge-gray' };
+      const next = _ACCT_COMMISSION_NEXT[r.status];
+      const beneficiaryLabel = _isAdmin ? (_acctStaffEmailById[r.beneficiary_user_id] || r.beneficiary_user_id) : null;
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:10px 0">
+          <div>
+            ${beneficiaryLabel ? `<div style="font-weight:600">${escapeHtml(beneficiaryLabel)}</div>` : ''}
+            <div class="diag-label-hint">${formatMoney(r.amount_due)} (${Number(r.pct_applied).toFixed(2)}% de ${formatMoney(r.amount_ht)} HT) · ${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
+          </div>
+          <div style="text-align:right;display:flex;align-items:center;gap:10px">
+            <span class="badge ${info.cls}">${info.label}</span>
+            ${_isAdmin && next ? `<button type="button" class="btn btn-out btn-sm" onclick="_acctUpdateCommissionStatus('${r.id}','${next.status}')">${next.label}</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+}
+
+async function _acctUpdateCommissionStatus(id, newStatus) {
+  const { error } = await sb.rpc('cyberdesk_update_commission_status', { p_id: id, p_status: newStatus });
+  if (error) { alert('Erreur : ' + error.message); return; }
+  showCrmToast('✅ Statut mis à jour');
+  await _acctLoad();
 }

@@ -32,6 +32,7 @@ textarea:focus{outline:none;border-color:var(--m)}
 .btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:var(--ff-disp),Arial,sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:.15s}
 .btn-pri{background:linear-gradient(135deg,var(--m),var(--m2));color:#fff}
 .btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.btn-sec{display:block;background:none;border:1.5px solid var(--line);color:var(--txt);text-decoration:none;margin-top:14px}
 .msg{text-align:center;font-size:.85rem;margin-top:14px;min-height:1.2em}
 .msg.err{color:var(--alert)}
 .msg.ok{color:var(--ok)}
@@ -67,6 +68,9 @@ textarea:focus{outline:none;border-color:var(--m)}
     <div class="ico">🙏</div>
     <h2>Merci pour votre avis !</h2>
     <p class="hint" style="margin-bottom:0">Il a bien été enregistré.</p>
+    <a class="btn btn-sec" id="google-review-link" href="#" target="_blank" rel="noopener" style="display:none">
+      ⭐ Le partager aussi sur Google
+    </a>
   </div>
 </div>
 
@@ -77,6 +81,15 @@ textarea:focus{outline:none;border-color:var(--m)}
 // par l'Edge Function (--no-verify-jwt, service_role).
 const _SB_URL = 'https://bgkijldrmdhklkadkeua.supabase.co';
 const _SB_ANON_KEY = 'sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32';
+
+// TODO : lien réel de la fiche Google Business Profile S@FE
+// (search.google.com/local/writereview?placeid=... ou lien "Avis" fourni
+// par Google). Laissé vide tant qu'il n'est pas communiqué — le bouton
+// reste caché plutôt que de pointer vers un lien inventé. Affiché à TOUS
+// les clients qui soumettent un avis ici, quelle que soit leur note : ne
+// jamais filtrer par note avant d'afficher ce lien (review gating interdit
+// par les règles Google Business Profile).
+const _GOOGLE_REVIEW_URL = '';
 
 const _token = new URLSearchParams(location.search).get('token');
 let _rating = 0;
@@ -124,6 +137,11 @@ async function submitReview() {
     if (r.ok && data.success) {
       document.getElementById('form-card').style.display = 'none';
       document.getElementById('thanks-card').style.display = 'block';
+      if (_GOOGLE_REVIEW_URL) {
+        const googleLink = document.getElementById('google-review-link');
+        googleLink.href = _GOOGLE_REVIEW_URL;
+        googleLink.style.display = 'block';
+      }
     } else {
       showMsg('Ce lien n\'est plus valable (déjà utilisé ou expiré).', 'err');
       btn.disabled = false;

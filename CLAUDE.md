@@ -118,7 +118,8 @@ cyberdesk/
 │       ├── supabase.client.js     ← client Supabase cyberdesk
 │       ├── task-tree.js           ← composant arbre de tâches (Suivi d'intervention)
 │       ├── settings.js            ← modale Paramétrage (fiche profil, 2FA, demande DPO)
-│       └── accounting.js          ← modale Comptable (dashboard KPI, réservée admin)
+│       ├── accounting.js          ← modale Comptable (dashboard KPI, réservée admin)
+│       └── audit-clients.js       ← modale Audit clients (avis clients + score NPS adapté)
 ├── modules/
 │   └── Cyber/                     ← module audit B2B (sur table clients propre à CyberDesk)
 │       ├── cyber-core.js          ← fonctions partagées, auth, score
@@ -610,6 +611,15 @@ sur `cybervictim_reviews` : contrairement à `client_token` (jamais
 exploité en RLS anon dans ce projet), la soumission passe exclusivement
 par cette Edge Function service_role.
 
+**Lien Google Avis** : après soumission, `avis-client.html` affiche un
+bouton « Le partager aussi sur Google » à **tous** les clients qui
+soumettent un avis, quelle que soit leur note — jamais de filtrage par
+note avant affichage (le *review gating* — ne solliciter que les avis
+positifs pour une plateforme publique — est interdit par les règles
+Google Business Profile). L'URL réelle (`_GOOGLE_REVIEW_URL` en tête du
+script inline) est laissée vide tant qu'elle n'a pas été communiquée ; le
+bouton reste masqué plutôt que de pointer vers un lien inventé.
+
 **Modale Comptable** (`assets/js/accounting.js`) : dashboard KPI (Chart.js
 via CDN) **accessible à tout utilisateur connecté**, avec un cloisonnement
 par créateur de dossier (`created_by`) :
@@ -619,25 +629,40 @@ par créateur de dossier (`created_by`) :
   basculer entre "Vue globale" et la vue d'un utilisateur en particulier
   (liste peuplée via `cyberdesk_staff_list()`).
 
-Le cloisonnement est fait **côté serveur**, par 4 fonctions
+Le cloisonnement est fait **côté serveur**, par des fonctions
 `SECURITY DEFINER` dédiées au reporting (`010_accounting_scope.sql`) :
-`cyberdesk_reporting_leads`, `cyberdesk_reporting_payments`,
-`cyberdesk_reporting_reviews` (chacune `(p_user_id uuid default null)` —
-un non-admin voit toujours `created_by = auth.uid()` quel que soit le
-paramètre passé, seul un admin peut filtrer sur un tiers ou passer `null`
-pour la vue globale) et `cyberdesk_staff_list()` (liste des comptes ayant
-accès au module, admin uniquement). **Volontairement pas une nouvelle
-policy RLS** sur `cybervictim_leads`/`payments`/`cybervictim_reviews` : la
-RLS de ces tables reste large (Kanban partagé, reporting admin Vente sur
-`payments`/`v_payments_reporting` inchangé) — un simple filtre JS aurait
-été contournable puisque ces tables restent lisibles par tout le staff
-`cyberdesk` par ailleurs. `v_payments_reporting` n'est donc plus utilisée
-par la modale Comptable (elle reste réservée au reporting admin de
-Vente) ; l'agrégation par mois du CA se fait désormais côté client à
-partir des lignes brutes renvoyées par `cyberdesk_reporting_payments`.
-Avis clients (`cybervictim_reviews`) rattachés au créateur du dossier via
-une jointure sur `cybervictim_leads.created_by` (la table des avis n'a pas
-de colonne utilisateur propre).
+`cyberdesk_reporting_leads`, `cyberdesk_reporting_payments` (chacune
+`(p_user_id uuid default null)` — un non-admin voit toujours
+`created_by = auth.uid()` quel que soit le paramètre passé, seul un admin
+peut filtrer sur un tiers ou passer `null` pour la vue globale) et
+`cyberdesk_staff_list()` (liste des comptes ayant accès au module, admin
+uniquement). **Volontairement pas une nouvelle policy RLS** sur
+`cybervictim_leads`/`payments` : la RLS de ces tables reste large (Kanban
+partagé, reporting admin Vente sur `payments`/`v_payments_reporting`
+inchangé) — un simple filtre JS aurait été contournable puisque ces
+tables restent lisibles par tout le staff `cyberdesk` par ailleurs.
+`v_payments_reporting` n'est donc plus utilisée par la modale Comptable
+(elle reste réservée au reporting admin de Vente) ; l'agrégation par mois
+du CA se fait désormais côté client à partir des lignes brutes renvoyées
+par `cyberdesk_reporting_payments`.
+
+**Modale Audit clients** (`assets/js/audit-clients.js`, bouton
+"🛡 Audit clients" de la topbar) : avis clients + score de satisfaction
+adapté, dans sa propre modale distincte de Comptable (déplacé depuis
+Comptable, qui l'hébergeait jusqu'à l'ajout de ce panneau dédié). Ce
+bouton pointait auparavant vers `modules/Cyber/module-cyber-clients.html`
+(module B2B hors périmètre CyberDesk, voir plus haut) — remplacé car ce
+lien ne menait plus à rien de branché sur les données CyberDesk.
+Même patron de cloisonnement que Comptable : `cyberdesk_reporting_reviews`
+(`010_accounting_scope.sql`, `(p_user_id uuid default null)`), avis
+clients (`cybervictim_reviews`) rattachés au créateur du dossier via une
+jointure sur `cybervictim_leads.created_by` (la table des avis n'a pas de
+colonne utilisateur propre). **Score adapté, pas un NPS® standard** : le
+formulaire `avis-client.html` collecte une note 1-5 ★, pas la question
+« probabilité de recommandation /10 » d'un vrai NPS. Mapping retenu :
+5★ = promoteur, 4★ = passif (exclu du calcul), 1-3★ = détracteur ; score
+= %promoteurs − %détracteurs, affiché comme tel dans l'UI pour ne jamais
+laisser croire à un NPS officiel.
 
 ## Grille tarifaire et devis 17Cyber
 
@@ -657,55 +682,62 @@ et alimente le tableau tarifaire des CGS (`cgs-render.ts`). Les deux
 systèmes ne sont pas synchronisés entre eux — un changement de prix
 dans l'un ne se répercute pas sur l'autre.
 
-**Frais de déplacement (option O4) : forfait + calcul automatique au km.**
-Contrairement aux autres options, O4 n'a pas de montant fixe —
-historiquement une case à chiffrer entièrement à la main. Formule :
-`montant HT = forfait (bas ou haut, choisi par le conseiller à chaque
-devis) + distance_km (aller-retour, calculée automatiquement) ×
-coefficient €/km`. Cocher O4 fait apparaître deux boutons radio
-« Forfait bas » / « Forfait haut » (`quote-o4-forfait`, défaut bas) puis
-déclenche le calcul via l'Edge Function `cyberdesk-compute-travel-fee` :
-géocodage de l'adresse S@FE et de la ville du dossier (champ
-`cybervictim_leads.city`) via l'API OpenRouteService, distance routière.
-**Jamais bloquant** : sans ville renseignée, ville non géolocalisée, ou
-service indisponible, la case retombe sur la saisie manuelle d'origine
-(champ texte + montant ajouté à la main dans `quote-ht-override`).
+**Frais de déplacement (option O4) : barème PAR AGENT + calcul
+automatique au km.** Contrairement aux autres options, O4 n'a pas de
+montant fixe — historiquement une case à chiffrer entièrement à la
+main. Décision produit : chaque agent facture son propre barème IK
+(coefficient €/km, forfait de base, adresse de départ), pas un barème
+unique fixé par un admin — réglé une fois pour toutes dans Paramétrage
+→ Profil → Facturation (`settings-travel-coef`, `settings-travel-
+forfait`), jamais choisi ou modifié depuis la modale devis. Formule :
+`montant HT = forfait_eur + distance_km (aller-retour, calculée
+automatiquement) × coefficient_eur_km`, avec `forfait_eur` et
+`coefficient_eur_km` ceux de **l'agent qui compose le devis** (pas
+forcément le créateur du dossier — c'est celui qui traite le dossier au
+moment de la génération qui se déplace et se fait rembourser). Cocher
+O4 déclenche directement le calcul via l'Edge Function
+`cyberdesk-compute-travel-fee` : géocodage de l'adresse de l'agent
+connecté et de la ville du dossier (champ `cybervictim_leads.city`) via
+l'API OpenRouteService, distance routière. **Jamais bloquant** : sans
+ville renseignée, ville non géolocalisée, ou service indisponible, la
+case retombe sur la saisie manuelle d'origine (champ texte + montant
+ajouté à la main dans `quote-ht-override`).
 
-**Forfaits et coefficient — ajustables en base, pas dans le code.**
-Contrairement à l'adresse d'origine et à l'aller-retour (statiques,
-`deplacement` dans `tarifs-cyberdesk.json` + `_shared/travel-fee-
-config.ts`, même patron que `product-texts.ts`), les trois montants
-vivent dans une table dédiée à une seule ligne,
-`cyberdesk_travel_fee_settings` (migrations `016_travel_fee_coefficient_
-setting.sql` puis `019_travel_fee_forfait_and_range.sql`) :
-`forfait_bas_eur` (défaut 10), `forfait_haut_eur` (défaut 15),
-`coefficient_eur_km` (défaut 0,51, **contraint entre 0,50 et 0,70** —
-plage usuelle du barème kilométrique professionnel, contrainte à la fois
-en base et côté formulaire). Un admin (`is_admin()`/`is_super_admin()`,
-RLS sur la table) modifie les trois valeurs directement depuis la
-modale devis, dans le bloc de l'option Déplacement (`quote-o4-admin-
-coef`, `victimes17-quote.js` : `_quoteLoadTravelFeeSettings()`/
-`_quoteSaveTravelFeeSettings()`) — sans déploiement, puisque le
-coefficient est republié chaque année (impôts/URSSAF) et que les deux
-forfaits sont une politique commerciale, pas une constante technique.
-Chaque modification est journalisée dans `audit_logs`
-(`action: 'tarif_deplacement_reglages_modifies'`).
-`cyberdesk-compute-travel-fee` lit systématiquement les valeurs en base
-(repli sur `TRAVEL_FEE_CONFIG` uniquement si la table est vide, ce qui
-ne devrait pas arriver — la migration 016 seede une ligne).
+**Barème par agent — stocké sur `cyberdesk_user_settings`, pas une
+table dédiée.** `travel_fee_coefficient_eur_km` (défaut 0,51,
+**contraint entre 0,50 et 0,79**) et `travel_fee_forfait_eur` (10 ou 15,
+défaut 10) — migration `024_cyberdesk_travel_fee_per_agent.sql`, même
+patron que `bank_iban`/`bank_account_holder` : chaque agent modifie
+librement sa propre ligne (RLS `cyberdesk_user_settings_write_own`,
+aucune garde admin, cohérent avec "vraiment par agent"). L'adresse de
+départ réutilise `billing_address` (existante depuis la migration 009,
+onglet Identification de Paramétrage) — pas de colonne dédiée.
+`cyberdesk-compute-travel-fee` lit la ligne `cyberdesk_user_settings` de
+l'appelant (`auth.uid()` du JWT, pas `cybervictim_leads.created_by`) ;
+repli sur `TRAVEL_FEE_CONFIG` (adresse S@FE, coefficient 0,51, forfait
+10€) uniquement si l'agent n'a pas encore de ligne (jamais ouvert
+Paramétrage) ou pas renseigné d'adresse.
+
+⚠️ **`cyberdesk_travel_fee_settings` (migrations
+`016_travel_fee_coefficient_setting.sql` puis
+`019_travel_fee_forfait_and_range.sql`) est lettre morte** : c'était le
+réglage global unique (admin-only) avant la décision "par agent" — ces
+deux migrations restent committées sur `main` (jamais réécrire une
+migration déjà committée) mais n'ont **jamais été appliquées** en base
+(vérifié via `information_schema.columns` avant d'écrire la migration
+024) et ne le seront pas. Ne pas s'y référer, ne pas la recréer.
 
 **Limites assumées** :
 - Précision **ville à ville**, pas porte-à-porte — `cybervictim_leads`
   n'a qu'un champ `city` (texte libre, migration 003), pas d'adresse
   complète. Approximation jugée suffisante pour une indemnité
   kilométrique, à revoir si une précision plus fine devient nécessaire.
-- Origine fixe (adresse S@FE), pas de point de départ configurable —
-  cohérent avec un seul lieu d'intervention type aujourd'hui. Seuls les
-  forfaits et le coefficient sont ajustables en base ; adresse et
-  aller-retour resteraient à changer dans le code si besoin.
-- Aucune règle automatique ne détermine le choix forfait bas/haut — au
-  jugement du conseiller à chaque devis (décision produit confirmée), pas
-  de présélection selon la distance ou le type d'intervention en v1.
+- Le barème s'applique à l'agent qui **compose le devis**, pas à celui
+  qui a créé le dossier — les deux sont généralement la même personne
+  vu le cloisonnement du Kanban (migration 011), mais un admin composant
+  un devis pour le dossier d'un autre agent facturera son propre barème
+  à lui, pas celui du propriétaire du dossier. Comportement assumé, pas
+  encore rencontré en usage réel.
 - Réponse de l'API Directions ORS lue de façon défensive (deux formes
   de payload possibles selon la configuration du compte) — à vérifier
   avec un appel réel avant mise en production, comme le reste de la

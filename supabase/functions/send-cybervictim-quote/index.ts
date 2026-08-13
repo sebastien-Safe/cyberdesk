@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
   if (!lead_id || !devis || !pdf_base64) return json({ error: "missing_fields" }, 400);
   const ttc = Number(devis.ttc);
   if (!ttc || ttc <= 0) return json({ error: "invalid_amount" }, 400);
+  const ht = Number(devis.ht) || null;
 
   const sb = createClient(SB_URL, SB_SR);
 
@@ -158,6 +159,7 @@ Deno.serve(async (req) => {
 
   const updatePayload: Record<string, unknown> = {
     quote_sent_at: new Date().toISOString(),
+    quote_amount_ht: ht,
     stripe_session_id: session.id,
     stripe_checkout_url: session.url,
     payment_status: "en_attente",
