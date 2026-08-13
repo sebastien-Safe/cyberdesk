@@ -1,16 +1,21 @@
 // ==========================================================================
-// S@FE CYBER PILOT — Vérifie le code OTP et enregistre la signature du contrat
-// partenaire (Mandataire / Associé SEP). C'est le seul point d'écriture de
-// cyberdesk_partner_contracts (aucune policy insert pour authenticated,
-// voir 022_cyberdesk_partner_contracts.sql) — la valeur probante de la
+// S@FE CYBER PILOT — Vérifie le code OTP et enregistre la signature d'UN
+// document du tunnel d'onboarding partenaire (Mandataire : NDA/DPA/Clause de
+// sous-traitance — Associé SEP : Statuts SEP). C'est le seul point
+// d'écriture de cyberdesk_partner_contracts (aucune policy insert pour
+// authenticated, voir 022_cyberdesk_partner_contracts.sql /
+// 026_cyberdesk_onboarding_identity.sql) — la valeur probante de la
 // signature dépend de cette vérification serveur, jamais du client.
+// Appelée une fois par document (le tunnel front boucle sur la liste de
+// documents de la piste choisie, voir assets/js/partner-contract.js).
 //
-// POST { code, remuneration_status, signature_svg } (JWT utilisateur requis)
-//   → { success: true, remuneration_status, remuneration_pct, signed_at }
+// POST { code, remuneration_status, document_key, signature_svg }
+//   (JWT utilisateur requis)
+//   → { success: true, remuneration_status, document_key, remuneration_pct, signed_at }
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
-import { buildContractText, PARTNER_CONTRACT_VERSION, type RemunerationStatus } from "../_shared/partner-contract-content.ts";
+import { buildDocumentText, getDocument, type RemunerationStatus, type DocumentKey, type OnboardingFields } from "../_shared/partner-contract-content.ts";
 
 Deno.serve(async (req) => {
   const CORS = corsHeaders(req);
@@ -46,10 +51,13 @@ Deno.serve(async (req) => {
 
   const code = String(body.code || "").trim();
   const remunerationStatus = body.remuneration_status as RemunerationStatus;
+  const documentKey = body.document_key as DocumentKey;
   const signatureSvg = String(body.signature_svg || "").trim();
 
   if (!/^\d{6}$/.test(code)) return json({ error: "invalid_code_format" }, 400);
   if (!["mandataire", "associe_sep"].includes(remunerationStatus)) return json({ error: "invalid_status" }, 400);
+  const documentDef = getDocument(remunerationStatus, documentKey);
+  if (!documentDef) return json({ error: "invalid_document_for_status" }, 400);
   if (!signatureSvg || !signatureSvg.startsWith("<svg")) return json({ error: "invalid_signature" }, 400);
 
   const sb = createClient(SB_URL, SB_SR);
@@ -83,9 +91,21 @@ Deno.serve(async (req) => {
   if (rateErr || !rateRow) return json({ error: "rate_unavailable" }, 500);
   const pct = Number(rateRow.pct);
 
+  // Champs d'onboarding déjà renseignés par le candidat (étape Identité /
+  // Compléments du tunnel) — jamais transmis par le client à cet endpoint,
+  // relus ici pour que le texte signé et son hash ne dépendent que de
+  // données déjà persistées côté serveur.
+  const { data: settingsRow, error: settingsErr } = await sb
+    .from("cyberdesk_user_settings")
+    .select("first_name, last_name, billing_name, siret, billing_address, sep_structure_nom, sep_structure_forme_juridique, sep_structure_siret, sep_structure_adresse, sep_taux_apurement_pct")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (settingsErr) return json({ error: "db_error", details: settingsErr.message }, 500);
+  const fields: OnboardingFields = settingsRow || {};
+
   // Hash d'intégrité calculé côté serveur, jamais confié au client.
-  const contractText = buildContractText(remunerationStatus, pct);
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(contractText));
+  const documentText = buildDocumentText(remunerationStatus, documentKey, fields, pct);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(documentText));
   const docHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
   const signedIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
@@ -96,8 +116,9 @@ Deno.serve(async (req) => {
     .insert({
       user_id: user.id,
       remuneration_status: remunerationStatus,
+      document_key: documentKey,
       remuneration_pct: pct,
-      doc_version: PARTNER_CONTRACT_VERSION,
+      doc_version: documentDef.version,
       doc_hash: docHash,
       signature_svg: signatureSvg,
       signed_ip: signedIp,
@@ -113,15 +134,16 @@ Deno.serve(async (req) => {
     module: "CyberDesk",
     entity_type: "cyberdesk_partner_contract",
     entity_id: contract.id,
-    donnees_concernees: `Signature du contrat partenaire — statut ${remunerationStatus}, taux ${pct}%`,
+    donnees_concernees: `Signature du document "${documentDef.title}" — statut ${remunerationStatus}, taux ${pct}%`,
     criticite: "Attention",
     resultat: "Succès",
-    details: { remuneration_status: remunerationStatus, remuneration_pct: pct, doc_version: PARTNER_CONTRACT_VERSION },
+    details: { remuneration_status: remunerationStatus, document_key: documentKey, remuneration_pct: pct, doc_version: documentDef.version },
   });
 
   return json({
     success: true,
     remuneration_status: contract.remuneration_status,
+    document_key: contract.document_key,
     remuneration_pct: contract.remuneration_pct,
     signed_at: contract.signed_at,
   });

@@ -189,7 +189,9 @@ cyberdesk/
 │       ├── 015_cyberdesk_tenant_billing.sql  ← facturation SaaS des tenants (voir section dédiée)
 │       ├── 016_travel_fee_coefficient_setting.sql ← coefficient barème kilométrique ajustable (voir section dédiée)
 │       ├── 019_travel_fee_forfait_and_range.sql ← forfaits bas/haut + plage 0,50-0,70 € du coefficient
-│       └── 025_drop_cybervictim_products.sql ← suppression du catalogue produits jamais peuplé (voir Base de données / Grille tarifaire)
+│       ├── 025_drop_cybervictim_products.sql ← suppression du catalogue produits jamais peuplé (voir Base de données / Grille tarifaire)
+│       ├── 026_cyberdesk_onboarding_identity.sql ← identité, structure SEP, casier judiciaire, documents multiples (voir Onboarding partenaire)
+│       └── 027_cyberdesk_onboarding_status_rpc.sql ← RPC cyberdesk_my_onboarding_status() (voir Onboarding partenaire)
 ├── .env.example
 ├── CLAUDE.md                              ← ce fichier
 └── README.md
@@ -212,6 +214,8 @@ cyberdesk/
 | `cyberdesk_tenants` | Un tenant = un prestataire cyber payant un abonnement SaaS S@FE CYBER PILOT (statut, IDs Stripe) — **propre à S@FE CYBER PILOT**, voir section dédiée |
 | `cyberdesk_tenant_invoices` | Détail des factures Stripe d'un tenant, alimente `payments` par trigger — **propre à S@FE CYBER PILOT** |
 | `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : forfaits bas/haut (€) et coefficient €/km du barème kilométrique (option Déplacement du devis), ajustables par un admin — **propre à S@FE CYBER PILOT** |
+| `cyberdesk_partner_contracts` | Documents signés du tunnel d'onboarding partenaire (une ligne par document, `document_key`), append-only — **propre à S@FE CYBER PILOT**, voir *Onboarding partenaire* |
+| `cyberdesk_remuneration_rates`, `cyberdesk_signature_otp`, `cyberdesk_feature_flags` | Barème par piste, OTP de signature, feature flags (`contract_gate`) du tunnel d'onboarding partenaire — **propres à S@FE CYBER PILOT**, voir *Onboarding partenaire* |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
@@ -684,6 +688,91 @@ formulaire `avis-client.html` collecte une note 1-5 ★, pas la question
 5★ = promoteur, 4★ = passif (exclu du calcul), 1-3★ = détracteur ; score
 = %promoteurs − %détracteurs, affiché comme tel dans l'UI pour ne jamais
 laisser croire à un NPS officiel.
+
+## Onboarding partenaire (Mandataire / Associé SEP)
+
+Tunnel d'intégration multi-étapes affiché à un utilisateur qui a un accès
+module (`staff_module_access`) mais n'a pas encore complété son dossier
+partenaire — identité, choix d'une piste (Mandataire technique ou Associé
+en Société en Participation), compléments spécifiques à la piste, puis
+signature électronique de chaque document requis. Reprend toujours là où
+il a été laissé (chaque étape est persistée dès sa validation) : jamais
+redemandé depuis le début.
+
+**Historique** : l'ossature (tables, Edge Functions OTP/signature, modale)
+existait déjà depuis un chantier précédent, mais avec un seul document
+générique par piste et aucune collecte d'identité — jamais activée en
+conditions réelles (`cyberdesk_feature_flags.contract_gate` toujours à
+`false`, taux à 0 % dans `cyberdesk_remuneration_rates`). Étendue en un
+vrai tunnel multi-étapes (migrations `026_cyberdesk_onboarding_identity.sql`,
+`027_cyberdesk_onboarding_status_rpc.sql`) pour coller aux documents
+juridiques réels (Fiche de poste, DPA, NDA, Clause de sous-traitance,
+Statuts SEP).
+
+**Deux pistes, documents distincts** (décision produit actée) :
+- **Mandataire technique** — 3 documents à signer : NDA, DPA (Article 28
+  RGPD, Annexe A), Clause de sous-traitance compatible Charte
+  Cybermalveillance.gouv.fr v2.5. Pas de structure juridique dédiée ni de
+  droit d'entrée.
+- **Associé SEP** — 1 seul document : les Statuts de la Société en
+  Participation (son Article 11 couvre déjà secret professionnel/RGPD pour
+  cette piste — pas de NDA/DPA/Clause redondants). Nécessite une structure
+  juridique propre (nom, forme juridique, SIRET, adresse du siège) et un
+  taux d'apurement du droit d'entrée choisi entre 10 et 30 %.
+
+**Étapes du tunnel** (`assets/js/partner-contract.js`, modale
+`#partner-contract-modal` dans `index.html`) :
+1. **Identité** — prénom/nom (nouveaux sur `cyberdesk_user_settings`,
+   jamais lus depuis `auth.users.raw_user_meta_data` : générique à tout le
+   projet partagé, pas garanti renseigné pour un compte créé à la main par
+   un admin) + dénomination/SIRET/adresse déjà existants (009).
+2. **Choix de la piste** — écran comparatif (pas un simple bouton radio) :
+   missions, taux, documents à signer, prérequis, avant le choix.
+3. **Compléments** — champs structure SEP (piste Associé SEP uniquement) +
+   attestation sur l'honneur du bulletin n°3 du casier judiciaire (**aucun
+   fichier téléversé** — décision produit pour éviter un traitement de
+   donnée judiciaire côté Supabase, catégorie spéciale RGPD/Art. 10 + Loi
+   Informatique et Libertés ; le justificatif physique reste vérifié
+   manuellement par un admin, hors app, comme le reste du recrutement).
+4. **Signature** — boucle sur les documents de la piste choisie : texte
+   rendu à partir des champs collectés (`_shared/partner-contract-content.ts`
+   côté serveur, copie navigateur `assets/js/partner-contract-content.js`,
+   même patron "dupliqué, à garder synchronisé" que le prompt système IA),
+   capture signature (canvas → SVG), code OTP par e-mail (Brevo,
+   `cyberdesk-send-signature-otp`), vérification et hash SHA-256 côté
+   serveur (`cyberdesk-verify-signature`, seul point d'écriture de
+   `cyberdesk_partner_contracts` — jamais le client directement).
+5. **Confirmation**.
+
+**`cyberdesk_partner_contracts`** : une ligne par document signé
+(`document_key`), pas une ligne par contrat — un Mandataire a 3 lignes, un
+Associé SEP en a 1. Append-only, `remuneration_status`/`document_key`
+contraints l'un à l'autre en base (un Mandataire ne peut pas avoir de ligne
+`sep_statuts` et inversement).
+
+**RPC `cyberdesk_my_onboarding_status()`** (remplace l'ancienne
+`cyberdesk_my_contract_status()`, une seule ligne un seul document) :
+retourne toujours exactement une ligne (y compris avant toute donnée
+saisie), avec la piste choisie, les champs d'identité/structure, l'état de
+l'attestation casier judiciaire, le statut du feature flag `contract_gate`,
+et la dernière signature par `document_key` (au client de comparer
+`doc_version` à la version courante connue — jamais figée dans une
+migration).
+
+**Gate dans `checkSession()`** (`index.html`) : ouvre le tunnel en mode
+bloquant (`openPartnerContractModal('gate')`, pas de bouton de fermeture)
+tant que `isPartnerOnboardingComplete()` (identité + piste + compléments +
+tous les documents de la piste signés à la version courante) n'est pas
+vrai — uniquement si `contract_gate` est actif. `is_super_admin()` bypasse
+toujours ce gate. Ouverture volontaire possible à tout moment depuis
+Paramétrage → onglet Documents légaux (badge "X/Y document(s) signé(s)").
+
+⚠️ **Texte des documents toujours PLACEHOLDER, sans valeur juridique** —
+explicitement marqué comme tel dans `_shared/partner-contract-content.ts`.
+Ne jamais activer `contract_gate` en production avant relecture/validation
+par un juriste du texte réel de chaque document et fixation des taux
+réels dans `cyberdesk_remuneration_rates` (0 % par défaut pour les deux
+pistes).
 
 ## Grille tarifaire et devis 17Cyber
 

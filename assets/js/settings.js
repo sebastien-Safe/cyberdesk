@@ -30,6 +30,8 @@ async function openSettingsModal() {
     .select('*').eq('user_id', user.id).maybeSingle();
   if (error) alert('Erreur : ' + error.message);
 
+  document.getElementById('settings-first-name').value = settings?.first_name || '';
+  document.getElementById('settings-last-name').value = settings?.last_name || '';
   document.getElementById('settings-billing-name').value = settings?.billing_name || '';
   document.getElementById('settings-billing-address').value = settings?.billing_address || '';
   document.getElementById('settings-siret').value = settings?.siret || '';
@@ -75,10 +77,10 @@ function _settingsRenderCommissionDocsPlaceholder() {
     '<div class="diag-label-hint">Génération automatique des bordereaux PDF — bientôt disponible.</div>';
 }
 
-// ── Statut de rémunération (Mandataire / Associé SEP) ──
-// cf. cyberdesk_partner_contracts / cyberdesk_my_contract_status() —
-// statut/taux dérivés de la dernière signature, jamais éditables
-// directement (voir partner-contract.js).
+// ── Statut du tunnel d'onboarding (Mandataire / Associé SEP) ──
+// cf. cyberdesk_partner_contracts (un document signé par ligne) /
+// cyberdesk_my_onboarding_status() — piste et documents signés jamais
+// éditables directement (voir partner-contract.js).
 
 const _SETTINGS_CONTRACT_LABELS = {
   mandataire: 'Mandataire',
@@ -88,17 +90,29 @@ const _SETTINGS_CONTRACT_LABELS = {
 async function _settingsRefreshContractStatus() {
   const badge = document.getElementById('settings-contract-badge');
   const detail = document.getElementById('settings-contract-detail');
-  const { data, error } = await sb.rpc('cyberdesk_my_contract_status');
+  const { data, error } = await sb.rpc('cyberdesk_my_onboarding_status');
   const status = !error && Array.isArray(data) ? data[0] : null;
-  if (!status || !status.remuneration_status) {
-    badge.textContent = 'Non signé';
+  if (!status || !status.chosen_remuneration_status) {
+    badge.textContent = 'Non démarré';
     badge.className = 'badge badge-gray';
     detail.textContent = '';
     return;
   }
-  badge.textContent = `${_SETTINGS_CONTRACT_LABELS[status.remuneration_status] || status.remuneration_status} — ${Number(status.remuneration_pct).toFixed(2)}%`;
-  badge.className = 'badge badge-green';
-  detail.textContent = 'Signé le ' + new Date(status.signed_at).toLocaleDateString('fr-FR');
+  const label = _SETTINGS_CONTRACT_LABELS[status.chosen_remuneration_status] || status.chosen_remuneration_status;
+  const docs = getPartnerDocumentsForStatus(status.chosen_remuneration_status);
+  const signedKeys = new Set(
+    (status.signed_documents || [])
+      .filter(d => {
+        const def = getPartnerDocument(status.chosen_remuneration_status, d.document_key);
+        return def && def.version === d.doc_version;
+      })
+      .map(d => d.document_key)
+  );
+  const nSigned = docs.filter(d => signedKeys.has(d.key)).length;
+  const complete = nSigned === docs.length;
+  badge.textContent = `${label} — ${complete ? 'complet' : 'en cours'}`;
+  badge.className = 'badge ' + (complete ? 'badge-green' : 'badge-orange');
+  detail.textContent = `${nSigned}/${docs.length} document(s) signé(s)`;
 }
 
 function closeSettingsModal() {
@@ -113,6 +127,8 @@ async function saveUserSettings() {
   try {
     const payload = {
       user_id: _settingsUserId,
+      first_name: document.getElementById('settings-first-name').value.trim() || null,
+      last_name: document.getElementById('settings-last-name').value.trim() || null,
       billing_name: document.getElementById('settings-billing-name').value.trim() || null,
       billing_address: document.getElementById('settings-billing-address').value.trim() || null,
       siret: document.getElementById('settings-siret').value.trim() || null,

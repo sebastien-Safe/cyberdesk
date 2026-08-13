@@ -558,6 +558,10 @@
 
         <h3 style="margin:18px 0 10px">Identification</h3>
         <div class="diag-row-2">
+          <div class="diag-field"><label>Prénom</label><input type="text" id="settings-first-name"></div>
+          <div class="diag-field"><label>Nom</label><input type="text" id="settings-last-name"></div>
+        </div>
+        <div class="diag-row-2">
           <div class="diag-field"><label>Raison sociale / Nom</label><input type="text" id="settings-billing-name"></div>
           <div class="diag-field"><label>Adresse</label><input type="text" id="settings-billing-address"></div>
         </div>
@@ -813,53 +817,127 @@
     <div class="modal-cyber-header">
       <div class="modal-cyber-title">
         <span class="modal-cyber-icon">✍️</span>
-        <span>Contrat partenaire — Rémunération</span>
+        <span>Intégration partenaire S@FE CYBER PILOT</span>
       </div>
     </div>
+
+    <div class="modal-cyber-steps" id="pc-steps">
+      <div class="diag-step active" data-step="1"><div class="diag-step-dot">1</div><div class="diag-step-label">Identité</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="2"><div class="diag-step-dot">2</div><div class="diag-step-label">Statut</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="3"><div class="diag-step-dot">3</div><div class="diag-step-label">Compléments</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="4"><div class="diag-step-dot">4</div><div class="diag-step-label">Signature</div></div>
+      <div class="diag-step-sep"></div>
+      <div class="diag-step" data-step="5"><div class="diag-step-dot">5</div><div class="diag-step-label">Confirmation</div></div>
+    </div>
+    <span class="diag-step-counter" id="pc-step-counter">Étape 1 / 5</span>
+
     <div class="modal-cyber-body">
 
-      <div class="diag-field">
-        <label>Statut contractuel</label>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <label style="display:flex;align-items:center;gap:8px;font-weight:400">
-            <input type="radio" name="pc-status" id="pc-status-mandataire" onchange="_pcSelectStatus('mandataire')">
-            Mandataire — <span id="pc-pct-mandataire">0.00</span>% du CA HT (commission facturée)
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:400">
-            <input type="radio" name="pc-status" id="pc-status-associe_sep" onchange="_pcSelectStatus('associe_sep')">
-            Associé SEP — <span id="pc-pct-associe_sep">0.00</span>% du CA HT (quote-part versée automatiquement)
-          </label>
-        </div>
-      </div>
-
-      <div class="diag-field">
-        <label>Document contractuel</label>
-        <pre id="pc-contract-text" style="white-space:pre-wrap;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:220px;overflow-y:auto">Choisissez un statut pour afficher le contrat correspondant.</pre>
-      </div>
-
-      <div class="diag-field">
-        <label>Signature</label>
-        <canvas id="pc-signature-canvas" width="480" height="140" style="width:100%;max-width:480px;height:140px;border:1px solid var(--line);border-radius:10px;touch-action:none;background:#fff"></canvas>
-        <button type="button" class="btn btn-out btn-sm" onclick="_pcClearSignature()" style="margin-top:8px">Effacer la signature</button>
-      </div>
-
-      <p class="error" id="pc-error"></p>
-
-      <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()" disabled>Continuer</button>
-
-      <div id="pc-otp-panel" style="display:none;margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
-        <p class="diag-label-hint" style="display:block;margin-bottom:8px">
-          Un code de confirmation à 6 chiffres vient de vous être envoyé par e-mail.
-        </p>
+      <!-- ÉTAPE 1 — Identité -->
+      <div class="diag-section active" id="pc-section-1">
         <div class="diag-row-2">
-          <input type="text" id="pc-otp-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
-          <button type="button" class="btn btn-pri" id="pc-verify-btn" onclick="_pcSubmitSignature()">Valider la signature</button>
+          <div class="diag-field"><label>Prénom *</label><input type="text" id="pc-first-name" placeholder="Prénom"></div>
+          <div class="diag-field"><label>Nom *</label><input type="text" id="pc-last-name" placeholder="Nom de famille"></div>
         </div>
+        <div class="diag-field">
+          <label>Dénomination (facturation)</label>
+          <input type="text" id="pc-billing-name" placeholder="Nom commercial ou raison sociale">
+        </div>
+        <div class="diag-row-2">
+          <div class="diag-field"><label>SIRET</label><input type="text" id="pc-siret"></div>
+          <div class="diag-field"><label>Adresse</label><input type="text" id="pc-billing-address"></div>
+        </div>
+        <p class="error" id="pc-step1-error"></p>
+        <button type="button" class="btn btn-pri" onclick="_pcSaveStep1()">Continuer</button>
+      </div>
+
+      <!-- ÉTAPE 2 — Choix de la piste -->
+      <div class="diag-section" id="pc-section-2">
+        <p class="diag-label-hint">Deux façons de rejoindre le réseau S@FE Cyber Pilot — choisissez celle qui correspond à votre projet. Ce choix reste modifiable tant qu'aucun document n'a été signé.</p>
+        <div class="diag-row-2">
+          <label style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
+            <input type="radio" name="pc-status" id="pc-status-mandataire" onchange="_pcSelectStatus('mandataire')" style="margin-top:4px">
+            <div>
+              <strong>Mandataire technique</strong>
+              <p class="diag-label-hint">Intervenant indépendant rémunéré à la commission (<span id="pc-pct-mandataire">0.00</span>% du CA HT, facturée par vous à S@FE). Pas de structure dédiée requise, pas de droit d'entrée. 3 documents à signer : accord de confidentialité (NDA), accord de traitement des données (DPA), clause de sous-traitance Cybermalveillance.gouv.fr.</p>
+            </div>
+          </label>
+          <label style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
+            <input type="radio" name="pc-status" id="pc-status-associe_sep" onchange="_pcSelectStatus('associe_sep')" style="margin-top:4px">
+            <div>
+              <strong>Associé en Société en Participation (SEP)</strong>
+              <p class="diag-label-hint">Double compétence Auxiliaire Technique + Directeur d'Agence sur une zone d'exclusivité de 50 km, quote-part de <span id="pc-pct-associe_sep">0.00</span>% versée automatiquement (sans facture). Nécessite une structure juridique propre et un droit d'entrée de 1 500 € HT. 1 seul document à signer : les Statuts de la SEP (son article 11 couvre déjà secret professionnel et RGPD).</p>
+            </div>
+          </label>
+        </div>
+        <p class="error" id="pc-step2-error"></p>
+        <button type="button" class="btn btn-pri" id="pc-step2-continue" onclick="_pcSaveStep2()" disabled>Continuer</button>
+      </div>
+
+      <!-- ÉTAPE 3 — Compléments -->
+      <div class="diag-section" id="pc-section-3">
+        <div id="pc-sep-fields" style="display:none">
+          <p class="diag-label-hint">Informations de votre structure juridique (Statuts SEP, Préambule et Article 3.2).</p>
+          <div class="diag-row-2">
+            <div class="diag-field"><label>Nom de la structure</label><input type="text" id="pc-sep-nom"></div>
+            <div class="diag-field"><label>Forme juridique</label><input type="text" id="pc-sep-forme" placeholder="SASU, EURL..."></div>
+          </div>
+          <div class="diag-row-2">
+            <div class="diag-field"><label>SIRET de la structure</label><input type="text" id="pc-sep-siret"></div>
+            <div class="diag-field"><label>Adresse du siège</label><input type="text" id="pc-sep-adresse"></div>
+          </div>
+          <div class="diag-field">
+            <label>Taux d'apurement du droit d'entrée (10 à 30 % de votre quote-part, Article 9.3.1)</label>
+            <input type="number" id="pc-sep-taux" min="10" max="30" step="1" value="10">
+          </div>
+        </div>
+        <div class="diag-field">
+          <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400">
+            <input type="checkbox" id="pc-casier-judiciaire" style="margin-top:4px">
+            <span>J'atteste sur l'honneur que mon bulletin n°3 du casier judiciaire est vierge (prérequis obligatoire — Fiche de poste Agent Indépendant Cyberdesk). Le justificatif pourra être demandé séparément par S@FE.</span>
+          </label>
+        </div>
+        <p class="error" id="pc-step3-error"></p>
+        <button type="button" class="btn btn-pri" onclick="_pcSaveStep3()">Continuer</button>
+      </div>
+
+      <!-- ÉTAPE 4 — Signature (boucle sur les documents de la piste choisie) -->
+      <div class="diag-section" id="pc-section-4">
+        <p class="diag-label-hint" id="pc-doc-progress"></p>
+        <div class="diag-field">
+          <label id="pc-doc-title">Document</label>
+          <pre id="pc-contract-text" style="white-space:pre-wrap;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:220px;overflow-y:auto"></pre>
+        </div>
+        <div class="diag-field">
+          <label>Signature</label>
+          <canvas id="pc-signature-canvas" width="480" height="140" style="width:100%;max-width:480px;height:140px;border:1px solid var(--line);border-radius:10px;touch-action:none;background:#fff"></canvas>
+          <button type="button" class="btn btn-out btn-sm" onclick="_pcClearSignature()" style="margin-top:8px">Effacer la signature</button>
+        </div>
+        <p class="error" id="pc-error"></p>
+        <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()">Continuer</button>
+        <div id="pc-otp-panel" style="display:none;margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
+          <p class="diag-label-hint" style="display:block;margin-bottom:8px">
+            Un code de confirmation à 6 chiffres vient de vous être envoyé par e-mail.
+          </p>
+          <div class="diag-row-2">
+            <input type="text" id="pc-otp-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
+            <button type="button" class="btn btn-pri" id="pc-verify-btn" onclick="_pcSubmitSignature()">Valider la signature</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 5 — Confirmation -->
+      <div class="diag-section" id="pc-section-5">
+        <p>✅ Tous les documents de votre parcours ont été signés. Bienvenue dans le réseau S@FE Cyber Pilot.</p>
+        <button type="button" class="btn btn-pri" onclick="_pcFinish()">Continuer</button>
       </div>
 
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" id="pc-cancel-btn" onclick="closePartnerContractModal()">Annuler</button>
+      <button class="btn btn-out" id="pc-cancel-btn" onclick="closePartnerContractModal()">Fermer</button>
     </div>
   </div>
 </div>
@@ -942,22 +1020,22 @@ async function checkSession() {
     _isAdmin = isAdminData === true || isSuperAdminData === true;
     const isSuperAdmin = isSuperAdminData === true;
 
-    // Gate "contrat partenaire" (Mandataire/Associé SEP, cyberdesk_partner_
+    // Gate "tunnel d'onboarding partenaire" (identité + piste Mandataire/
+    // Associé SEP + compléments + documents signés, cyberdesk_partner_
     // contracts) — désactivé par défaut (cyberdesk_feature_flags.contract_
-    // gate), à activer une fois le parcours de signature validé en
-    // conditions réelles. is_super_admin() bypass toujours ce gate : un bug
-    // dans le parcours de signature ne doit jamais verrouiller la seule
-    // personne capable de corriger le problème en base.
-    let contractOk = true;
+    // gate), à activer une fois le parcours validé en conditions réelles.
+    // is_super_admin() bypass toujours ce gate : un bug dans le tunnel ne
+    // doit jamais verrouiller la seule personne capable de corriger le
+    // problème en base.
+    let onboardingOk = true;
     if (!isSuperAdmin) {
-      const { data: contractRows } = await sb.rpc('cyberdesk_my_contract_status');
-      const contract = Array.isArray(contractRows) ? contractRows[0] : null;
-      const gateEnabled = contract?.gate_enabled === true;
-      const hasValidContract = contract?.remuneration_status && contract?.doc_version === PARTNER_CONTRACT_VERSION;
-      contractOk = !gateEnabled || hasValidContract;
+      const { data: gateRows } = await sb.rpc('cyberdesk_my_onboarding_status');
+      const gateStatus = Array.isArray(gateRows) ? gateRows[0] : null;
+      const gateEnabled = gateStatus?.gate_enabled === true;
+      onboardingOk = !gateEnabled || (await isPartnerOnboardingComplete());
     }
 
-    if (!contractOk) {
+    if (!onboardingOk) {
       document.getElementById('app-shell').classList.add('is-hidden');
       await openPartnerContractModal('gate');
       return;
