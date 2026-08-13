@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Config frais de déplacement (option O4 du devis 17Cyber).
+// S@FE CYBER PILOT — Config frais de déplacement (option O4 du devis 17Cyber).
 // Le coefficient €/km, le forfait et l'adresse de départ sont désormais
 // PAR AGENT (cyberdesk_user_settings, migration
 // 024_cyberdesk_travel_fee_per_agent.sql), réglables librement par

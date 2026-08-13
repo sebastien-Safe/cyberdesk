@@ -1,12 +1,25 @@
-# CLAUDE.md — CyberDesk
+# CLAUDE.md — S@FE CYBER PILOT
 
 Ce fichier est destiné à Claude Code. Il décrit l'architecture,
-les conventions et les décisions techniques du projet CyberDesk.
+les conventions et les décisions techniques du projet S@FE CYBER PILOT.
 Lis-le intégralement avant toute action.
 
-## Ce qu'est CyberDesk
+**Nom commercial vs identifiants techniques.** Le produit s'appelle
+désormais « S@FE CYBER PILOT » (ex-« CyberDesk ») — tout le texte visible
+(pages, e-mails, documents générés, cette documentation) a été renommé en
+conséquence. Le préfixe `cyberdesk`/`CyberDesk` **reste inchangé côté
+technique** (tables, fonctions SQL, slugs d'Edge Functions, secrets Vault,
+bucket de stockage, domaine, noms de fichiers, identifiants JS/TS comme
+`hasCyberdeskAccess()`, et la valeur `module = 'CyberDesk'` déjà écrite
+dans `audit_logs`/`payments`) : renommer ces identifiants casserait les
+webhooks Stripe, le job pg_cron et l'historique RGPD déjà en production —
+à ne faire, si un jour décidé, que via une migration dédiée et une
+coordination manuelle (Stripe, DNS, Supabase Dashboard), jamais par un
+simple renommage de texte.
 
-CyberDesk est une plateforme SaaS de gestion d'incidents cyber,
+## Ce qu'est S@FE CYBER PILOT
+
+S@FE CYBER PILOT est une plateforme SaaS de gestion d'incidents cyber,
 extraite du CRM safecrm (sebastien-Safe/safecrm).
 
 Elle permet à des prestataires cyber, assureurs, avocats et
@@ -38,15 +51,15 @@ avec ses propres dépendances au cœur de safecrm :
 
 1. **Pipeline victimes17** (`victimes17.js`) — Kanban de dossiers
    individuels (table `cybervictim_leads`). Autonome, c'est le cœur du
-   produit CyberDesk.
+   produit S@FE CYBER PILOT.
 2. **Module Cybersec Clients B2B** (`cyber-*.js`, `modules/Cyber/`) — audit
-   de sécurité pour des clients existants. **Hors périmètre CyberDesk
+   de sécurité pour des clients existants. **Hors périmètre S@FE CYBER PILOT
    depuis la migration 008** : ce module a été réimplémenté nativement
    côté safe-crm/Vente (tables `cyber_client_profiles`, `cyber_client_audits`,
    `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`,
    référençant `contacts.id`, pas une table `clients` séparée). Le code
    sous `modules/Cyber/` dans ce dépôt n'est donc plus branché sur rien —
-   à retirer ou reconnecter un jour si le besoin revient côté CyberDesk,
+   à retirer ou reconnecter un jour si le besoin revient côté S@FE CYBER PILOT,
    mais **ne jamais créer de table `clients`/`cyber_client_*` ici**, ça
    collisionnerait avec le module natif de safe-crm.
 
@@ -58,7 +71,7 @@ Dépendances au cœur safecrm qui ont été **retirées** (non portées) :
   appel direct à l'API Anthropic (voir plus bas)
 - Le module NIS2 interne (`incidents-nis2.html`, table
   `incidents_nis2`) — outil de conformité interne à safecrm, hors
-  périmètre CyberDesk
+  périmètre S@FE CYBER PILOT
 
 Fichiers ajoutés à l'extraction en cours de route (absents de la
 liste initiale mais requis pour que le code fonctionne) :
@@ -121,7 +134,7 @@ cyberdesk/
 │       ├── accounting.js          ← modale Comptable (dashboard KPI, réservée admin)
 │       └── audit-clients.js       ← modale Audit clients (avis clients + score NPS adapté)
 ├── modules/
-│   └── Cyber/                     ← module audit B2B (sur table clients propre à CyberDesk)
+│   └── Cyber/                     ← module audit B2B (sur table clients propre à S@FE CYBER PILOT)
 │       ├── cyber-core.js          ← fonctions partagées, auth, score
 │       ├── cyber-audit.js         ← checklist d'audit (23 points ANSSI/CIS)
 │       ├── cyber-incidents.js     ← gestion des incidents B2B
@@ -188,23 +201,23 @@ cyberdesk/
 
 | Table | Rôle |
 |---|---|
-| `cybervictim_leads` | Dossiers victimes (table centrale du pipeline 17Cyber) — **propre à CyberDesk** |
-| `staff_module_access` | Droit d'accès par module pour les comptes internes (`user_id`, `module`, ex. `'cyberdesk'`) — **propre à CyberDesk, réutilisable par les autres modules** |
+| `cybervictim_leads` | Dossiers victimes (table centrale du pipeline 17Cyber) — **propre à S@FE CYBER PILOT** |
+| `staff_module_access` | Droit d'accès par module pour les comptes internes (`user_id`, `module`, ex. `'cyberdesk'`) — **propre à S@FE CYBER PILOT, réutilisable par les autres modules** |
 | `payments` | Paiements, source unique **partagée** avec Vente (`module` = `'cyberdesk'`/`'vente'`), alimentée par trigger depuis `cybervictim_leads` |
 | `v_payments_reporting` | Vue de reporting agrégé sur `payments`, lue par le module admin Vente |
-| `audit_logs` | Journal RGPD **partagé** avec safe-crm (table de safe-crm, pas de CyberDesk) — CyberDesk y écrit avec `module = 'CyberDesk'` |
-| `cyberdesk_user_settings` | Fiche profil (facturation, contrat, photo) par utilisateur — **propre à CyberDesk**, jamais une extension de `profiles` (safe-crm) |
-| `cyberdesk_dpo_requests` | Demandes d'exercice de droits RGPD — **propre à CyberDesk**, intake V1 (voir section dédiée) |
-| `cybervictim_reviews` | Avis clients post-clôture (lien à token, soumission via Edge Function) — **propre à CyberDesk** |
-| `cyberdesk_tenants` | Un tenant = un prestataire cyber payant un abonnement SaaS CyberDesk (statut, IDs Stripe) — **propre à CyberDesk**, voir section dédiée |
-| `cyberdesk_tenant_invoices` | Détail des factures Stripe d'un tenant, alimente `payments` par trigger — **propre à CyberDesk** |
-| `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : forfaits bas/haut (€) et coefficient €/km du barème kilométrique (option Déplacement du devis), ajustables par un admin — **propre à CyberDesk** |
+| `audit_logs` | Journal RGPD **partagé** avec safe-crm (table de safe-crm, pas de S@FE CYBER PILOT) — S@FE CYBER PILOT y écrit avec `module = 'CyberDesk'` (valeur historique inchangée, voir *Cohabitation avec safe-crm*) |
+| `cyberdesk_user_settings` | Fiche profil (facturation, contrat, photo) par utilisateur — **propre à S@FE CYBER PILOT**, jamais une extension de `profiles` (safe-crm) |
+| `cyberdesk_dpo_requests` | Demandes d'exercice de droits RGPD — **propre à S@FE CYBER PILOT**, intake V1 (voir section dédiée) |
+| `cybervictim_reviews` | Avis clients post-clôture (lien à token, soumission via Edge Function) — **propre à S@FE CYBER PILOT** |
+| `cyberdesk_tenants` | Un tenant = un prestataire cyber payant un abonnement SaaS S@FE CYBER PILOT (statut, IDs Stripe) — **propre à S@FE CYBER PILOT**, voir section dédiée |
+| `cyberdesk_tenant_invoices` | Détail des factures Stripe d'un tenant, alimente `payments` par trigger — **propre à S@FE CYBER PILOT** |
+| `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : forfaits bas/haut (€) et coefficient €/km du barème kilométrique (option Déplacement du devis), ajustables par un admin — **propre à S@FE CYBER PILOT** |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
-périmètre CyberDesk**, gérées nativement côté safe-crm/Vente avec un schéma
+périmètre S@FE CYBER PILOT**, gérées nativement côté safe-crm/Vente avec un schéma
 différent (`contact_id`, colonnes en français) — ne jamais les recréer ni
-les modifier depuis une migration CyberDesk.
+les modifier depuis une migration S@FE CYBER PILOT.
 
 **Note sur `cybervictim_leads` :** cette table n'existait dans aucune
 migration versionnée de safecrm (créée à la main en production). Le
@@ -288,12 +301,12 @@ légale. `pg_cron`/`pg_net`/`pgcrypto` sont actifs sur le projet partagé
 
 ## Cohabitation avec safe-crm
 
-Depuis la migration `008_cyberdesk_on_safecrm.sql`, CyberDesk et le
+Depuis la migration `008_cyberdesk_on_safecrm.sql`, S@FE CYBER PILOT et le
 module Vente de safe-crm partagent le même projet Supabase. Trois
 principes structurent cette cohabitation :
 
 **1. Connexions séparées, même `auth.users`.** Un compte qui peut se
-connecter à Vente n'a pas accès à CyberDesk automatiquement, et
+connecter à Vente n'a pas accès à S@FE CYBER PILOT automatiquement, et
 inversement. Le garde-fou est la fonction `has_module_access(p_module
 text)` (SECURITY DEFINER), vraie si `is_super_admin()` ou si une ligne
 existe dans `staff_module_access(user_id, module)`. `index.html` appelle
@@ -301,14 +314,14 @@ existe dans `staff_module_access(user_id, module)`. `index.html` appelle
 de session) et déconnecte si l'accès est refusé. `is_admin()` seul ne
 suffit pas — l'accès à un module n'est jamais implicite. Ce mécanisme est
 générique et destiné à être réutilisé pour les futurs modules loués
-séparément (vision produit : louer chaque module — Paiement, CyberDesk,
+séparément (vision produit : louer chaque module — Paiement, S@FE CYBER PILOT,
 Vente, DPO, SEO, Social... — indépendamment à des clients externes).
 Voir aussi `client_module_settings` (déjà existante côté safe-crm),
 prévue pour gérer l'activation d'un module et son branding pour un
 client externe loueur — **écartée comme point d'accroche pour la
 facturation SaaS des tenants** (voir section dédiée) après inspection de
 son schéma réel : elle est indexée sur `contacts.id` (un contact Vente),
-pas sur un compte `auth.users` qui se connecte à CyberDesk, et ne porte
+pas sur un compte `auth.users` qui se connecte à S@FE CYBER PILOT, et ne porte
 aucune colonne de facturation. Reste un palier futur pour un usage
 différent (louer un module à un client externe géré par Vente).
 
@@ -317,7 +330,7 @@ différent (louer un module à un client externe géré par Vente).
 vérité, alimentée automatiquement par un trigger (`sync_cybervictim_payment`)
 depuis `cybervictim_leads` — aucun changement dans la logique Stripe
 existante (`cyberdesk-stripe-webhook`, `send-cybervictim-quote`) ni dans le
-paiement manuel. L'espace client CyberDesk continue de lire
+paiement manuel. L'espace client S@FE CYBER PILOT continue de lire
 `cybervictim_leads` directement (jamais `payments`). Le rapport financier
 admin de Vente lit `v_payments_reporting` (réservée à
 `is_admin()`/`is_super_admin()`). Depuis la migration `015_cyberdesk_
@@ -329,7 +342,7 @@ changement de structure ni côté Vente.
 **Secrets Stripe/Brevo/Anthropic — deux espaces de stockage distincts, pas
 de collision, mais attention à la valeur.** Vente utilise déjà des secrets
 Edge Function classiques (`Deno.env.get(...)`) : `STRIPE_SECRET_KEY`,
-`STRIPE_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`, `BREVO`. CyberDesk utilise le
+`STRIPE_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`, `BREVO`. S@FE CYBER PILOT utilise le
 Vault Postgres (`vault.create_secret` + `get_edge_secret()`), noms en
 minuscules : `stripe_secret_key`, `stripe_webhook_secret`,
 `stripe_billing_webhook_secret`, `stripe_price_id_cyberdesk`,
@@ -344,23 +357,23 @@ différente** : Stripe génère un secret de signature par endpoint webhook,
 et `cyberdesk-stripe-webhook` est un endpoint distinct de celui de Vente —
 le secret de Vente ne fonctionnera pas ici. Même règle entre
 `stripe_webhook_secret` et `stripe_billing_webhook_secret` : deux endpoints
-webhook CyberDesk distincts (paiement dossier victime vs. abonnement
+webhook S@FE CYBER PILOT distincts (paiement dossier victime vs. abonnement
 tenant), donc deux secrets de signature distincts, jamais le même.
 Quand Vente aura son propre flux de vente, il insérera dans `payments`
 avec `module='vente'` — pas de nouvelle migration de structure nécessaire.
 
 **3. RGPD : un seul journal.** `audit_logs` est une table de safe-crm,
-pas de CyberDesk — ne jamais la recréer. CyberDesk y écrit avec
-`module: "CyberDesk"` (`logRgpd()` dans `supabase.client.js`, appels
+pas de S@FE CYBER PILOT — ne jamais la recréer. S@FE CYBER PILOT y écrit avec
+`module: "CyberDesk"` (valeur historique inchangée) (`logRgpd()` dans `supabase.client.js`, appels
 serveur dans les Edge Functions). Les policies RLS existantes de
 safe-crm (`audit_insert_auth`, `audit_select_admin`, `audit_select_own`)
-couvrent déjà tous les besoins de CyberDesk — ne rien ajouter dessus sauf
+couvrent déjà tous les besoins de S@FE CYBER PILOT — ne rien ajouter dessus sauf
 besoin nouveau vérifié.
 
-**Ce qui reste hors périmètre CyberDesk** : le module d'audit sécurité
+**Ce qui reste hors périmètre S@FE CYBER PILOT** : le module d'audit sécurité
 entreprise (`clients`, `cyber_client_*`, `cyber_audits`) est géré
 nativement côté Vente, avec un schéma différent. Ne jamais y toucher
-depuis une migration CyberDesk.
+depuis une migration S@FE CYBER PILOT.
 
 ## Edge Functions
 
@@ -389,7 +402,7 @@ purge_secret
 stripe_secret_key
 stripe_webhook_secret            -- valeur propre à cyberdesk-stripe-webhook, pas celle de Vente
 stripe_billing_webhook_secret    -- valeur propre à cyberdesk-billing-webhook, distincte de stripe_webhook_secret
-stripe_price_id_cyberdesk        -- id du Price Stripe de l'abonnement SaaS CyberDesk (un seul plan en v1)
+stripe_price_id_cyberdesk        -- id du Price Stripe de l'abonnement SaaS S@FE CYBER PILOT (un seul plan en v1)
 openrouteservice_api_key         -- géocodage + itinéraire, calcul frais de déplacement (option O4 devis)
 brevo_api_key
 anthropic_api_key
@@ -449,12 +462,12 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 Distinct du paiement des dossiers victimes (`cyberdesk-stripe-webhook` /
 `send-cybervictim-quote`, qui existe depuis la migration 005 et n'est pas
 touché ici) : c'est l'abonnement mensuel que paie le prestataire cyber
-pour utiliser CyberDesk lui-même — vide complet avant la migration
+pour utiliser S@FE CYBER PILOT lui-même — vide complet avant la migration
 `015_cyberdesk_tenant_billing.sql` (aucune table `tenants`, aucune
 notion d'essai/abonnement dans le code avant cette migration).
 
 **Modèle Stripe : un seul compte plateforme**, pas de Stripe Connect —
-CyberDesk facture chaque tenant directement, comme le paiement victime
+S@FE CYBER PILOT facture chaque tenant directement, comme le paiement victime
 le fait déjà. `stripe_secret_key` (Vault) est réutilisé tel quel.
 
 **Schéma** : `cyberdesk_tenants` (statut d'abonnement, IDs Stripe, dates
@@ -515,7 +528,7 @@ Function `cyber-ia-assistant`, pas de multi-connecteurs (le système
 `connectors-guard`/`call-ia`/`safe_connectors` de safecrm n'a pas
 été porté — trop couplé au CRM parent ; `call-ia` existe bien côté
 Vente sur le projet partagé, mais c'est un système distinct, non
-réutilisé par CyberDesk).
+réutilisé par S@FE CYBER PILOT).
 
 Multi-connecteurs (Groq, Mistral, Grok) reste une piste V2/V3,
 pas un pré-requis MVP.
@@ -542,9 +555,9 @@ dans le navigateur :
   assumée** : un tiers non identifié mentionné nommément dans un champ
   libre n'est pas détecté (nécessiterait une détection d'entités nommées,
   hors périmètre v1) — documenté comme risque résiduel dans le registre
-  de traitement CyberDesk (module DPO).
+  de traitement S@FE CYBER PILOT (module DPO).
 - Chaque appel est journalisé dans `audit_logs`
-  (`action: 'ia_assistant_appel'`, `module: 'CyberDesk'`).
+  (`action: 'ia_assistant_appel'`, `module: 'CyberDesk'` — valeur historique inchangée).
 - Anthropic est déclaré comme sous-traitant dans les CGS
   (`_shared/cgs-content.ts`, section 10.5).
 
@@ -571,13 +584,13 @@ d'énumération de comptes possible) :
   `noreply@safe-digitalisation.fr` (identique à `send-cybervictim-quote`).
 - Chaque envoi réussi (ou tentative échouée côté Brevo) est journalisé
   dans `audit_logs` (`action: 'mot_de_passe_oublie_email_envoye'`,
-  `module: 'CyberDesk'`, `entity_type: 'auth_user'`) — preuve d'envoi
+  `module: 'CyberDesk'` — valeur historique inchangée, `entity_type: 'auth_user'`) — preuve d'envoi
   pour le registre de traitement du module DPO. Aucun log si le compte
   n'existe pas (aucun e-mail n'est réellement envoyé dans ce cas).
 - **Limite assumée** : endpoint public sans limitation de débit dédiée
   (au-delà de celle de Brevo) — acceptable en l'état vu le nombre de
   comptes actuel (un seul, voir `profiles`), à revoir si le nombre de
-  comptes CyberDesk augmente.
+  comptes S@FE CYBER PILOT augmente.
 
 Le reste du parcours (redirection vers `index.html`, détection de
 l'événement `PASSWORD_RECOVERY` côté client, saisie du nouveau mot de
@@ -592,7 +605,7 @@ extension de `profiles` — table safe-crm hors périmètre), photo de profil
 (bucket privé `cyberdesk-avatars`, URL signée), et activation de la double
 authentification via le MFA natif de Supabase Auth (`sb.auth.mfa.enroll/
 challenge/verify/unenroll` — pas de table ni de logique custom, l'état 2FA
-n'est jamais dupliqué côté CyberDesk).
+n'est jamais dupliqué côté S@FE CYBER PILOT).
 
 **Demande d'exercice de droits RGPD** (bouton dans Paramétrage → Edge
 Function `cyberdesk-dpo-request`, JWT utilisateur normal) : préparation du
@@ -602,7 +615,7 @@ demande dans `cyberdesk_dpo_requests` **et** notifie immédiatement
 réponse est de 1 mois, une demande invisible tant qu'aucun panneau admin
 dédié n'existe serait trop risquée à manquer. Chaque appel réussi est
 journalisé dans `audit_logs` (`action: 'dpo_demande_exercice_droits'`,
-`module: 'CyberDesk'`).
+`module: 'CyberDesk'` — valeur historique inchangée).
 
 **Avis clients** (`cybervictim_reviews`) : à la clôture d'un dossier
 (`victimes17.js`, transition vers `pipeline_stage = 'cloture'`), un appel
@@ -659,8 +672,8 @@ par `cyberdesk_reporting_payments`.
 adapté, dans sa propre modale distincte de Comptable (déplacé depuis
 Comptable, qui l'hébergeait jusqu'à l'ajout de ce panneau dédié). Ce
 bouton pointait auparavant vers `modules/Cyber/module-cyber-clients.html`
-(module B2B hors périmètre CyberDesk, voir plus haut) — remplacé car ce
-lien ne menait plus à rien de branché sur les données CyberDesk.
+(module B2B hors périmètre S@FE CYBER PILOT, voir plus haut) — remplacé car ce
+lien ne menait plus à rien de branché sur les données S@FE CYBER PILOT.
 Même patron de cloisonnement que Comptable : `cyberdesk_reporting_reviews`
 (`010_accounting_scope.sql`, `(p_user_id uuid default null)`), avis
 clients (`cybervictim_reviews`) rattachés au créateur du dossier via une
@@ -797,7 +810,7 @@ usage commercial réel.
 - [ ] Formulaire web d'entrée (source: formulaire_web)
 - [ ] Location de module à un client externe via `client_module_settings` (cas d'usage différent de
       la facturation SaaS tenant ci-dessous — un client géré par Vente, pas un compte auth.users
-      CyberDesk direct)
+      S@FE CYBER PILOT direct)
 - [x] Facturation SaaS des tenants — abonnement Stripe (migration `015_cyberdesk_tenant_billing.sql`,
       voir section dédiée). Onboarding encore manuel côté admin (pas d'auto-inscription publique).
 
@@ -835,7 +848,7 @@ usage commercial réel.
 - Créer, modifier ou supprimer une table/colonne du module Vente/B2B
   (`contacts`, `clients`, `cyber_client_*`, `cyber_audits`,
   `client_module_settings`, `profiles`...) depuis une migration
-  CyberDesk — le projet Supabase est partagé, mais le schéma de Vente
+  S@FE CYBER PILOT — le projet Supabase est partagé, mais le schéma de Vente
   ne l'est pas
 - Recréer `audit_logs`, `profiles`, ou toute fonction RLS déjà existante
   côté safe-crm (`is_admin`, `is_super_admin`, `my_contact_id`,

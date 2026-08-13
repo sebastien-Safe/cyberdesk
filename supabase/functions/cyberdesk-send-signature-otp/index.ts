@@ -1,9 +1,9 @@
 // ==========================================================================
-// CyberDesk — Envoi du code OTP pour la signature du contrat partenaire
+// S@FE CYBER PILOT — Envoi du code OTP pour la signature du contrat partenaire
 // (Mandataire / Associé SEP). Même patron que cyberdesk-dpo-request (JWT
 // utilisateur normal, service_role en interne) et que le mécanisme OTP déjà
 // utilisé côté Vente (send-mandat-otp) — mais avec une table propre à
-// CyberDesk (cyberdesk_signature_otp), voir 022_cyberdesk_partner_contracts.sql.
+// S@FE CYBER PILOT (cyberdesk_signature_otp), voir 022_cyberdesk_partner_contracts.sql.
 //
 // POST {} (JWT utilisateur requis) → { success: true }
 // Le code n'est jamais renvoyé dans la réponse HTTP, uniquement par e-mail.
@@ -11,7 +11,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
   if (authErr || !user) return json({ error: "unauthorized" }, 401);
 
   // Garde d'accès module — un compte Vente authentifié ne doit pas pouvoir
-  // déclencher ce flux côté CyberDesk (projet Supabase partagé).
+  // déclencher ce flux côté S@FE CYBER PILOT (projet Supabase partagé).
   const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
   if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);
 
@@ -77,9 +77,9 @@ Deno.serve(async (req) => {
     <div style="font-family:Arial,sans-serif;color:#1d1d1b;max-width:560px;margin:0 auto;line-height:1.6">
       <div style="border-bottom:3px solid #000091;padding-bottom:10px;margin-bottom:20px">
         <strong style="font-size:18px">S<span style="color:#e1000f">@</span>FE</strong>
-        <div style="font-size:11px;color:#666">CyberDesk — Signature du contrat partenaire</div>
+        <div style="font-size:11px;color:#666">S@FE CYBER PILOT — Signature du contrat partenaire</div>
       </div>
-      <p>Voici votre code de confirmation pour la signature électronique de votre contrat partenaire CyberDesk :</p>
+      <p>Voici votre code de confirmation pour la signature électronique de votre contrat partenaire S@FE CYBER PILOT :</p>
       <p style="font-size:28px;font-weight:700;letter-spacing:.2em;font-family:monospace">${code}</p>
       <p>Ce code est valable 15 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>
     </div>

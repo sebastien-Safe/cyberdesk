@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Génération du rapport d'intervention 17Cyber (arbre de tâches)
+// S@FE CYBER PILOT — Génération du rapport d'intervention 17Cyber (arbre de tâches)
 // POST { lead_id } → { success, filename, docx_base64 }
 // Le document est calculé à la volée et retourné dans la réponse HTTP :
 // aucun stockage serveur (cohérent avec le registre RGPD T11 — cf. plan
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
   // Garde d'accès module — indispensable sur le projet Supabase partagé :
   // un compte Vente authentifié ne doit pas pouvoir agir sur un dossier
-  // victime CyberDesk (les opérations ci-dessous passent par service_role,
+  // victime S@FE CYBER PILOT (les opérations ci-dessous passent par service_role,
   // qui contourne RLS).
   const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
   if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);

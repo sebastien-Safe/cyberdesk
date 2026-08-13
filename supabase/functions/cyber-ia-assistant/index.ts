@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Assistant Cybersécurité IA (appel direct Anthropic Claude)
+// S@FE CYBER PILOT — Assistant Cybersécurité IA (appel direct Anthropic Claude)
 // POST { lead_id, question } → { reply }
 //
 // Auth : bearer JWT utilisateur authentifié + droit d'accès au module

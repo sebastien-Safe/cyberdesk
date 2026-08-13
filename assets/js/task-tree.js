@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Composant « Arbre de tâches d'intervention » 17Cyber
+// S@FE CYBER PILOT — Composant « Arbre de tâches d'intervention » 17Cyber
 // Source de données : assets/data/task_trees.json (chargé une fois, en cache)
 // Utilisé par la modale « Suivi d'intervention » (assets/victimes17/victimes17.js)
 // ==========================================================================

@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Purge RGPD automatique des dossiers victimes 17Cyber
+// S@FE CYBER PILOT — Purge RGPD automatique des dossiers victimes 17Cyber
 // Déclenchée quotidiennement à 2h00 UTC par pg_cron (cf. migration SQL
 // cybervictim_purge_cron), authentifiée par un secret partagé (Vault côté
 // SQL / variable d'environnement PURGE_SECRET côté Edge Function) — même

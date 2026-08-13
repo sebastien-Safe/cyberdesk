@@ -1,6 +1,6 @@
-# CyberDesk
+# S@FE CYBER PILOT
 
-CyberDesk est une plateforme SaaS de gestion de dossiers victimes
+S@FE CYBER PILOT est une plateforme SaaS de gestion de dossiers victimes
 cyber, extraite du CRM safecrm et rendue autonome.
 
 Elle s'adresse aux prestataires en cybersécurité, assureurs,

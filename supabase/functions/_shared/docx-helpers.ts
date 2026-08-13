@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Helpers de construction docx (module partagé Edge Functions)
+// S@FE CYBER PILOT — Helpers de construction docx (module partagé Edge Functions)
 // Palette S@FE : navy #030D26, gold #C9A24B, steel #7C97C4
 // Utilisé par generate-cybervictim-report / generate-cybervictim-quote.
 //

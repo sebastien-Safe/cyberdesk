@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss://*.supabase.co blob:;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CyberDesk — Dossiers victimes 17Cyber</title>
+<title>S@FE CYBER PILOT — Dossiers victimes 17Cyber</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -21,7 +21,7 @@
 <div id="login-screen" class="login-screen">
   <div class="login-card">
     <div id="login-panel">
-      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Gestion de dossiers victimes cyber</p>
       <form id="login-form" onsubmit="return false">
         <div class="field"><label>E-mail</label><input id="login-email" type="email" autocomplete="username"></div>
@@ -33,7 +33,7 @@
     </div>
 
     <div id="forgot-password-panel" class="is-hidden">
-      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Réinitialisation du mot de passe</p>
       <form id="forgot-password-form" onsubmit="return false">
         <div class="field"><label>E-mail</label><input id="forgot-email" type="email" autocomplete="username"></div>
@@ -44,7 +44,7 @@
     </div>
 
     <div id="reset-password-panel" class="is-hidden">
-      <h1 style="margin-bottom:4px">🛡 CyberDesk</h1>
+      <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Choisissez un nouveau mot de passe</p>
       <form id="reset-password-form" onsubmit="return false">
         <div class="field"><label>Nouveau mot de passe</label><input id="reset-password-new" type="password" autocomplete="new-password"></div>
@@ -59,7 +59,7 @@
 <!-- ================= APP ================= -->
 <div id="app-shell" class="is-hidden">
   <header class="cyber-topbar">
-    <span class="cyber-topbar-brand">🛡 CyberDesk</span>
+    <span class="cyber-topbar-brand">🛡 S@FE CYBER PILOT</span>
     <span class="cyber-topbar-subtitle">Dossiers victimes 17Cyber</span>
     <div class="cyber-topbar-right" style="margin-left:auto;display:flex;gap:10px;align-items:center">
       <button class="btn btn-ghost btn-sm" onclick="openReviewsModal()">🛡 Audit clients</button>
@@ -660,7 +660,7 @@
       <div id="settings-tab-finances" class="settings-tab-panel" style="display:none">
 
         <div class="diag-field" id="settings-subscription-field" style="display:none">
-          <label>Mon abonnement CyberDesk</label>
+          <label>Mon abonnement S@FE CYBER PILOT</label>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
             <div>
               <span id="settings-subscription-badge" class="badge badge-gray">—</span>
@@ -757,7 +757,7 @@
         </div>
 
         <div id="accounting-tenants-section" style="display:none;margin-top:28px">
-          <h3 style="margin:8px 0 12px">🏢 Abonnements CyberDesk (tenants)</h3>
+          <h3 style="margin:8px 0 12px">🏢 Abonnements S@FE CYBER PILOT (tenants)</h3>
           <div id="accounting-tenants-kpi-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
           <div id="accounting-tenants-list"></div>
         </div>
@@ -902,7 +902,7 @@ async function checkSession() {
   const errEl = document.getElementById('login-error');
   if (session) {
     // Même auth.users que safe-crm/Vente : un compte connecté n'a pas
-    // accès à CyberDesk pour autant — vérifie le droit par module avant
+    // accès à S@FE CYBER PILOT pour autant — vérifie le droit par module avant
     // d'afficher quoi que ce soit.
     const ok = await hasCyberdeskAccess();
     if (!ok) {
@@ -911,12 +911,12 @@ async function checkSession() {
       // car cyberdesk_my_tenant_status() s'appuie sur auth.uid(). Un tenant
       // trialing/active/past_due n'atteint jamais cette branche (has_module_
       // access reste vrai) — voir migration 015 et CLAUDE.md.
-      let blockedMessage = "Ce compte n'a pas accès à CyberDesk.";
+      let blockedMessage = "Ce compte n'a pas accès à S@FE CYBER PILOT.";
       try {
         const { data: subRows } = await sb.rpc('cyberdesk_my_tenant_status');
         const sub = Array.isArray(subRows) ? subRows[0] : null;
         if (sub && ['canceled', 'unpaid'].includes(sub.subscription_status)) {
-          blockedMessage = 'Votre abonnement CyberDesk est suspendu — contactez-nous pour le réactiver.';
+          blockedMessage = 'Votre abonnement S@FE CYBER PILOT est suspendu — contactez-nous pour le réactiver.';
         }
       } catch (e) { /* repli sur le message générique */ }
 

@@ -1,10 +1,10 @@
 // =========================================================
-// CyberDesk — Modale « Audit clients » (Avis Client + NPS)
+// S@FE CYBER PILOT — Modale « Audit clients » (Avis Client + NPS)
 //
 // Remplace l'ancien bouton "🛡 Audit clients" qui pointait vers
 // modules/Cyber/module-cyber-clients.html (module B2B hors périmètre
-// CyberDesk depuis la migration 008, jamais branché sur les données
-// CyberDesk — voir CLAUDE.md).
+// S@FE CYBER PILOT depuis la migration 008, jamais branché sur les données
+// S@FE CYBER PILOT — voir CLAUDE.md).
 //
 // Réutilise cyberdesk_reporting_reviews (migration 010_accounting_scope.sql),
 // déjà cloisonnée par utilisateur/admin — même patron que la modale

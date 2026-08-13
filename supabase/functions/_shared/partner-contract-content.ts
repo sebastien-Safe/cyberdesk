@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Contenu du document contractuel "Rémunération partenaires"
+// S@FE CYBER PILOT — Contenu du document contractuel "Rémunération partenaires"
 // (statut Mandataire ou Associé SEP), signé électroniquement lors de
 // l'intégration (cyberdesk-verify-signature).
 //
@@ -31,7 +31,7 @@ const BODIES: Record<RemunerationStatus, string> = {
 
 Le mandataire perçoit une commission égale à {PCT}% du chiffre d'affaires
 Hors Taxes encaissé sur les dossiers dont il est le propriétaire au sein de
-CyberDesk. Cette commission fait l'objet d'une facturation par le
+S@FE CYBER PILOT. Cette commission fait l'objet d'une facturation par le
 mandataire à S@FE, selon les modalités habituelles de facturation entre
 professionnels.
 `.trim(),
@@ -40,7 +40,7 @@ professionnels.
 
 Dans le cadre de la société en participation, l'associé perçoit une
 quote-part du résultat égale à {PCT}% du chiffre d'affaires Hors Taxes
-encaissé sur les dossiers dont il est le propriétaire au sein de CyberDesk.
+encaissé sur les dossiers dont il est le propriétaire au sein de S@FE CYBER PILOT.
 Cette quote-part est calculée et versée automatiquement, sans émission de
 facture par l'associé.
 `.trim(),

@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Création d'un tenant + session Stripe Checkout (abonnement).
+// S@FE CYBER PILOT — Création d'un tenant + session Stripe Checkout (abonnement).
 // POST { tenant_name, user_id, trial_days? } → { success, tenant_id, checkout_url }
 // Réservée aux super-admins (action de facturation, distincte de
 // has_module_access('cyberdesk') qui ne garantit qu'un accès module) :

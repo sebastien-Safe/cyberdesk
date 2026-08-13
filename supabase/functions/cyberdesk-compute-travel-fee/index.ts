@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Calcul automatique des frais de déplacement (option O4 du
+// S@FE CYBER PILOT — Calcul automatique des frais de déplacement (option O4 du
 // devis 17Cyber) : forfait de base + distance réelle (OpenRouteService,
 // aller-retour) × coefficient du barème kilométrique, PAR AGENT — chacun
 // facture son propre barème (coefficient + forfait + adresse de départ),

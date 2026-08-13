@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Helper de calcul de durée d'intervention selon la prestation
+// S@FE CYBER PILOT — Helper de calcul de durée d'intervention selon la prestation
 // choisie dans le devis (grille tarifaire 17Cyber). Utilisé par
 // send-cybervictim-quote pour estimer la durée attendue de l'intervention.
 //

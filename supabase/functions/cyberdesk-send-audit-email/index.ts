@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Envoi par email du résultat du quiz de diagnostic public
+// S@FE CYBER PILOT — Envoi par email du résultat du quiz de diagnostic public
 // (mission-cyber.html). Endpoint public — pas d'authentification JWT
 // (le visiteur n'a pas de compte), protégé uniquement par la clé apikey
 // standard Supabase (anon key), comme tout appel client public.
@@ -10,7 +10,7 @@
 // (get_edge_secret) — même mécanisme que send-cybervictim-quote,
 // cyberdesk-forgot-password et cyberdesk-dpo-request. Remplace l'appel
 // direct à Resend (RESEND_API_KEY) utilisé jusqu'ici : c'était le seul
-// point du projet, CyberDesk comme Vente confondus, à ne pas passer par
+// point du projet, S@FE CYBER PILOT comme Vente confondus, à ne pas passer par
 // Brevo — un choix isolé fait le jour de la création de cette fonction,
 // jamais réconcilié avec le reste du stack.
 //
@@ -22,7 +22,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -80,7 +80,7 @@ function buildHtml(p: AuditParams): string {
   const recos = p.recommandations || [];
   const recoHtml = recos.length
     ? recos.map((r) => `<li style="margin-bottom:6px;padding-left:4px">${esc(r)}</li>`).join("")
-    : `<li>Un conseiller CyberDesk reviendra vers vous avec des recommandations personnalisées.</li>`;
+    : `<li>Un conseiller S@FE CYBER PILOT reviendra vers vous avec des recommandations personnalisées.</li>`;
 
   const mColor = esc(p.mission_color || "#0a1628");
   const nBg = esc(p.niveau_bg || "#f8fafc");
@@ -91,7 +91,7 @@ function buildHtml(p: AuditParams): string {
 <html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Votre diagnostic ${esc(p.mission)} — CyberDesk</title>
+<title>Votre diagnostic ${esc(p.mission)} — S@FE CYBER PILOT</title>
 <style>
 body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
 table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
@@ -113,7 +113,7 @@ body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-seri
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
 <td style="vertical-align:middle">
   <span style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.5px">S<span style="color:#e1000f">@</span>FE</span>
-  <span style="display:block;font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">CyberDesk — Diagnostic public</span>
+  <span style="display:block;font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">S@FE CYBER PILOT — Diagnostic public</span>
 </td>
 <td style="text-align:right;vertical-align:middle">
   <span style="font-size:14px;font-weight:700;color:${mColor}">${esc(p.mission)}</span>
@@ -127,7 +127,7 @@ body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-seri
 
 <p style="margin:0 0 8px;font-size:17px;font-weight:700;color:#0a1628">Bonjour ${esc(p.nom)},</p>
 <p style="margin:0 0 24px;font-size:14px;color:#4b5563;line-height:1.6">
-  Voici les résultats de votre diagnostic <strong>${esc(p.mission)}</strong> réalisé via le quiz public CyberDesk.
+  Voici les résultats de votre diagnostic <strong>${esc(p.mission)}</strong> réalisé via le quiz public S@FE CYBER PILOT.
 </p>
 
 <!-- Score -->
@@ -195,7 +195,7 @@ body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-seri
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
        style="background:#f8fafc;border-left:3px solid ${mColor};border-radius:0 8px 8px 0;margin-bottom:24px">
 <tr><td style="padding:14px 16px">
-  <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px">Votre conseiller CyberDesk</p>
+  <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px">Votre conseiller S@FE CYBER PILOT</p>
   <p style="margin:0;font-size:14px;color:#0f172a;font-weight:600">${esc(p.conseiller)}</p>
   <p style="margin:4px 0 0;font-size:13px;color:#4b5563">contact@safe-digitalisation.fr</p>
 </td></tr>
@@ -205,8 +205,8 @@ body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-seri
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
 <tr><td style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px">
   <p style="margin:0;font-size:11px;color:#1e40af;line-height:1.5">
-    Consentement RGPD recueilli le ${esc(p.date)} dans le cadre du quiz de diagnostic CyberDesk.
-    ${esc(p.nom)} (${esc(p.email)}) autorise CyberDesk à conserver ses coordonnées pour le suivi de ce diagnostic.
+    Consentement RGPD recueilli le ${esc(p.date)} dans le cadre du quiz de diagnostic S@FE CYBER PILOT.
+    ${esc(p.nom)} (${esc(p.email)}) autorise S@FE CYBER PILOT à conserver ses coordonnées pour le suivi de ce diagnostic.
     Données non transmises à des tiers — Art. 13 RGPD.
   </p>
 </td></tr>
@@ -217,11 +217,11 @@ body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-seri
 <!-- FOOTER -->
 <tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:18px 28px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
-  <td><span style="font-size:11px;color:#9ca3af">CyberDesk · Safe Digitalisation<br>contact@safe-digitalisation.fr</span></td>
+  <td><span style="font-size:11px;color:#9ca3af">S@FE CYBER PILOT · Safe Digitalisation<br>contact@safe-digitalisation.fr</span></td>
   <td style="text-align:right"><span style="font-size:11px;color:#9ca3af">Rapport généré le ${esc(p.date)}</span></td>
 </tr></table>
 <p style="margin:10px 0 0;font-size:10px;color:#d1d5db;text-align:center">
-  Vous recevez cet email car vous avez complété le quiz de diagnostic CyberDesk.
+  Vous recevez cet email car vous avez complété le quiz de diagnostic S@FE CYBER PILOT.
   Ce rapport est confidentiel et destiné uniquement à son destinataire.
 </p>
 </td></tr>

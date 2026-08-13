@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Envoi du devis par e-mail (Brevo) + création d'une session
+// S@FE CYBER PILOT — Envoi du devis par e-mail (Brevo) + création d'une session
 // Stripe Checkout au montant exact du devis composé côté client.
 // POST { lead_id, devis, pdf_base64, pdf_filename }
 //   devis: { prestation_label, ht, tva, ttc, ... } (voir victimes17-quote.js)
@@ -14,7 +14,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
   // Garde d'accès module — indispensable sur le projet Supabase partagé :
   // un compte Vente authentifié ne doit pas pouvoir agir sur un dossier
-  // victime CyberDesk (les opérations ci-dessous passent par service_role,
+  // victime S@FE CYBER PILOT (les opérations ci-dessous passent par service_role,
   // qui contourne RLS).
   const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
   if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       sender: SENDER,
       to: [{ email: lead.email, name: clientNom }],
-      bcc: [{ email: "cyberdesk@safe-digitalisation.fr", name: "CyberDesk Team" }],
+      bcc: [{ email: "cyberdesk@safe-digitalisation.fr", name: "S@FE CYBER PILOT Team" }],
       subject: `Votre devis d'intervention 17Cyber — ${ttc.toFixed(2)} € TTC`,
       htmlContent,
       attachment: [{ content: pdf_base64, name: pdf_filename || "devis-17cyber.pdf" }],

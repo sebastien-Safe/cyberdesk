@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Sauvegarde de l'arbre de tâches d'intervention 17Cyber
+// S@FE CYBER PILOT — Sauvegarde de l'arbre de tâches d'intervention 17Cyber
 // POST { lead_id, os, incident_type, phases, completion_pct }
 // Auth : bearer JWT utilisateur authentifié (vérifié via auth.getUser(),
 // même pattern que supabase/functions/send-mandat-email/index.ts).
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
   // Garde d'accès module — indispensable sur le projet Supabase partagé :
   // un compte Vente authentifié ne doit pas pouvoir agir sur un dossier
-  // victime CyberDesk (les opérations ci-dessous passent par service_role,
+  // victime S@FE CYBER PILOT (les opérations ci-dessous passent par service_role,
   // qui contourne RLS).
   const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
   if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);

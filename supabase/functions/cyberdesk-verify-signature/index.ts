@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Vérifie le code OTP et enregistre la signature du contrat
+// S@FE CYBER PILOT — Vérifie le code OTP et enregistre la signature du contrat
 // partenaire (Mandataire / Associé SEP). C'est le seul point d'écriture de
 // cyberdesk_partner_contracts (aucune policy insert pour authenticated,
 // voir 022_cyberdesk_partner_contracts.sql) — la valeur probante de la

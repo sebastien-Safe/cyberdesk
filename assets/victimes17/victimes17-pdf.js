@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Générateur PDF Devis / Rapport dossiers victimes 17Cyber
+// S@FE CYBER PILOT — Générateur PDF Devis / Rapport dossiers victimes 17Cyber
 // Génération 100% client-side via jsPDF, palette navy/gold, doc.save()
 // direct (aucun stockage serveur des PDF générés).
 // ==========================================================================
@@ -27,7 +27,7 @@ window.VictimPDF = (function () {
     return (s || '')
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-zA-Z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '') || 'CyberDesk';
+      .replace(/^_+|_+$/g, '') || 'SAFE_CYBER_PILOT';
   }
 
   // --- Header / footer communs ---
@@ -218,7 +218,7 @@ window.VictimPDF = (function () {
     doc.setTextColor(60, 60, 60);
     const cfg = PRODUCT_CONFIG[product.code] || {};
     const objetLines = doc.splitTextToSize(
-      cfg.objet || `Intervention CyberDesk suite à un signalement 17Cyber — ${product.alert_type}.`, 180
+      cfg.objet || `Intervention S@FE CYBER PILOT suite à un signalement 17Cyber — ${product.alert_type}.`, 180
     );
     doc.text(objetLines, 15, y);
     y += objetLines.length * 4.5 + 6;
@@ -321,7 +321,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
     const objetLines = doc.splitTextToSize(
-      `Intervention CyberDesk suite à un signalement 17Cyber — ${devis.prestation_label || 'diagnostic à préciser'}.`, 180
+      `Intervention S@FE CYBER PILOT suite à un signalement 17Cyber — ${devis.prestation_label || 'diagnostic à préciser'}.`, 180
     );
     doc.text(objetLines, 15, y);
     y += objetLines.length * 4.5 + 6;
@@ -474,7 +474,7 @@ window.VictimPDF = (function () {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(3, 13, 38);
-      doc.text('Notes du dossier (saisies dans CyberDesk)', 15, y);
+      doc.text('Notes du dossier (saisies dans S@FE CYBER PILOT)', 15, y);
       y += 5.5;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
@@ -531,7 +531,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
     doc.text(
-      "CyberDesk n'est pas un prestataire de forensique judiciaire agréé ; ce rapport constitue un élément d'aide à la décision et non une expertise judiciaire opposable.",
+      "S@FE CYBER PILOT n'est pas un prestataire de forensique judiciaire agréé ; ce rapport constitue un élément d'aide à la décision et non une expertise judiciaire opposable.",
       15, y + 12, { maxWidth: 180 }
     );
 

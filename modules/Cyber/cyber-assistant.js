@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Assistant Cybersécurité IA
+   S@FE CYBER PILOT — Assistant Cybersécurité IA
    Appel direct à l'Edge Function cyber-ia-assistant (Anthropic
    Claude). Pas de système multi-connecteurs en v1 (voir CLAUDE.md).
    CYBER_SYSTEM est défini dans assets/js/cyber-ai-system-prompt.js

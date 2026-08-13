@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Contenu du document contractuel "Rémunération
+   S@FE CYBER PILOT — Contenu du document contractuel "Rémunération
    partenaires" (copie navigateur, affichage uniquement).
 
    ⚠️ N'est PAS la source de vérité — le hash d'intégrité (doc_hash)
@@ -26,13 +26,13 @@ const PARTNER_CONTRACT_BODIES = {
     "[PLACEHOLDER — à valider par un juriste avant mise en production]\n\n" +
     "Le mandataire perçoit une commission égale à {PCT}% du chiffre d'affaires " +
     "Hors Taxes encaissé sur les dossiers dont il est le propriétaire au sein de " +
-    "CyberDesk. Cette commission fait l'objet d'une facturation par le mandataire " +
+    "S@FE CYBER PILOT. Cette commission fait l'objet d'une facturation par le mandataire " +
     "à S@FE, selon les modalités habituelles de facturation entre professionnels.",
   associe_sep:
     "[PLACEHOLDER — à valider par un juriste avant mise en production]\n\n" +
     "Dans le cadre de la société en participation, l'associé perçoit une quote-part " +
     "du résultat égale à {PCT}% du chiffre d'affaires Hors Taxes encaissé sur les " +
-    "dossiers dont il est le propriétaire au sein de CyberDesk. Cette quote-part " +
+    "dossiers dont il est le propriétaire au sein de S@FE CYBER PILOT. Cette quote-part " +
     "est calculée et versée automatiquement, sans émission de facture par l'associé.",
 };
 

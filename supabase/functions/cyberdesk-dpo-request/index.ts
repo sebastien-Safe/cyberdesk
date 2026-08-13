@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Demande d'exercice de droits RGPD (module DPO — préparation).
+// S@FE CYBER PILOT — Demande d'exercice de droits RGPD (module DPO — préparation).
 // Enregistre la demande (cyberdesk_dpo_requests) et notifie immédiatement
 // le DPO par e-mail (Brevo) : le délai légal de réponse est de 1 mois,
 // une demande non vue tant qu'un panneau admin dédié n'existe pas serait
@@ -11,7 +11,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 const DPO_EMAIL = "dpo@safe-digitalisation.fr";
 
 const REQUEST_TYPES: Record<string, string> = {
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   if (authErr || !user) return json({ error: "unauthorized" }, 401);
 
   // Garde d'accès module — un compte Vente authentifié ne doit pas pouvoir
-  // ouvrir une demande DPO côté CyberDesk (projet Supabase partagé).
+  // ouvrir une demande DPO côté S@FE CYBER PILOT (projet Supabase partagé).
   const { data: hasAccess, error: accessErr } = await sbAnon.rpc("has_module_access", { p_module: "cyberdesk" });
   if (accessErr || hasAccess !== true) return json({ error: "forbidden" }, 403);
 
@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
     <div style="font-family:Arial,sans-serif;color:#1d1d1b;max-width:560px;margin:0 auto;line-height:1.6">
       <div style="border-bottom:3px solid #000091;padding-bottom:10px;margin-bottom:20px">
         <strong style="font-size:18px">S<span style="color:#e1000f">@</span>FE</strong>
-        <div style="font-size:11px;color:#666">CyberDesk — Registre de traitement RGPD</div>
+        <div style="font-size:11px;color:#666">S@FE CYBER PILOT — Registre de traitement RGPD</div>
       </div>
-      <p>Nouvelle demande d'exercice de droits reçue depuis CyberDesk.</p>
+      <p>Nouvelle demande d'exercice de droits reçue depuis S@FE CYBER PILOT.</p>
       <p><strong>Type :</strong> ${REQUEST_TYPES[requestType]}</p>
       <p><strong>Compte :</strong> ${user.email || user.id}</p>
       ${message ? `<p><strong>Message :</strong><br>${message.replace(/</g, "&lt;")}</p>` : ""}
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       sender: SENDER,
       to: [{ email: DPO_EMAIL }],
-      subject: `CyberDesk — Demande d'exercice de droits (${REQUEST_TYPES[requestType]})`,
+      subject: `S@FE CYBER PILOT — Demande d'exercice de droits (${REQUEST_TYPES[requestType]})`,
       htmlContent,
     }),
   });

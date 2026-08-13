@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Prompt système de l'assistant IA (copie navigateur)
+   S@FE CYBER PILOT — Prompt système de l'assistant IA (copie navigateur)
 
    ⚠️ N'est plus la source de vérité pour le circuit actif (dossiers
    victimes 17Cyber) : cyber-ia-assistant construit et pseudonymise

@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Module Audit B2B : Dashboard
+   S@FE CYBER PILOT — Module Audit B2B : Dashboard
    ============================================================ */
 
 async function loadDashboard() {

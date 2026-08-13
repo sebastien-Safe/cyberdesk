@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Lien vers le portail client Stripe (changement de plan /
+// S@FE CYBER PILOT — Lien vers le portail client Stripe (changement de plan /
 // résiliation en self-service pour l'abonnement SaaS tenant).
 // POST {} → { success, portal_url }
 // Retrouve le tenant de l'appelant via staff_module_access — n'exige PAS

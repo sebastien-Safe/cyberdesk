@@ -1,5 +1,5 @@
 // =========================================================
-// CyberDesk — Signature électronique du contrat partenaire
+// S@FE CYBER PILOT — Signature électronique du contrat partenaire
 // (Mandataire / Associé SEP) : choix du statut, capture de
 // signature (canvas → SVG), envoi/vérification d'un code OTP
 // (cyberdesk-send-signature-otp / cyberdesk-verify-signature).

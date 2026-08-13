@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Module Audit B2B : Incidents de sécurité
+   S@FE CYBER PILOT — Module Audit B2B : Incidents de sécurité
    ============================================================ */
 
 const INCIDENT_TYPES = [

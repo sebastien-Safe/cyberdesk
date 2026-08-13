@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Réinitialisation de mot de passe, envoyée via Brevo au lieu
+// S@FE CYBER PILOT — Réinitialisation de mot de passe, envoyée via Brevo au lieu
 // du service e-mail intégré de Supabase (quota par défaut trop bas — la
 // limite "email rate limit exceeded" a été atteinte dès les premiers tests
 // réels). Portée volontairement limitée au flux "mot de passe oublié" :
@@ -18,7 +18,7 @@ import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -90,10 +90,10 @@ Deno.serve(async (req) => {
     <div style="font-family:Arial,sans-serif;color:#1d1d1b;max-width:560px;margin:0 auto;line-height:1.6">
       <div style="border-bottom:3px solid #000091;padding-bottom:10px;margin-bottom:20px">
         <strong style="font-size:18px">S<span style="color:#e1000f">@</span>FE</strong>
-        <div style="font-size:11px;color:#666">CyberDesk — Gestion de dossiers victimes cyber</div>
+        <div style="font-size:11px;color:#666">S@FE CYBER PILOT — Gestion de dossiers victimes cyber</div>
       </div>
       <p>Bonjour,</p>
-      <p>Une demande de réinitialisation de mot de passe a été effectuée pour ce compte CyberDesk.</p>
+      <p>Une demande de réinitialisation de mot de passe a été effectuée pour ce compte S@FE CYBER PILOT.</p>
       <p style="text-align:center;margin:24px 0">
         <a href="${actionLink}" style="background:#000091;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">
           Choisir un nouveau mot de passe
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       sender: SENDER,
       to: [{ email }],
-      subject: "CyberDesk — Réinitialisation de votre mot de passe",
+      subject: "S@FE CYBER PILOT — Réinitialisation de votre mot de passe",
       htmlContent,
     }),
   });

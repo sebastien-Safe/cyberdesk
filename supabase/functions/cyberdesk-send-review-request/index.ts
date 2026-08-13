@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Envoi de la demande d'avis client à la clôture d'un dossier.
+// S@FE CYBER PILOT — Envoi de la demande d'avis client à la clôture d'un dossier.
 // Crée une ligne cybervictim_reviews (token valable 60 jours) et envoie au
 // client un e-mail Brevo contenant le lien public vers avis-client.html.
 //
@@ -11,7 +11,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
-const SENDER = { name: "S@FE — CyberDesk", email: "noreply@safe-digitalisation.fr" };
+const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
 const REVIEW_VALIDITY_DAYS = 60;
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {

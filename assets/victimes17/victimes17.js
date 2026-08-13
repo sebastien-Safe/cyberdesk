@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   CyberDesk — Kanban dossiers victimes (pipeline 17Cyber)
+   S@FE CYBER PILOT — Kanban dossiers victimes (pipeline 17Cyber)
    Étapes : signalement → qualification → devis_envoye →
             paiement_recu → rapport_livre → cloture
    ═══════════════════════════════════════════ */

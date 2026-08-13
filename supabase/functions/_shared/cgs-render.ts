@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Rendu docx des Conditions Générales de Services (cgs-content.ts)
+// S@FE CYBER PILOT — Rendu docx des Conditions Générales de Services (cgs-content.ts)
 // ==========================================================================
 import { Paragraph, Table, PageBreak } from "docx";
 import { h1, h2, h3, p, bullet, callout, infoTable, simpleTable } from "./docx-helpers.ts";

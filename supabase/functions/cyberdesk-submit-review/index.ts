@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Soumission publique d'un avis client (page avis-client.html).
+// S@FE CYBER PILOT — Soumission publique d'un avis client (page avis-client.html).
 // Appelée par un visiteur non authentifié via un lien reçu par e-mail
 // (cyberdesk-send-review-request) — même logique que cyberdesk-forgot-password :
 // service_role en interne, --no-verify-jwt, réponse générique en cas de

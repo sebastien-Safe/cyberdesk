@@ -1,5 +1,5 @@
 // =========================================================
-// CyberDesk — Modale « Comptable » (dashboard KPI)
+// S@FE CYBER PILOT — Modale « Comptable » (dashboard KPI)
 // Accessible à tout utilisateur connecté : un utilisateur standard ne voit
 // que ses propres résultats (dossiers qu'il a créés), un admin choisit
 // entre la vue globale et celle d'un utilisateur en particulier.
@@ -231,7 +231,7 @@ function _acctRenderAttackTypeChart(leads) {
   });
 }
 
-// ── Abonnements CyberDesk (tenants) — admin uniquement ──
+// ── Abonnements S@FE CYBER PILOT (tenants) — admin uniquement ──
 // Pas de MRR en €  ici : cyberdesk_tenants ne stocke que l'id du Price
 // Stripe (stripe_price_id), pas son montant — calculer un MRR fiable
 // demanderait soit de le dupliquer en base, soit un appel à l'API Stripe

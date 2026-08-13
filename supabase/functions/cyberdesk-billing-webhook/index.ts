@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Webhook Stripe : cycle de vie de l'abonnement SaaS tenant
+// S@FE CYBER PILOT — Webhook Stripe : cycle de vie de l'abonnement SaaS tenant
 // (public.cyberdesk_tenants). Distinct de cyberdesk-stripe-webhook (paiement
 // des dossiers victimes, migration 005) — endpoint et secret de signature
 // séparés (un secret Stripe par endpoint webhook, voir CLAUDE.md).

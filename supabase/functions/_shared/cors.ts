@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — CORS restreint aux origines connues du frontend.
+// S@FE CYBER PILOT — CORS restreint aux origines connues du frontend.
 // Remplace le précédent "Access-Control-Allow-Origin: *" (TODO historique
 // présent dans chaque fonction) par une liste blanche, avec repli sur
 // l'origine de production si l'en-tête Origin de la requête ne correspond

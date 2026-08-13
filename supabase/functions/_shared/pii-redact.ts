@@ -1,10 +1,10 @@
 // ==========================================================================
-// CyberDesk — Pseudonymisation du texte libre avant envoi à Anthropic
+// S@FE CYBER PILOT — Pseudonymisation du texte libre avant envoi à Anthropic
 // Masque par expressions régulières les motifs identifiables (email,
 // téléphone, IBAN, numéro de sécurité sociale, numéro de carte) et
 // substitue le nom connu de la victime par "la victime".
 //
-// Limite documentée (registre de traitement CyberDesk) : un tiers non
+// Limite documentée (registre de traitement S@FE CYBER PILOT) : un tiers non
 // identifié mentionné nommément dans un champ libre (ex. l'agresseur,
 // un témoin) n'est pas détecté — cela nécessiterait une détection
 // d'entités nommées, hors périmètre de cette implémentation.

@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Webhook Stripe : marque le dossier payé et avance le pipeline
+// S@FE CYBER PILOT — Webhook Stripe : marque le dossier payé et avance le pipeline
 // à "paiement_recu" quand une session Checkout est complétée.
 // Appelé directement par Stripe (pas de JWT Supabase) — authenticité
 // vérifiée via la signature de la requête (STRIPE_WEBHOOK_SECRET), donc

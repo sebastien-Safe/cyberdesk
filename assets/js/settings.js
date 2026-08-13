@@ -1,5 +1,5 @@
 // =========================================================
-// CyberDesk — Modale « Paramétrage » (fiche profil utilisateur)
+// S@FE CYBER PILOT — Modale « Paramétrage » (fiche profil utilisateur)
 // Facturation/contrat (cyberdesk_user_settings), photo de profil
 // (bucket cyberdesk-avatars), 2FA (MFA natif Supabase Auth), et
 // demande d'exercice de droits RGPD (Edge Function cyberdesk-dpo-request).

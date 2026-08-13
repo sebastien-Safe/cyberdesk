@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-// CyberDesk — Modale Devis 17Cyber (3 étapes)
+// S@FE CYBER PILOT — Modale Devis 17Cyber (3 étapes)
 // Source unique de vérité tarifaire : assets/data/tarifs-cyberdesk.json.
 // Présélectionne une prestation à partir du diagnostic 17Cyber (attack_type
 // + mots-clés targeted_services), toujours modifiable. Montant final

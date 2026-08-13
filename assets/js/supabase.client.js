@@ -1,8 +1,8 @@
 // =========================================================
-// Configuration Supabase — CyberDesk
+// Configuration Supabase — S@FE CYBER PILOT
 // =========================================================
 // Projet partagé avec safe-crm (Safe-crm-V2, ref bgkijldrmdhklkadkeua,
-// région Paris) — CyberDesk et le module Vente de safe-crm vivent dans
+// région Paris) — S@FE CYBER PILOT et le module Vente de safe-crm vivent dans
 // la même base, avec un cloisonnement par module (voir has_module_access()
 // / staff_module_access dans supabase/migrations/008_cyberdesk_on_safecrm.sql
 // et la section "Cohabitation avec safe-crm" de CLAUDE.md).
@@ -10,11 +10,11 @@
 // Cette clé "publishable/anon" est conçue pour être publique
 // (protégée par les règles RLS définies dans les migrations) :
 // seuls les comptes ayant une ligne staff_module_access(module='cyberdesk')
-// (ou is_super_admin()) pourront réellement voir des données CyberDesk.
+// (ou is_super_admin()) pourront réellement voir des données S@FE CYBER PILOT.
 //
 // ⚠️ Ne mettez JAMAIS ici la "secret key" / "service_role key" : elle
 // donne un accès administrateur complet à TOUTES les données du projet
-// partagé (y compris safe-crm/Vente), pas seulement à CyberDesk — ne
+// partagé (y compris safe-crm/Vente), pas seulement à S@FE CYBER PILOT — ne
 // doit jamais figurer dans du code public (GitHub, site déployé, etc.).
 // =========================================================
 
@@ -64,7 +64,7 @@ sb.auth.onAuthStateChange((event) => {
   }
 });
 
-// Accès au module CyberDesk (cloisonné de Vente même si auth.users est
+// Accès au module S@FE CYBER PILOT (cloisonné de Vente même si auth.users est
 // partagé) — à appeler juste après une connexion réussie, voir index.html.
 async function hasCyberdeskAccess() {
   const { data, error } = await sb.rpc('has_module_access', { p_module: 'cyberdesk' });

@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Assistant IA côté dossier victime 17Cyber
+   S@FE CYBER PILOT — Assistant IA côté dossier victime 17Cyber
    Appel à l'Edge Function cyber-ia-assistant avec { lead_id, question }
    uniquement — le contexte du dossier (diagnostic + notes + chronologie)
    est désormais assemblé ET pseudonymisé côté serveur (voir

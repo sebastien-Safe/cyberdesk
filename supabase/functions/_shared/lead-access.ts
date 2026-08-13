@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Vérifie qu'un utilisateur authentifié est bien le créateur du
+// S@FE CYBER PILOT — Vérifie qu'un utilisateur authentifié est bien le créateur du
 // dossier (created_by) ou un admin, avant d'agir dessus (devis, rapport,
 // assistant IA, tâches, avis client...).
 //

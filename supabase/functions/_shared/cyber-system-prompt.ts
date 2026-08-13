@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Prompt système de l'assistant IA (copie serveur)
+// S@FE CYBER PILOT — Prompt système de l'assistant IA (copie serveur)
 //
 // Source de vérité pour l'appel Anthropic côté cyber-ia-assistant : le
 // prompt n'est plus accepté depuis le client (voir index.ts) pour éviter

@@ -1,5 +1,5 @@
 /* ============================================================
-   CyberDesk — Module Audit B2B : auth, navigation, helpers, score
+   S@FE CYBER PILOT — Module Audit B2B : auth, navigation, helpers, score
    ============================================================ */
 
 // Client Supabase partagé, défini dans assets/js/supabase.client.js

@@ -1,5 +1,5 @@
 // ==========================================================================
-// CyberDesk — Textes par produit 17Cyber (objet du devis + prestations type)
+// S@FE CYBER PILOT — Textes par produit 17Cyber (objet du devis + prestations type)
 // Dupliqué depuis assets/victimes17/victimes17-pdf.js (PRODUCT_CONFIG) : contenu
 // statique partagé entre le PDF client-side et les Edge Functions docx, pas de
 // dépendance runtime entre les deux côtés.
