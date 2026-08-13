@@ -14,8 +14,6 @@ const V17_COLS = [
 ];
 
 let _v17Leads       = [];
-let _v17Products    = [];
-let _v17ProductsById = {};
 let _v17Search      = '';
 let _v17Dragging    = null;
 
@@ -38,14 +36,8 @@ async function initVictimes17() {
 
 // ── Chargement données ──
 async function _v17LoadData() {
-  const { data: products, error: pErr } = await sb.from('cybervictim_products').select('*').order('alert_type');
-  if (pErr) throw pErr;
-  _v17Products = products || [];
-  _v17ProductsById = {};
-  _v17Products.forEach(p => { _v17ProductsById[p.id] = p; });
-
   const { data: leads, error: lErr } = await sb.from('cybervictim_leads')
-    .select('*, cybervictim_products(code, alert_type, price_ht, price_ttc)')
+    .select('*')
     .order('created_at', { ascending: false });
   if (lErr) throw lErr;
   _v17Leads = leads || [];
@@ -94,7 +86,6 @@ function _v17RenderBoard() {
 
 // ── HTML d'une carte ──
 function _v17CardHTML(lead) {
-  const product = lead.cybervictim_products || {};
   const dateStr = lead.created_at ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '—';
 
   return `
@@ -104,12 +95,14 @@ function _v17CardHTML(lead) {
        ondragend="_v17DragEnd()">
     <div style="padding-left:6px">
       <div class="pcard-company">${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}</div>
-      <div class="v17-alert-badge">${escapeHtml(product.alert_type || '—')}</div>
+      <div class="v17-alert-badge">${escapeHtml(ATTACK_TYPE_LABELS[lead.attack_type] || '—')}</div>
       ${lead.ticket_number ? `<div class="v17-ticket-badge">🎫 ${escapeHtml(lead.ticket_number)}</div>` : ''}
       <div class="pcard-meta">
         ${lead.payment_status === 'paye'
           ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.amount_paid_ttc)} TTC — payé</div>`
-          : `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(product.price_ttc)} TTC</div>`}
+          : lead.quote_amount_ht != null
+            ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.quote_amount_ht * 1.2)} TTC</div>`
+            : ''}
         <div class="pcard-meta-item">📅 ${dateStr}</div>
         ${lead.birth_year ? `<div class="pcard-meta-item">🎂 ${_diagComputeAge(lead.birth_year)} ans</div>` : ''}
         ${lead.task_completion_pct ? `<div class="pcard-meta-item">🗂️ ${lead.task_completion_pct}% tâches</div>` : ''}
@@ -607,11 +600,11 @@ function _diagPrefillForm(lead) {
   _diagGoToStep(1);
 }
 
-// Dérive automatiquement le "type d'alerte 17Cyber" (product_id, catalogue
-// legacy cybervictim_products) à partir du type d'attaque du diagnostic —
-// remplace l'ancienne sélection manuelle. deni_de_service/autre n'ont pas
-// de correspondance : product_id reste null (colonne nullable), c'est
-// volontaire plutôt que de forcer un choix arbitraire.
+// Dérive le "code" d'incident canonique (voir PRODUCT_DISPLAY_ORDER côté
+// serveur, supabase/functions/_shared/product-texts.ts — copie serveur à
+// garder synchronisée) à partir du type d'attaque du diagnostic.
+// deni_de_service/autre n'ont pas de correspondance : code reste null,
+// c'est volontaire plutôt que de forcer un choix arbitraire.
 const ATTACK_TYPE_TO_PRODUCT_CODE = {
   hameconnage:         'hameconnage',
   violation_compte:    'piratage_compte',
@@ -622,18 +615,20 @@ const ATTACK_TYPE_TO_PRODUCT_CODE = {
   intrusion_reseau:    'virus_informatique',
 };
 
-function _diagDeriveProductId(attackType) {
-  if (!attackType) return null;
-  const code = ATTACK_TYPE_TO_PRODUCT_CODE[attackType];
-  if (!code) return null;
-  const product = _v17Products.find(p => p.code === code);
-  return product ? product.id : null;
-}
+// Libellés courts FR — mêmes valeurs que les puces diag-chip (index.html).
+const ATTACK_TYPE_LABELS = {
+  hameconnage:         'Hameçonnage',
+  ransomware:          'Rançongiciel',
+  violation_compte:    'Violation de compte',
+  arnaque_virement:    'Arnaque au virement',
+  fraude_telephonique: 'Fraude téléphonique',
+  usurpation_identite: "Usurpation d'identité",
+  intrusion_reseau:    'Intrusion réseau',
+  deni_de_service:     'Déni de service',
+  autre:               'Autre',
+};
 
 async function openVictimLeadModal() {
-  if (!_v17Products.length) {
-    try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
-  }
   // UUID généré côté client pour scoper les captures d'écran uploadées
   // avant même l'enregistrement du dossier — réutilisé comme id explicite
   // à l'insertion dans saveVictimLead().
@@ -647,9 +642,6 @@ async function openVictimLeadModal() {
 async function openEditVictimLeadModal(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
-  if (!_v17Products.length) {
-    try { await _v17LoadData(); } catch (e) { console.error('[victimes17]', e); }
-  }
   _diagUploadLeadId = leadId;
   document.getElementById('victim-lead-modal-title').textContent =
     `Modifier — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
@@ -711,7 +703,6 @@ async function saveVictimLead() {
     return;
   }
 
-  const productId = _diagDeriveProductId(attackType);
   const leadId = document.getElementById('vl-id').value || null;
   const btn = document.getElementById('btn-diag-next');
   btn.disabled = true;
@@ -729,7 +720,6 @@ async function saveVictimLead() {
 
     // Étape 2
     ticket_number:       document.getElementById('diag-ticket').value.trim() || null,
-    product_id:          productId,
     attack_type:         attackType,
     attack_description:  document.getElementById('diag-attack-description').value.trim() || null,
     os_victim:           document.getElementById('diag-os-victim').value || null,
@@ -777,7 +767,7 @@ async function saveVictimLead() {
       entityId:   data.id,
       donnees:    leadId ? 'Mise à jour diagnostic dossier victime 17Cyber' : 'Création dossier victime 17Cyber (diagnostic complet)',
       criticite:  'Info',
-      details:    { alert_type: _v17ProductsById[productId]?.alert_type, ticket_number: payload.ticket_number, attack_type: payload.attack_type, severity: payload.severity },
+      details:    { alert_type: ATTACK_TYPE_LABELS[attackType], ticket_number: payload.ticket_number, attack_type: payload.attack_type, severity: payload.severity },
     });
 
     closeVictimLeadModal();
@@ -839,10 +829,13 @@ function _diagInit() {
 async function generateVictimReport(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
-  // product_id peut être null (attack_type sans correspondance dans le
-  // catalogue legacy, ex. deni_de_service/autre) — on utilise alors un
-  // intitulé de repli basé sur le diagnostic plutôt que de bloquer.
-  const product = _v17ProductsById[lead.product_id] || { alert_type: lead.attack_type || 'Incident cybersécurité', code: null };
+  // code sans correspondance possible (attack_type ex. deni_de_service/
+  // autre) — on utilise alors un intitulé de repli basé sur le diagnostic
+  // plutôt que de bloquer.
+  const product = {
+    code:       ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
+    alert_type: ATTACK_TYPE_LABELS[lead.attack_type] || lead.attack_type || 'Incident cybersécurité',
+  };
   if (typeof window.VictimPDF === 'undefined') { alert('Générateur PDF indisponible.'); return; }
 
   window.VictimPDF.generateReport(lead, product);
@@ -857,7 +850,7 @@ async function generateVictimReport(leadId) {
     entityId:   leadId,
     donnees:    'Génération du rapport PDF',
     criticite:  'Info',
-    details:    { product_id: product.id, alert_type: product.alert_type },
+    details:    { code: product.code, alert_type: product.alert_type },
   });
 
   if (lead.pipeline_stage === 'paiement_recu') {
@@ -875,12 +868,10 @@ async function generateVictimReport(leadId) {
 async function openTaskTreeModal(leadId) {
   const lead = _v17Leads.find(l => l.id === leadId);
   if (!lead) return;
-  // product_id peut être null (attack_type sans correspondance dans le
-  // catalogue legacy, ex. deni_de_service/autre) — TaskTree.init() gère
-  // déjà un incidentType manquant (repli sur le premier type disponible +
-  // sélecteur dans la modale pour le changer manuellement), donc on ne
-  // bloque plus l'ouverture ici comme avant.
-  const product = _v17ProductsById[lead.product_id];
+  // code sans correspondance possible (attack_type ex. deni_de_service/
+  // autre) — TaskTree.init() gère déjà un incidentType manquant (repli sur
+  // le premier type disponible + sélecteur dans la modale pour le changer
+  // manuellement), donc on ne bloque pas l'ouverture ici.
   if (typeof window.TaskTree === 'undefined') { alert("Composant d'arbre de tâches indisponible."); return; }
 
   document.getElementById('task-tree-modal-title').textContent =
@@ -891,7 +882,7 @@ async function openTaskTreeModal(leadId) {
     await window.TaskTree.init({
       container: '#task-tree-container',
       leadId,
-      incidentType: product?.code || null,
+      incidentType: ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
       os: lead.os_victim || null,
       savedPhases: lead.intervention_tasks?.phases || null,
       onSave: (payload) => _v17SaveTaskTree(leadId, payload),

@@ -3,8 +3,10 @@
 // POST { lead_id } → { success, filename, docx_base64 }
 // Le détail de la prestation se complète automatiquement à partir des actes
 // techniques cochés dans l'arbre de tâches (intervention_tasks) ; à défaut,
-// repli sur la liste des prestations type du produit. Le tarif reste le forfait
-// du produit (price_ht/price_ttc) — pas de tarification à l'acte.
+// repli sur la liste des prestations type du produit. Le tarif est celui du
+// devis déjà composé et envoyé côté modale 3 étapes (cybervictim_leads.
+// quote_amount_ht, persisté par send-cybervictim-quote) — pas de catalogue
+// de prix séparé, ni de tarification à l'acte ici.
 // Document calculé à la volée et retourné dans la réponse HTTP : aucun stockage
 // serveur (cohérent avec le registre RGPD T11).
 // ==========================================================================
@@ -12,7 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Document, Packer, Paragraph } from "docx";
 import { h1, h2, p, bullet, infoTable, pricingTable, centered } from "../_shared/docx-helpers.ts";
 import { renderCgsBlocks } from "../_shared/cgs-render.ts";
-import { PRODUCT_TEXTS } from "../_shared/product-texts.ts";
+import { PRODUCT_TEXTS, ATTACK_TYPE_TO_PRODUCT_CODE, ATTACK_TYPE_LABELS, TARIFS_INDICATIFS_CGS } from "../_shared/product-texts.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { canAccessLead } from "../_shared/lead-access.ts";
 
@@ -77,21 +79,18 @@ Deno.serve(async (req) => {
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, product_id, created_by, cybervictim_products(code, alert_type, price_ht, price_ttc)")
+    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, attack_type, quote_amount_ht, created_by")
     .eq("id", leadId)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
   if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
-  const { data: allProducts, error: eProducts } = await sb
-    .from("cybervictim_products")
-    .select("code, alert_type, price_ttc");
-  if (eProducts) return json({ error: "products_fetch_failed" }, 500);
-
-  const product = (lead as any).cybervictim_products || {};
+  const code = ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type as string] || null;
+  const alertType = ATTACK_TYPE_LABELS[lead.attack_type as string] || "Intervention 17Cyber";
+  const product = { code, alert_type: alertType };
   const it = lead.intervention_tasks || {};
   const phases: PhaseRecord[] = it.phases || [];
-  const texts = PRODUCT_TEXTS[product.code] || { objet: `Intervention S@FE suite à un signalement 17Cyber — ${product.alert_type}.`, prestationsType: [] };
+  const texts = PRODUCT_TEXTS[product.code || ""] || { objet: `Intervention S@FE suite à un signalement 17Cyber — ${product.alert_type}.`, prestationsType: [] };
 
   const dossierRef = `S@FE-CYB-${new Date(lead.created_at || Date.now()).getFullYear()}-${leadId.slice(0, 8).toUpperCase()}`;
   const quoteRef = `DEV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-17C-${leadId.slice(0, 4).toUpperCase()}`;
@@ -114,8 +113,8 @@ Deno.serve(async (req) => {
     for (const item of texts.prestationsType) detailChildren.push(bullet(item));
   }
 
-  const ht = Number(product.price_ht) || 0;
-  const ttc = Number(product.price_ttc) || 0;
+  const ht = Number(lead.quote_amount_ht) || 0;
+  const ttc = ht * 1.2;
 
   const doc = new Document({
     sections: [
@@ -152,7 +151,7 @@ Deno.serve(async (req) => {
 
           p(`Fait à Paris, le ${dateEmission}`, { size: 20 }),
 
-          ...renderCgsBlocks((allProducts || []) as any),
+          ...renderCgsBlocks(TARIFS_INDICATIFS_CGS),
         ],
       },
     ],

@@ -37,8 +37,8 @@ autonome.** Il s'agissait de deux sous-systèmes distincts, chacun
 avec ses propres dépendances au cœur de safecrm :
 
 1. **Pipeline victimes17** (`victimes17.js`) — Kanban de dossiers
-   individuels (tables `cybervictim_leads` / `cybervictim_products`).
-   Autonome, c'est le cœur du produit CyberDesk.
+   individuels (table `cybervictim_leads`). Autonome, c'est le cœur du
+   produit CyberDesk.
 2. **Module Cybersec Clients B2B** (`cyber-*.js`, `modules/Cyber/`) — audit
    de sécurité pour des clients existants. **Hors périmètre CyberDesk
    depuis la migration 008** : ce module a été réimplémenté nativement
@@ -175,7 +175,8 @@ cyberdesk/
 │       ├── 014_fix_has_module_access_grants.sql ← correctif grant anon (has_module_access)
 │       ├── 015_cyberdesk_tenant_billing.sql  ← facturation SaaS des tenants (voir section dédiée)
 │       ├── 016_travel_fee_coefficient_setting.sql ← coefficient barème kilométrique ajustable (voir section dédiée)
-│       └── 019_travel_fee_forfait_and_range.sql ← forfaits bas/haut + plage 0,50-0,70 € du coefficient
+│       ├── 019_travel_fee_forfait_and_range.sql ← forfaits bas/haut + plage 0,50-0,70 € du coefficient
+│       └── 025_drop_cybervictim_products.sql ← suppression du catalogue produits jamais peuplé (voir Base de données / Grille tarifaire)
 ├── .env.example
 ├── CLAUDE.md                              ← ce fichier
 └── README.md
@@ -188,7 +189,6 @@ cyberdesk/
 | Table | Rôle |
 |---|---|
 | `cybervictim_leads` | Dossiers victimes (table centrale du pipeline 17Cyber) — **propre à CyberDesk** |
-| `cybervictim_products` | Catalogue produits/forfaits — **propre à CyberDesk** |
 | `staff_module_access` | Droit d'accès par module pour les comptes internes (`user_id`, `module`, ex. `'cyberdesk'`) — **propre à CyberDesk, réutilisable par les autres modules** |
 | `payments` | Paiements, source unique **partagée** avec Vente (`module` = `'cyberdesk'`/`'vente'`), alimentée par trigger depuis `cybervictim_leads` |
 | `v_payments_reporting` | Vue de reporting agrégé sur `payments`, lue par le module admin Vente |
@@ -206,11 +206,19 @@ périmètre CyberDesk**, gérées nativement côté safe-crm/Vente avec un sché
 différent (`contact_id`, colonnes en français) — ne jamais les recréer ni
 les modifier depuis une migration CyberDesk.
 
-**Note sur `cybervictim_leads`/`cybervictim_products` :** ces tables
-n'existaient dans aucune migration versionnée de safecrm (créées à la
-main en production). Le schéma a été **reconstruit par déduction du code
-JS**, pas copié depuis une source faisant autorité — vérifier avant mise
-en production réelle.
+**Note sur `cybervictim_leads` :** cette table n'existait dans aucune
+migration versionnée de safecrm (créée à la main en production). Le
+schéma a été **reconstruit par déduction du code JS**, pas copié depuis
+une source faisant autorité — vérifier avant mise en production réelle.
+
+**`cybervictim_products` a existé (migration 008) mais n'a jamais été
+peuplée** — 0 ligne constatée en production. Elle a été supprimée par la
+migration `025_drop_cybervictim_products.sql` (avec la colonne
+`cybervictim_leads.product_id` qui la référençait) : le flux de devis
+réellement utilisé (modale 3 étapes → `send-cybervictim-quote`) est
+piloté depuis le début par `assets/data/tarifs-cyberdesk.json`, jamais
+par ce catalogue — voir *Grille tarifaire et devis 17Cyber* plus bas pour
+le détail de la consolidation sur cette seule source.
 
 ### Champs importants sur cybervictim_leads
 
@@ -674,13 +682,34 @@ TVA, et la politique (devis gratuit, garantie de reprise 7 jours). Le
 conseiller peut toujours modifier manuellement le montant HT final
 (`quote-ht-override`) quel que soit le calcul automatique en amont.
 
-**À ne pas confondre avec** `cybervictim_products` (`price_ht`/
-`price_ttc`, un forfait unique par type d'alerte) : cette seconde table
-sert de repli pour les Edge Functions qui régénèrent un devis .docx
-côté serveur sans repasser par la modale (`generate-cybervictim-quote`)
-et alimente le tableau tarifaire des CGS (`cgs-render.ts`). Les deux
-systèmes ne sont pas synchronisés entre eux — un changement de prix
-dans l'un ne se répercute pas sur l'autre.
+**Source unique depuis la migration `025_drop_cybervictim_products.sql`.**
+Il existait auparavant une seconde table, `cybervictim_products`
+(`price_ht`/`price_ttc`, un forfait par type d'alerte), lue par les Edge
+Functions qui régénèrent un devis/rapport .docx sans repasser par la
+modale (`generate-cybervictim-quote`/`generate-cybervictim-report`,
+déclenchées depuis la modale "Suivi d'intervention") et par le tableau
+tarifaire de l'annexe CGS (`cgs-render.ts`). Cette table n'a **jamais été
+peuplée** en production (0 ligne, constaté) — ces deux fonctions
+généraient donc silencieusement un devis à 0 € et une annexe CGS vide
+depuis le début, sans jamais avoir été branchées sur autre chose que ce
+catalogue mort.
+
+Ces Edge Functions sont maintenant rebranchées sur des champs déjà
+existants de `cybervictim_leads` : `attack_type` (converti en libellé
+FR + "code" d'incident canonique via `ATTACK_TYPE_LABELS`/
+`ATTACK_TYPE_TO_PRODUCT_CODE`) et `quote_amount_ht` (montant du devis
+déjà composé et envoyé via la modale, persisté par
+`send-cybervictim-quote` depuis la migration 021 — voir plus haut,
+*Base de données*). Le tableau tarifaire de l'annexe CGS lit désormais
+`tarifs-cyberdesk.json.tarifs_indicatifs_cgs` (9 lignes, une par code
+canonique de `PRODUCT_DISPLAY_ORDER`), dupliqué côté serveur dans
+`supabase/functions/_shared/product-texts.ts`
+(`TARIFS_INDICATIFS_CGS`/`ATTACK_TYPE_TO_PRODUCT_CODE`/
+`ATTACK_TYPE_LABELS`) — même patron "dupliqué, à garder synchronisé
+manuellement" que le prompt système IA (voir *Assistant IA*). Il n'y a
+donc plus qu'**un seul fichier tarifaire édité à la main**
+(`tarifs-cyberdesk.json`), avec une toute petite copie serveur pour
+l'annexe CGS.
 
 **Frais de déplacement (option O4) : barème PAR AGENT + calcul
 automatique au km.** Contrairement aux autres options, O4 n'a pas de
@@ -742,7 +771,7 @@ migration déjà committée) mais n'ont **jamais été appliquées** en base
   de payload possibles selon la configuration du compte) — à vérifier
   avec un appel réel avant mise en production, comme le reste de la
   grille tarifaire reconstruite par déduction (voir note sur
-  `cybervictim_leads`/`cybervictim_products` plus haut).
+  `cybervictim_leads` plus haut).
 
 ## Documents générés (devis / rapports)
 

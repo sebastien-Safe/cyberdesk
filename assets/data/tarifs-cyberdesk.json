@@ -67,6 +67,17 @@
       "inclus": ["Récupération des comptes", "Suppression accès pirates", "Vérification appareils", "Sécurisation complète", "Rapport"] }
   ],
   "cas_complexe": { "taux_horaire": 75, "label": "Cas complexe — facturation horaire", "codes_diagnostic": ["deni_de_service"] },
+  "tarifs_indicatifs_cgs": [
+    { "code": "piratage_compte",    "alert_type": "Piratage de compte",              "price_ttc": 54.00,  "source": "niveaux.N1[N1-2] 45€ HT" },
+    { "code": "hameconnage",        "alert_type": "Hameçonnage (phishing)",          "price_ttc": 54.00,  "source": "niveaux.N1[N1-2] 45€ HT" },
+    { "code": "faux_support",       "alert_type": "Faux support technique",          "price_ttc": 178.80, "source": "niveaux.N3[N3-2] 149€ HT" },
+    { "code": "fuite_donnees",      "alert_type": "Fuite de données personnelles",   "price_ttc": 298.80, "source": "niveaux.N4[N4-3] 249€ HT" },
+    { "code": "cyberharcelement",   "alert_type": "Cyberharcèlement",                "price_ttc": 180.00, "source": "tarif horaire N3 — 2h × cas_complexe.taux_horaire (75€/h)" },
+    { "code": "faux_conseiller",    "alert_type": "Faux conseiller bancaire",        "price_ttc": 90.00,  "price_ttc_label": "90,00 € – 180,00 € selon accompagnement médiateur bancaire", "source": "tarif horaire N2 (1h), N3 (2h) si accompagnement médiateur de la banque" },
+    { "code": "fraude_cb",          "alert_type": "Fraude à la carte bancaire",      "price_ttc": 90.00,  "source": "tarif horaire N2 — 1h × cas_complexe.taux_horaire (75€/h)" },
+    { "code": "virus_informatique", "alert_type": "Virus / ransomware",              "price_ttc": 154.80, "source": "niveaux.N3[N3-1] 129€ HT" },
+    { "code": "faux_rib",           "alert_type": "Fraude au faux RIB (BEC)",        "price_ttc": 82.80,  "source": "niveaux.N3[N3-4] 69€ HT" }
+  ],
   "deplacement": {
     "origine_adresse": "66 avenue des Champs-Élysées, 75008 Paris",
     "aller_retour": true

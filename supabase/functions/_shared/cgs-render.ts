@@ -10,6 +10,8 @@ export interface TariffRow {
   code: string;
   alert_type: string;
   price_ttc: number;
+  /** Affichage libre (ex. plage "90,00 € – 180,00 €") — prioritaire sur price_ttc si fourni. */
+  price_ttc_label?: string;
 }
 
 /** Encart "cas" (Article 4) — même traitement visuel qu'un callout, teinte acier. */
@@ -20,7 +22,7 @@ function casBlock(title: string, body: string[]): Table {
 function tariffTable(products: TariffRow[]): Table {
   const byCode = new Map(products.map((pr) => [pr.code, pr]));
   const ordered = PRODUCT_DISPLAY_ORDER.map((c) => byCode.get(c)).filter(Boolean) as TariffRow[];
-  const rows = ordered.map((pr) => [pr.alert_type, `${Number(pr.price_ttc).toFixed(2).replace(".", ",")} €`]);
+  const rows = ordered.map((pr) => [pr.alert_type, pr.price_ttc_label || `${Number(pr.price_ttc).toFixed(2).replace(".", ",")} €`]);
   return simpleTable(["Type d'incident", "Tarif TTC indicatif"], rows, [0.7, 0.3]);
 }
 

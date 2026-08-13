@@ -2,8 +2,9 @@
 // CyberDesk — Contenu des Conditions Générales de Services (16 articles)
 // Extrait fidèlement des modèles .docx sources (~/Desktop/17CYBER/*/devis_*.docx,
 // bloc CGS strictement identique sur les 9 modèles — cf. plan-devis-17cyber.md).
-// Un seul bloc est dynamique (tariff_table_dynamic) : reconstruit à la génération
-// depuis cybervictim_products pour ne jamais afficher un tarif obsolète.
+// Un seul bloc est dynamique (tariff_table_dynamic) : reconstruit à la
+// génération depuis TARIFS_INDICATIFS_CGS (product-texts.ts, copie serveur
+// de tarifs-cyberdesk.json) pour ne jamais afficher un tarif obsolète.
 // ==========================================================================
 export type CgsBlock =
   | { type: "h1" | "h2" | "h3" | "p" | "p_italic" | "bullet"; text: string }

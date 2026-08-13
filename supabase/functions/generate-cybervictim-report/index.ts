@@ -8,6 +8,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Document, Packer, Paragraph, PageBreak } from "docx";
 import { h1, h2, p, bullet, placeholder, infoTable, chronoTable, centered, ChronoEntry } from "../_shared/docx-helpers.ts";
+import { ATTACK_TYPE_TO_PRODUCT_CODE, ATTACK_TYPE_LABELS } from "../_shared/product-texts.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { canAccessLead } from "../_shared/lead-access.ts";
 
@@ -113,13 +114,16 @@ Deno.serve(async (req) => {
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, ticket_number, os_victim, intervention_tasks, task_completion_pct, created_at, product_id, created_by, cybervictim_products(code, alert_type)")
+    .select("id, first_name, last_name, ticket_number, os_victim, intervention_tasks, task_completion_pct, created_at, attack_type, created_by")
     .eq("id", leadId)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
   if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
 
-  const product = (lead as any).cybervictim_products || {};
+  const product = {
+    code: ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type as string] || null,
+    alert_type: ATTACK_TYPE_LABELS[lead.attack_type as string] || null,
+  };
   const it = lead.intervention_tasks || {};
   const phases: PhaseRecord[] = it.phases || [];
   const completionPct = lead.task_completion_pct || 0;

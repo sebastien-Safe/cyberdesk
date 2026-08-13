@@ -109,3 +109,54 @@ export const PRODUCT_DISPLAY_ORDER = [
   "piratage_compte", "hameconnage", "faux_support", "fuite_donnees", "cyberharcelement",
   "faux_conseiller", "fraude_cb", "virus_informatique", "faux_rib",
 ];
+
+// ==========================================================================
+// Dérivation attack_type → code produit + libellé court, et tarifs
+// indicatifs de l'annexe CGS — dupliqués depuis assets/victimes17/
+// victimes17.js (ATTACK_TYPE_TO_PRODUCT_CODE), index.html (libellés des
+// puces diag-chip) et assets/data/tarifs-cyberdesk.json (clé
+// tarifs_indicatifs_cgs) — source unique de vérité tarifaire, à garder
+// synchronisée ici manuellement, même patron que PRODUCT_TEXTS ci-dessus.
+// ==========================================================================
+
+/** deni_de_service/autre n'ont pas de correspondance — absence volontaire. */
+export const ATTACK_TYPE_TO_PRODUCT_CODE: Record<string, string> = {
+  hameconnage:         "hameconnage",
+  violation_compte:    "piratage_compte",
+  ransomware:           "virus_informatique",
+  usurpation_identite: "fuite_donnees",
+  fraude_telephonique: "faux_support",
+  arnaque_virement:    "faux_rib",
+  intrusion_reseau:    "virus_informatique",
+};
+
+export const ATTACK_TYPE_LABELS: Record<string, string> = {
+  hameconnage:         "Hameçonnage",
+  ransomware:           "Rançongiciel",
+  violation_compte:    "Violation de compte",
+  arnaque_virement:    "Arnaque au virement",
+  fraude_telephonique: "Fraude téléphonique",
+  usurpation_identite: "Usurpation d'identité",
+  intrusion_reseau:    "Intrusion réseau",
+  deni_de_service:     "Déni de service",
+  autre:                "Autre",
+};
+
+export interface TariffRow {
+  code: string;
+  alert_type: string;
+  price_ttc: number;
+  price_ttc_label?: string;
+}
+
+export const TARIFS_INDICATIFS_CGS: TariffRow[] = [
+  { code: "piratage_compte",    alert_type: "Piratage de compte",            price_ttc: 54.00 },
+  { code: "hameconnage",        alert_type: "Hameçonnage (phishing)",        price_ttc: 54.00 },
+  { code: "faux_support",       alert_type: "Faux support technique",        price_ttc: 178.80 },
+  { code: "fuite_donnees",      alert_type: "Fuite de données personnelles", price_ttc: 298.80 },
+  { code: "cyberharcelement",   alert_type: "Cyberharcèlement",              price_ttc: 180.00 },
+  { code: "faux_conseiller",    alert_type: "Faux conseiller bancaire",      price_ttc: 90.00, price_ttc_label: "90,00 € – 180,00 € selon accompagnement médiateur bancaire" },
+  { code: "fraude_cb",          alert_type: "Fraude à la carte bancaire",    price_ttc: 90.00 },
+  { code: "virus_informatique", alert_type: "Virus / ransomware",            price_ttc: 154.80 },
+  { code: "faux_rib",           alert_type: "Fraude au faux RIB (BEC)",      price_ttc: 82.80 },
+];
