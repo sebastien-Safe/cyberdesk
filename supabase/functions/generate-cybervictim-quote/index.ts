@@ -19,7 +19,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { canAccessLead } from "../_shared/lead-access.ts";
 
 const SAFE = {
-  nom: "S@FE SASU",
+  nom: "S@FE SAS",
   adresse: "66 avenue des Champs-Élysées, 75008 Paris",
   siret: "104 699 558 00011",
   email: "contact@safe-digitalisation.fr",

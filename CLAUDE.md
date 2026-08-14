@@ -899,11 +899,18 @@ migration déjà committée) mais n'ont **jamais été appliquées** en base
 
 ## Documents générés (devis / rapports)
 
-Le prestataire mentionné dans les PDF/DOCX générés est **"S@FE"**
-(sans la mention légale "SASU" — à la différence de safecrm).
+Le prestataire mentionné dans les PDF/DOCX générés est **"S@FE SAS"**
+(forme juridique SAS, jamais "SASU" — à la différence de safecrm).
 Les autres coordonnées (adresse, SIRET, email, référencement
 17Cyber) restent inchangées par défaut ; à reconfirmer avant tout
 usage commercial réel.
+
+⚠️ Corrigé le 2026-08-14 : les deux Edge Functions génératrices de
+documents (`generate-cybervictim-report`, `generate-cybervictim-quote`)
+affichaient encore "S@FE SASU" dans leur objet `SAFE` constant,
+contredisant cette convention — corrigé pour "S@FE SAS" dans les deux
+fichiers (le champ n'était utilisé que dans le rapport ; dans le devis
+c'était du code mort).
 
 ## Feuille de route
 
