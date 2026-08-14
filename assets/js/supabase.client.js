@@ -24,18 +24,6 @@ const SUPABASE_ANON_KEY = "sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── Lien de réinitialisation de mot de passe cliqué ──────────────────────
-// Enregistré ici, immédiatement après createClient() et avant tout autre
-// script de la page : dès createClient(), supabase-js détecte en interne le
-// jeton de récupération dans l'URL et notifie les abonnés à
-// onAuthStateChange très tôt (via un setTimeout(0) interne). Si cet
-// écouteur n'était posé que plus tard (ex. dans le script inline
-// d'index.html, après le chargement de 8 autres fichiers <script src>), la
-// notification PASSWORD_RECOVERY partait avant que quiconque ne l'écoute et
-// était perdue silencieusement — la session de récupération restait
-// valide, mais rien ne redirigeait vers l'écran "nouveau mot de passe" :
-// index.html traitait alors le lien reçu comme une connexion normale et
-// donnait directement accès au module.
-//
 // Passe à true pendant le parcours "lien de réinitialisation cliqué" pour
 // empêcher checkSession() (index.html) d'enchaîner automatiquement sur
 // l'app avec la session de récupération avant que l'utilisateur ait choisi
@@ -49,18 +37,47 @@ let inPasswordRecovery = false;
 // l'app sans jamais repasser par une authentification réelle.
 const PENDING_RECOVERY_KEY = 'cd_pending_recovery';
 
-// Lien de réinitialisation cliqué depuis l'e-mail : Supabase redirige vers
-// cette page avec un jeton de récupération dans l'URL et déclenche cet
-// événement une fois la session de récupération établie.
+function _enterPasswordRecoveryUI() {
+  inPasswordRecovery = true;
+  localStorage.setItem(PENDING_RECOVERY_KEY, '1');
+  document.getElementById('login-panel').classList.add('is-hidden');
+  document.getElementById('forgot-password-panel').classList.add('is-hidden');
+  document.getElementById('reset-password-panel').classList.remove('is-hidden');
+  document.getElementById('login-screen').classList.remove('is-hidden');
+  document.getElementById('app-shell').classList.add('is-hidden');
+}
+
+// Détection SYNCHRONE, immédiatement après createClient() et avant tout
+// autre script de la page. Ne pas se fier uniquement à l'événement
+// onAuthStateChange('PASSWORD_RECOVERY') ci-dessous : en interne,
+// supabase-js programme cette notification via un setTimeout(0) que
+// _initialize() n'attend PAS avant de résoudre sa promesse
+// (vérifié dans le code source de @supabase/auth-js 2.108.2, la version
+// chargée ici) — sb.auth.getSession() (donc checkSession()) peut donc
+// résoudre AVANT que inPasswordRecovery ne soit mis à jour par
+// l'événement, notamment quand les 11 autres <script src> de la page se
+// chargent depuis le cache navigateur assez vite pour que checkSession()
+// (appelée en toute fin de script, après leur exécution) s'exécute avant
+// ce setTimeout(0). Constaté en usage réel : lien cliqué → accès direct au
+// dashboard avec la session de récupération, sans jamais passer par
+// l'écran "nouveau mot de passe". En lisant nous-mêmes le hash de l'URL de
+// façon synchrone ici, avant tout autre code, on élimine cette course : le
+// SDK ne vide window.location.hash qu'après un aller-retour réseau
+// (_getUser(access_token) dans _getSessionFromURL), donc bien après ce
+// point.
+if (window.location.hash) {
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  if (hashParams.get('type') === 'recovery') {
+    _enterPasswordRecoveryUI();
+  }
+}
+
+// Gardé en complément (idempotent) : couvre le cas où une session de
+// récupération serait établie autrement qu'au chargement initial de la
+// page (ex. détection différée par le SDK).
 sb.auth.onAuthStateChange((event) => {
   if (event === 'PASSWORD_RECOVERY') {
-    inPasswordRecovery = true;
-    localStorage.setItem(PENDING_RECOVERY_KEY, '1');
-    document.getElementById('login-panel').classList.add('is-hidden');
-    document.getElementById('forgot-password-panel').classList.add('is-hidden');
-    document.getElementById('reset-password-panel').classList.remove('is-hidden');
-    document.getElementById('login-screen').classList.remove('is-hidden');
-    document.getElementById('app-shell').classList.add('is-hidden');
+    _enterPasswordRecoveryUI();
   }
 });
 
