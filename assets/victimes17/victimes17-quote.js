@@ -15,9 +15,9 @@ let _quoteTarifs = null;
 let _quoteLeadId = null;
 let _quoteStep = 1;
 const _quoteTotalSteps = 3;
-let _quoteSelection = null;   // { type:'prestation'|'pack'|'complexe', id, label, ht, source, diagnosticCode }
+let _quoteSelections = [];    // [{ type:'prestation'|'pack'|'complexe', id, label, ht, source, diagnosticCode }] — plusieurs prestations combinables par niveau ; un pack ou le mode cas complexe reste seul (remplace le tableau)
 let _quoteSuggested = null;   // snapshot de la suggestion auto au moment de l'ouverture
-let _quoteOptions = {};       // { O1:bool, O2:bool, O3:bool, O4:bool }
+let _quoteOptions = {};       // { O1:number (nombre d'heures supplémentaires), O2:bool, O3:bool, O4:bool }
 let _quoteAccompagnement = {}; // { A1:bool, A2:bool, A3:bool }
 let _quoteHtOverridden = false;
 let _quoteO4Result = null;    // { distance_km, forfait_eur, coefficient_eur_km, amount_ht, city } une fois calculé (cyberdesk-compute-travel-fee, barème de l'agent connecté), sinon null
@@ -77,7 +77,7 @@ async function openQuoteModal(leadId) {
   }
 
   _quoteLeadId = leadId;
-  _quoteOptions = { O1: false, O2: false, O3: false, O4: false };
+  _quoteOptions = { O1: 0, O2: false, O3: false, O4: false };
   _quoteAccompagnement = { A1: false, A2: false, A3: false };
   _quoteHtOverridden = false;
   _quoteO4Result = null;
@@ -86,12 +86,13 @@ async function openQuoteModal(leadId) {
   document.getElementById('quote-o4-field').style.display = 'none';
   document.getElementById('quote-observations').value = '';
   document.querySelectorAll('#quote-options-container input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#quote-options-container input[type=number]').forEach(inp => inp.value = '0');
   document.querySelectorAll('#quote-accompagnement-container input[type=checkbox]').forEach(cb => cb.checked = false);
   document.getElementById('quote-complexe-hours').value = '';
 
   const suggestion = _quoteSuggestFromDiagnostic(lead);
   _quoteSuggested = suggestion;
-  _quoteSelection = suggestion ? { ...suggestion } : null;
+  _quoteSelections = suggestion ? [{ ...suggestion }] : [];
 
   document.getElementById('quote-modal-title').textContent =
     `Devis — ${lead.first_name || ''} ${lead.last_name || ''}`.trim();
@@ -146,10 +147,19 @@ function _quoteRenderNiveaux() {
   });
   container.querySelectorAll('.quote-prestation-card').forEach(card => {
     card.addEventListener('click', () => {
-      _quoteSelection = {
-        type: 'prestation', id: card.dataset.prestaId, label: card.dataset.label,
-        ht: Number(card.dataset.ht), source: 'manuel', diagnosticCode: null,
-      };
+      const id = card.dataset.prestaId;
+      const idx = _quoteSelections.findIndex(s => s.type === 'prestation' && s.id === id);
+      if (idx >= 0) {
+        _quoteSelections.splice(idx, 1);
+      } else {
+        // Un pack ou le mode cas complexe actif ne se combine pas avec des
+        // prestations par niveau : on repart d'une sélection vierge.
+        if (_quoteSelections.some(s => s.type !== 'prestation')) _quoteSelections = [];
+        _quoteSelections.push({
+          type: 'prestation', id, label: card.dataset.label,
+          ht: Number(card.dataset.ht), source: 'manuel', diagnosticCode: null,
+        });
+      }
       _quoteHighlightSelection();
       _quoteRenderSummaryLive();
     });
@@ -170,10 +180,10 @@ function _quoteRenderPacks() {
 
   container.querySelectorAll('.quote-pack-card').forEach(card => {
     card.addEventListener('click', () => {
-      _quoteSelection = {
+      _quoteSelections = [{
         type: 'pack', id: card.dataset.packId, label: card.dataset.label,
         ht: Number(card.dataset.ht), source: 'manuel', diagnosticCode: null,
-      };
+      }];
       _quoteHighlightSelection();
       _quoteRenderSummaryLive();
     });
@@ -189,17 +199,18 @@ function _quoteSwitchMode(mode) {
 
 function _quoteHighlightSelection() {
   document.querySelectorAll('.quote-prestation-card, .quote-pack-card').forEach(c => c.classList.remove('selected'));
-  if (!_quoteSelection) return;
-  if (_quoteSelection.type === 'prestation') {
-    const card = document.querySelector(`.quote-prestation-card[data-presta-id="${_quoteSelection.id}"]`);
-    if (card) { card.classList.add('selected'); card.closest('.quote-niveau')?.classList.add('open'); }
-  } else if (_quoteSelection.type === 'pack') {
-    const card = document.querySelector(`.quote-pack-card[data-pack-id="${_quoteSelection.id}"]`);
-    if (card) card.classList.add('selected');
-  } else if (_quoteSelection.type === 'complexe') {
-    document.getElementById('quote-complexe-hours').value = _quoteSelection.ht && _quoteTarifs.cas_complexe.taux_horaire
-      ? (_quoteSelection.ht / _quoteTarifs.cas_complexe.taux_horaire) : '';
-  }
+  _quoteSelections.forEach(sel => {
+    if (sel.type === 'prestation') {
+      const card = document.querySelector(`.quote-prestation-card[data-presta-id="${sel.id}"]`);
+      if (card) { card.classList.add('selected'); card.closest('.quote-niveau')?.classList.add('open'); }
+    } else if (sel.type === 'pack') {
+      const card = document.querySelector(`.quote-pack-card[data-pack-id="${sel.id}"]`);
+      if (card) card.classList.add('selected');
+    } else if (sel.type === 'complexe') {
+      document.getElementById('quote-complexe-hours').value = sel.ht && _quoteTarifs.cas_complexe.taux_horaire
+        ? (sel.ht / _quoteTarifs.cas_complexe.taux_horaire) : '';
+    }
+  });
 }
 
 // ── Rendu étape 2 : options et accompagnement ──

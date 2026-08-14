@@ -53,7 +53,7 @@
     { "id": "A4", "label": "Rapport d'intervention PDF",   "ht": 0, "inclus": true }
   ],
   "options": [
-    { "id": "O1", "label": "Heure supplémentaire",       "ht": 75,   "type": "fixe" },
+    { "id": "O1", "label": "Heure(s) supplémentaire(s)", "ht": 75,   "type": "unitaire" },
     { "id": "O2", "label": "Intervention urgente (<2h)", "ht": 50,   "type": "fixe" },
     { "id": "O3", "label": "Intervention soir/week-end", "ht": null, "type": "pourcentage", "valeur": 40 },
     { "id": "O4", "label": "Déplacement",                "ht": null, "type": "bareme" }
@@ -85,7 +85,6 @@
   "tva": 0.20,
   "politique": {
     "devis_gratuit": true,
-    "garantie_reprise_jours": 7,
     "facturation_si_impossible": true
   }
 }
