@@ -94,7 +94,7 @@
   <main style="display:flex;flex-direction:column;height:calc(100vh - 56px)">
     <section id="view-victimes17" class="view active">
       <div class="pipeline-toolbar">
-        <h2>🆘 Particuliers — 17Cyber</h2>
+        <h2 id="v17-greeting">🕵️‍♂️</h2>
         <div class="pipeline-total" id="v17-total"><span>Dossiers actifs</span> —</div>
         <input class="pipeline-search" id="v17-search" type="text" placeholder="Rechercher (nom, ticket)…" oninput="_v17ApplySearch()">
         <button class="pipeline-btn-add" onclick="openVictimLeadModal()">+ Nouveau dossier victime</button>
@@ -1051,12 +1051,20 @@ async function checkSession() {
     // fonctions cyberdesk_reporting_*() (migration 010), pas ici. Résolu
     // ici (avant l'entrée dans l'app) car aussi nécessaire pour le filet
     // de sécurité is_super_admin() du gate contrat ci-dessous.
-    const [{ data: isAdminData }, { data: isSuperAdminData }] = await Promise.all([
+    const [{ data: isAdminData }, { data: isSuperAdminData }, { data: userSettings }] = await Promise.all([
       sb.rpc('is_admin'),
       sb.rpc('is_super_admin'),
+      sb.from('cyberdesk_user_settings').select('first_name').eq('user_id', session.user.id).maybeSingle(),
     ]);
     _isAdmin = isAdminData === true || isSuperAdminData === true;
     const isSuperAdmin = isSuperAdminData === true;
+
+    // Salutation de la barre d'outils du Kanban — prénom de l'utilisateur
+    // connecté (cyberdesk_user_settings.first_name, renseigné à l'étape
+    // Identité du tunnel d'onboarding partenaire, voir CLAUDE.md). Repli sur
+    // l'emoji seul tant que l'utilisateur n'a pas renseigné son prénom.
+    const greetingEl = document.getElementById('v17-greeting');
+    if (greetingEl) greetingEl.textContent = `🕵️‍♂️ ${userSettings?.first_name || ''}`.trim();
 
     // Gate "tunnel d'onboarding partenaire" (identité + piste Mandataire/
     // Associé SEP + compléments + documents signés, cyberdesk_partner_
