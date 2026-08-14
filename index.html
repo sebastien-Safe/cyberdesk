@@ -131,6 +131,15 @@
       </select>
     </div>
 
+    <!-- Transfert en libre-service — propriétaire du dossier uniquement (pas admin, qui a déjà la barre ci-dessus), dossier existant uniquement -->
+    <div id="vl-transfer-bar" style="display:none;padding:0 26px 10px;align-items:center;gap:10px">
+      <label for="vl-transfer-select" style="font-size:.78rem;color:var(--mut)">Transférer ce dossier à</label>
+      <select id="vl-transfer-select">
+        <option value="">Choisir un collègue…</option>
+      </select>
+      <button type="button" class="btn-diag-ghost" onclick="transferVictimLead()">Transférer</button>
+    </div>
+
     <!-- Progression -->
     <div class="modal-cyber-progress"><div class="modal-cyber-progress-fill" id="diagnostic-progress"></div></div>
 

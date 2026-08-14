@@ -265,10 +265,32 @@ réattribuer un dossier.
   renseigné avant, ils ont donc tous `created_by = NULL` — invisibles pour
   le staff standard, visibles uniquement par un admin jusqu'à
   réattribution manuelle.
-- **Réattribution** : un admin éditant un dossier voit une barre
+- **Réattribution (admin)** : un admin éditant un dossier voit une barre
   "Propriétaire du dossier" dans la modale (`index.html` #vl-owner-bar,
   `victimes17.js` `_vlPopulateOwnerBar()`/`reassignLeadOwner()`), peuplée
-  via la fonction `cyberdesk_staff_list()` (migration 010).
+  via la fonction `cyberdesk_staff_list()` (migration 010) — update direct
+  sur `cybervictim_leads`, passe la policy car `is_admin()`/
+  `is_super_admin()` satisfait le `WITH CHECK`.
+- **Transfert en libre-service (propriétaire)** — migration
+  `030_cyberdesk_lead_transfer.sql` : un utilisateur standard, propriétaire
+  du dossier qu'il édite, voit une seconde barre "Transférer ce dossier à"
+  (`#vl-transfer-bar`, `_vlPopulateTransferBar()`/`transferVictimLead()`),
+  absente pour un admin (qui a déjà `vl-owner-bar`). Un propriétaire non-admin
+  ne peut pas faire l'update direct ci-dessus (le `WITH CHECK` exige
+  `created_by = auth.uid()` sur la ligne *après* modification — rejette
+  justement tout transfert vers quelqu'un d'autre) : passe donc par la RPC
+  `security definer` `cyberdesk_transfer_lead(p_lead_id, p_new_owner_id)`,
+  qui revérifie côté serveur que l'appelant est bien le propriétaire actuel
+  (ou admin) et que le destinataire a accès au module `cyberdesk`. Liste des
+  destinataires peuplée via `cyberdesk_transferable_staff_list()` (nouvelle,
+  même migration) — `cyberdesk_staff_list()` reste réservée aux admins,
+  inutilisable ici. Contrairement à la réattribution admin, pas d'option
+  "Non attribué" : un propriétaire ne peut pas orpheliner son propre
+  dossier. Transfert immédiat, sans confirmation du destinataire (choix
+  produit — cohérent avec la réattribution admin, déjà immédiate).
+  Journalisé côté client dans `audit_logs` (`action:
+  'victim_dossier_transfert'`, `module: 'CyberDesk'`), distinct de
+  `victim_dossier_reattribue` (admin).
 - **Edge Functions** : toutes celles qui agissent sur un `lead_id` précis
   via un client `service_role` (donc hors RLS) revérifient l'appartenance
   côté serveur via `_shared/lead-access.ts` (`canAccessLead()`) :

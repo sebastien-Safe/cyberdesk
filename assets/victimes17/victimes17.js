@@ -648,6 +648,7 @@ async function openEditVictimLeadModal(leadId) {
   document.getElementById('victim-lead-modal').classList.add('show');
   _diagPrefillForm(lead);
   await _vlPopulateOwnerBar(lead);
+  await _vlPopulateTransferBar(lead);
 }
 
 function closeVictimLeadModal() {
@@ -686,6 +687,54 @@ async function reassignLeadOwner() {
       details:    { new_owner: newOwnerId },
     });
     showCrmToast('✅ Dossier réattribué');
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  }
+}
+
+// ── Transfert en libre-service (propriétaire du dossier, pas admin) ──
+// L'admin a déjà la barre de réattribution ci-dessus (met à jour la table
+// directement, passe la policy RLS via is_admin()) ; un propriétaire non-admin
+// n'a pas ce droit en direct (WITH CHECK de cyberdesk_leads_access exige
+// created_by = auth.uid() sur la ligne modifiée), d'où le passage par la RPC
+// security definer cyberdesk_transfer_lead (migration 030).
+
+async function _vlPopulateTransferBar(lead) {
+  const bar = document.getElementById('vl-transfer-bar');
+  // Barre réservée au propriétaire actuel — l'admin utilise vl-owner-bar,
+  // qui couvre déjà tous les cas pour lui (y compris ses propres dossiers).
+  const { data: { session } } = await sb.auth.getSession();
+  if (_isAdmin || !session || lead.created_by !== session.user.id) { bar.style.display = 'none'; return; }
+  const select = document.getElementById('vl-transfer-select');
+  const { data, error } = await sb.rpc('cyberdesk_transferable_staff_list');
+  if (error) { console.error('[cyberdesk_transferable_staff_list]', error); bar.style.display = 'none'; return; }
+  select.innerHTML = '<option value="">Choisir un collègue…</option>'
+    + (data || []).map(u => `<option value="${u.user_id}">${escapeHtml(u.email)}</option>`).join('');
+  bar.style.display = 'flex';
+}
+
+async function transferVictimLead() {
+  const leadId = document.getElementById('vl-id').value;
+  const newOwnerId = document.getElementById('vl-transfer-select').value;
+  if (!leadId || !newOwnerId) return;
+  if (!confirm('Transférer ce dossier ? Vous n\'y aurez plus accès une fois le transfert effectué.')) return;
+  try {
+    const { data, error } = await sb.rpc('cyberdesk_transfer_lead', {
+      p_lead_id: leadId, p_new_owner_id: newOwnerId,
+    });
+    if (error) throw error;
+    _v17Leads = _v17Leads.filter(l => l.id !== leadId); // n'est plus visible pour nous une fois transféré
+    await logRgpd('victim_dossier_transfert', 'CyberDesk', {
+      entityType: 'cybervictim_lead',
+      entityId:   leadId,
+      donnees:    'Transfert du dossier par son propriétaire à un autre membre du staff',
+      criticite:  'Info',
+      details:    { new_owner: newOwnerId },
+    });
+    showCrmToast('✅ Dossier transféré');
+    closeVictimLeadModal();
+    _v17RenderBoard();
+    _v17UpdateTotal();
   } catch (e) {
     alert('Erreur : ' + e.message);
   }
