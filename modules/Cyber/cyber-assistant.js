@@ -210,6 +210,12 @@ function _renderCyberReply(question, reply, provider) {
       <div style="font-size:.83rem;color:var(--mut-2);line-height:1.65;margin-top:6px;white-space:pre-line">${escHtml(reply).replace(/\*\*(.*?)\*\*/g,'<strong style="color:#fff">$1</strong>')}</div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(reply)}).then(()=>toast('Copié ✓'))">📋 Copier</button>
+      <button class="btn btn-ghost btn-sm" id="cyber-ai-copy-btn">📋 Copier</button>
     </div>`;
+  // reply passé par closure (pas interpolé dans le HTML) : évite toute
+  // casse/injection si le texte de l'IA contient des guillemets ou des
+  // caractères spéciaux HTML.
+  output.querySelector('#cyber-ai-copy-btn')?.addEventListener('click', () => {
+    navigator.clipboard.writeText(reply).then(() => toast('Copié ✓'));
+  });
 }

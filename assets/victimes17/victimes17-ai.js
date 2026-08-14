@@ -80,8 +80,14 @@ function _renderVictimAiReply(question, reply, provider) {
       <div style="font-size:.83rem;color:var(--txt);line-height:1.65;margin-top:6px;white-space:pre-line">${escapeHtml(reply).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn-diag-ghost" onclick="navigator.clipboard.writeText(${JSON.stringify(reply)}).then(()=>showCrmToast('📋 Copié'))">📋 Copier</button>
+      <button class="btn-diag-ghost" id="victim-ai-copy-btn">📋 Copier</button>
     </div>`;
+  // reply passé par closure (pas interpolé dans le HTML) : évite toute
+  // casse/injection si le texte de l'IA contient des guillemets ou des
+  // caractères spéciaux HTML (ex. citation d'un email de phishing).
+  output.querySelector('#victim-ai-copy-btn')?.addEventListener('click', () => {
+    navigator.clipboard.writeText(reply).then(() => showCrmToast('📋 Copié'));
+  });
 }
 
 // Attaché directement (pas de DOMContentLoaded) : ce script est chargé en
