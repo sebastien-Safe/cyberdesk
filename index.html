@@ -46,6 +46,15 @@
     <div id="reset-password-panel" class="is-hidden">
       <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Choisissez un nouveau mot de passe</p>
+      <!-- Affiché à la place du formulaire quand le lien de réinitialisation
+           n'a pas (ou plus) de session valide derrière lui : lien déjà
+           utilisé, expiré, ou pré-visité par un scanner anti-spam côté
+           messagerie (ex. Outlook Safe Links) qui consomme le jeton à usage
+           unique avant le vrai clic de l'utilisateur. -->
+      <div id="reset-password-invalid" class="is-hidden">
+        <p class="error">Ce lien de réinitialisation est invalide, expiré ou a déjà été utilisé.</p>
+        <p class="link-row"><a href="#" class="link-muted" id="reset-password-retry-link">Demander un nouveau lien</a></p>
+      </div>
       <form id="reset-password-form" onsubmit="return false">
         <div class="field"><label>Nouveau mot de passe</label><input id="reset-password-new" type="password" autocomplete="new-password"></div>
         <div class="field"><label>Confirmer le mot de passe</label><input id="reset-password-confirm" type="password" autocomplete="new-password"></div>
@@ -968,7 +977,17 @@ let _isAdmin = false;
 
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
-  if (inPasswordRecovery) return;
+  if (inPasswordRecovery) {
+    // Le hash contenait bien type=recovery (voir supabase.client.js), mais
+    // le SDK n'a pas réussi à échanger le jeton contre une session — lien
+    // déjà utilisé/expiré, ou consommé par un scanner de liens côté
+    // messagerie avant le vrai clic de l'utilisateur. Sans ce contrôle,
+    // l'utilisateur resterait sur le formulaire "nouveau mot de passe" et
+    // ne découvrirait le problème qu'à la soumission, via l'erreur brute du
+    // SDK ("Auth session missing!").
+    if (!session) showRecoveryLinkInvalid();
+    return;
+  }
   if (localStorage.getItem(PENDING_RECOVERY_KEY)) {
     await sb.auth.signOut();
     localStorage.removeItem(PENDING_RECOVERY_KEY);
@@ -1097,6 +1116,23 @@ document.getElementById('back-to-login-link').addEventListener('click', (e) => {
   showLoginPanel();
 });
 
+/** Affiche le message "lien invalide" à la place du formulaire nouveau mot de passe, sans jamais l'écran générique de connexion (l'utilisateur vient de cliquer un lien e-mail, pas de rouvrir l'app). */
+function showRecoveryLinkInvalid() {
+  localStorage.removeItem(PENDING_RECOVERY_KEY);
+  inPasswordRecovery = false;
+  document.getElementById('reset-password-form').classList.add('is-hidden');
+  document.getElementById('reset-password-invalid').classList.remove('is-hidden');
+}
+
+document.getElementById('reset-password-retry-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('reset-password-panel').classList.add('is-hidden');
+  document.getElementById('reset-password-form').classList.remove('is-hidden');
+  document.getElementById('reset-password-invalid').classList.add('is-hidden');
+  document.getElementById('forgot-password-error').textContent = '';
+  document.getElementById('forgot-password-panel').classList.remove('is-hidden');
+});
+
 document.getElementById('forgot-password-form').addEventListener('submit', async () => {
   const email = document.getElementById('forgot-email').value.trim();
   const errEl = document.getElementById('forgot-password-error');
@@ -1128,7 +1164,11 @@ document.getElementById('reset-password-form').addEventListener('submit', async 
   btn.disabled = true;
   const { error } = await sb.auth.updateUser({ password: pw1 });
   btn.disabled = false;
-  if (error) { errEl.textContent = error.message; return; }
+  if (error) {
+    if (error.name === 'AuthSessionMissingError') { showRecoveryLinkInvalid(); return; }
+    errEl.textContent = error.message;
+    return;
+  }
   document.getElementById('reset-password-panel').classList.add('is-hidden');
   localStorage.removeItem(PENDING_RECOVERY_KEY);
   inPasswordRecovery = false;
