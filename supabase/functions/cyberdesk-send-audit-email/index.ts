@@ -34,22 +34,16 @@ const RATE_LIMIT_ACTION = "cyberdesk_send_audit_email";
 const RATE_LIMIT_MAX = 30; // par fenêtre
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 heure
 
+// Incrémentation atomique côté SQL (migration 029) : évite la condition de
+// course d'un SELECT puis UPDATE séparés sous requêtes concurrentes.
 async function checkRateLimit(sb: ReturnType<typeof createClient>): Promise<boolean> {
-  const now = Date.now();
-  const { data } = await sb
-    .from("rate_limits")
-    .select("count, window_at")
-    .eq("action", RATE_LIMIT_ACTION)
-    .maybeSingle();
-
-  if (!data || new Date(data.window_at as string).getTime() < now - RATE_LIMIT_WINDOW_MS) {
-    await sb.from("rate_limits").upsert({ action: RATE_LIMIT_ACTION, count: 1, window_at: new Date(now).toISOString() });
-    return true;
-  }
-  if ((data.count as number) >= RATE_LIMIT_MAX) return false;
-
-  await sb.from("rate_limits").update({ count: (data.count as number) + 1 }).eq("action", RATE_LIMIT_ACTION);
-  return true;
+  const { data, error } = await sb.rpc("cyberdesk_check_rate_limit", {
+    p_action: RATE_LIMIT_ACTION,
+    p_max: RATE_LIMIT_MAX,
+    p_window_ms: RATE_LIMIT_WINDOW_MS,
+  });
+  if (error) throw error;
+  return data as boolean;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
