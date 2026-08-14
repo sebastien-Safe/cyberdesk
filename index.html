@@ -1156,16 +1156,23 @@ document.getElementById('reset-password-retry-link').addEventListener('click', (
 
 /** Appelée une fois la session de récupération confirmée (voir checkSession()) : bascule sur l'étape code MFA si la 2FA est activée sur le compte, sinon laisse le formulaire "nouveau mot de passe" déjà visible tel quel. */
 async function maybeRequireRecoveryMFA() {
-  const { data: aal, error: aalErr } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
-  // Non bloquant en cas d'erreur : le formulaire reste affiché, et
-  // sb.auth.updateUser() renverra alors sa propre erreur AAL2 si ce
-  // contrôle a échoué à tort — pas pire que le comportement d'avant.
-  if (aalErr || aal.currentLevel === 'aal2' || aal.nextLevel !== 'aal2') return;
-
+  // listFactors() en premier (pas getAuthenticatorAssuranceLevel()) : ce
+  // dernier lit session.user.factors, une copie figée au moment où la
+  // session de récupération a été établie (_getSessionFromURL), qui peut
+  // ne pas refléter les facteurs MFA du compte — auquel cas l'étape MFA
+  // était sautée à tort et sb.auth.updateUser() échouait ensuite avec
+  // "AAL2 session is required...". listFactors() refait un appel réseau
+  // frais (même mécanisme que Paramétrage, assets/js/settings.js) et fait
+  // foi.
   const { data: factorsData, error: factorsErr } = await sb.auth.mfa.listFactors();
   if (factorsErr) return;
   const factor = (factorsData.totp || []).find(f => f.status === 'verified');
-  if (!factor) return;
+  if (!factor) return; // pas de 2FA sur ce compte
+
+  // Filet de sécurité seulement : ne devrait normalement jamais être vrai
+  // pour une session de récupération fraîche.
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.currentLevel === 'aal2') return;
 
   const { data: challenge, error: challengeErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
   if (challengeErr) return;
