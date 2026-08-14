@@ -23,7 +23,7 @@ async function initVictimes17() {
   if (!board) return;
   board.innerHTML = '<div class="pipeline-loading"><div class="pipeline-spinner"></div> Chargement…</div>';
   try {
-    await _v17LoadData();
+    await Promise.all([_v17LoadData(), _quoteLoadTarifs().catch(() => null)]);
     _v17RenderBoard();
     _v17UpdateTotal();
     const searchEl = document.getElementById('v17-search');
@@ -101,7 +101,7 @@ function _v17CardHTML(lead) {
         ${lead.payment_status === 'paye'
           ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.amount_paid_ttc)} TTC — payé</div>`
           : lead.quote_amount_ht != null
-            ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.quote_amount_ht * 1.2)} TTC</div>`
+            ? `<div class="pcard-meta-item v17-price-badge">💰 ${formatMoney(lead.quote_amount_ht * (1 + (_quoteTarifs?.tva ?? 0.20)))} TTC</div>`
             : ''}
         <div class="pcard-meta-item">📅 ${dateStr}</div>
         ${lead.birth_year ? `<div class="pcard-meta-item">🎂 ${_diagComputeAge(lead.birth_year)} ans</div>` : ''}
