@@ -55,6 +55,19 @@
         <p class="error">Ce lien de réinitialisation est invalide, expiré ou a déjà été utilisé.</p>
         <p class="link-row"><a href="#" class="link-muted" id="reset-password-retry-link">Demander un nouveau lien</a></p>
       </div>
+      <!-- Étape intermédiaire si la 2FA (MFA natif Supabase) est activée sur
+           le compte : une session issue d'un lien de récupération par e-mail
+           reste en AAL1, et sb.auth.updateUser({password}) exige AAL2 dès
+           qu'un facteur MFA est vérifié sur le compte — sinon erreur "AAL2
+           session is required...". Masquée par défaut, affichée par
+           maybeRequireRecoveryMFA() (voir script plus bas) uniquement si le
+           compte a effectivement la 2FA activée. -->
+      <div id="reset-password-mfa" class="is-hidden">
+        <p style="color:var(--mut);font-size:.85rem;margin-bottom:12px">Ce compte a la double authentification activée — saisissez le code à 6 chiffres de votre application d'authentification pour continuer.</p>
+        <div class="field"><label>Code de vérification</label><input id="reset-password-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+        <button type="button" class="btn btn-pri btn--full" id="reset-password-mfa-btn" onclick="verifyRecoveryMFA()">Vérifier</button>
+        <p class="error" id="reset-password-mfa-error"></p>
+      </div>
       <form id="reset-password-form" onsubmit="return false">
         <div class="field"><label>Nouveau mot de passe</label><input id="reset-password-new" type="password" autocomplete="new-password"></div>
         <div class="field"><label>Confirmer le mot de passe</label><input id="reset-password-confirm" type="password" autocomplete="new-password"></div>
@@ -975,6 +988,11 @@
 // l'affichage du bouton "Comptable" (assets/js/accounting.js).
 let _isAdmin = false;
 
+// Renseignés par maybeRequireRecoveryMFA() ci-dessous, consommés par
+// verifyRecoveryMFA() lors de la soumission du code.
+let _recoveryMfaFactorId = null;
+let _recoveryMfaChallengeId = null;
+
 async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
   if (inPasswordRecovery) {
@@ -985,7 +1003,8 @@ async function checkSession() {
     // l'utilisateur resterait sur le formulaire "nouveau mot de passe" et
     // ne découvrirait le problème qu'à la soumission, via l'erreur brute du
     // SDK ("Auth session missing!").
-    if (!session) showRecoveryLinkInvalid();
+    if (!session) { showRecoveryLinkInvalid(); return; }
+    await maybeRequireRecoveryMFA();
     return;
   }
   if (localStorage.getItem(PENDING_RECOVERY_KEY)) {
@@ -1120,6 +1139,7 @@ document.getElementById('back-to-login-link').addEventListener('click', (e) => {
 function showRecoveryLinkInvalid() {
   localStorage.removeItem(PENDING_RECOVERY_KEY);
   inPasswordRecovery = false;
+  document.getElementById('reset-password-mfa').classList.add('is-hidden');
   document.getElementById('reset-password-form').classList.add('is-hidden');
   document.getElementById('reset-password-invalid').classList.remove('is-hidden');
 }
@@ -1127,11 +1147,56 @@ function showRecoveryLinkInvalid() {
 document.getElementById('reset-password-retry-link').addEventListener('click', (e) => {
   e.preventDefault();
   document.getElementById('reset-password-panel').classList.add('is-hidden');
+  document.getElementById('reset-password-mfa').classList.add('is-hidden');
   document.getElementById('reset-password-form').classList.remove('is-hidden');
   document.getElementById('reset-password-invalid').classList.add('is-hidden');
   document.getElementById('forgot-password-error').textContent = '';
   document.getElementById('forgot-password-panel').classList.remove('is-hidden');
 });
+
+/** Appelée une fois la session de récupération confirmée (voir checkSession()) : bascule sur l'étape code MFA si la 2FA est activée sur le compte, sinon laisse le formulaire "nouveau mot de passe" déjà visible tel quel. */
+async function maybeRequireRecoveryMFA() {
+  const { data: aal, error: aalErr } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  // Non bloquant en cas d'erreur : le formulaire reste affiché, et
+  // sb.auth.updateUser() renverra alors sa propre erreur AAL2 si ce
+  // contrôle a échoué à tort — pas pire que le comportement d'avant.
+  if (aalErr || aal.currentLevel === 'aal2' || aal.nextLevel !== 'aal2') return;
+
+  const { data: factorsData, error: factorsErr } = await sb.auth.mfa.listFactors();
+  if (factorsErr) return;
+  const factor = (factorsData.totp || []).find(f => f.status === 'verified');
+  if (!factor) return;
+
+  const { data: challenge, error: challengeErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
+  if (challengeErr) return;
+
+  _recoveryMfaFactorId = factor.id;
+  _recoveryMfaChallengeId = challenge.id;
+  document.getElementById('reset-password-form').classList.add('is-hidden');
+  document.getElementById('reset-password-mfa-code').value = '';
+  document.getElementById('reset-password-mfa-error').textContent = '';
+  document.getElementById('reset-password-mfa').classList.remove('is-hidden');
+}
+
+async function verifyRecoveryMFA() {
+  const code = document.getElementById('reset-password-mfa-code').value.trim();
+  const errEl = document.getElementById('reset-password-mfa-error');
+  errEl.textContent = '';
+  if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Saisissez le code à 6 chiffres.'; return; }
+
+  const btn = document.getElementById('reset-password-mfa-btn');
+  btn.disabled = true;
+  const { error } = await sb.auth.mfa.verify({
+    factorId: _recoveryMfaFactorId,
+    challengeId: _recoveryMfaChallengeId,
+    code,
+  });
+  btn.disabled = false;
+  if (error) { errEl.textContent = 'Code invalide, réessayez.'; return; }
+
+  document.getElementById('reset-password-mfa').classList.add('is-hidden');
+  document.getElementById('reset-password-form').classList.remove('is-hidden');
+}
 
 document.getElementById('forgot-password-form').addEventListener('submit', async () => {
   const email = document.getElementById('forgot-email').value.trim();
