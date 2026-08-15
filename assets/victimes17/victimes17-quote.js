@@ -217,6 +217,14 @@ function _quoteHighlightSelection() {
 function _quoteRenderOptionsStep() {
   const optContainer = document.getElementById('quote-options-container');
   optContainer.innerHTML = _quoteTarifs.options.map(o => {
+    if (o.type === 'unitaire') {
+      return `
+        <label class="quote-check-item">
+          <span>${escapeHtml(o.label)}</span>
+          <input type="number" class="quote-opt-qty" data-id="${o.id}" min="0" step="1" value="0" style="width:64px">
+          <span class="quote-check-price">${formatMoney(o.ht)} / h</span>
+        </label>`;
+    }
     const priceLabel = o.type === 'pourcentage' ? `+${o.valeur} %` : o.type === 'bareme' ? 'à définir' : `+${formatMoney(o.ht)}`;
     const priceId = o.id === 'O4' ? ' id="quote-o4-price-label"' : '';
     return `
@@ -253,6 +261,12 @@ function _quoteRenderOptionsStep() {
   accContainer.querySelectorAll('.quote-acc-checkbox').forEach(cb => {
     cb.addEventListener('change', () => {
       _quoteAccompagnement[cb.dataset.id] = cb.checked;
+      _quoteRenderSummaryLive();
+    });
+  });
+  optContainer.querySelectorAll('.quote-opt-qty').forEach(inp => {
+    inp.addEventListener('input', () => {
+      _quoteOptions[inp.dataset.id] = Math.max(0, parseInt(inp.value, 10) || 0);
       _quoteRenderSummaryLive();
     });
   });
@@ -312,12 +326,19 @@ async function _quoteComputeO4() {
 
 // ── Calcul du total ──
 function _quoteComputeHt() {
-  const baseHt = _quoteSelection ? (Number(_quoteSelection.ht) || 0) : 0;
+  const baseHt = _quoteSelections.reduce((sum, s) => sum + (Number(s.ht) || 0), 0);
   let total = baseHt;
-  const lines = [];
-  if (_quoteSelection) lines.push({ label: _quoteSelection.label, montant: baseHt });
+  const lines = _quoteSelections.map(s => ({ label: s.label, montant: Number(s.ht) || 0 }));
 
   _quoteTarifs.options.forEach(o => {
+    if (o.type === 'unitaire') {
+      const qty = Number(_quoteOptions[o.id]) || 0;
+      if (qty <= 0) return;
+      const m = o.ht * qty;
+      total += m;
+      lines.push({ label: `${o.label} × ${qty}`, montant: m });
+      return;
+    }
     if (!_quoteOptions[o.id]) return;
     if (o.type === 'fixe') {
       total += o.ht;
@@ -353,8 +374,8 @@ function _quoteComputeHt() {
 function _quoteIsModifiedFromSuggestion() {
   if (_quoteHtOverridden) return true;
   if (!_quoteSuggested) return false;
-  if (!_quoteSelection) return true;
-  if (_quoteSelection.type !== _quoteSuggested.type || _quoteSelection.id !== _quoteSuggested.id) return true;
+  if (_quoteSelections.length !== 1) return true;
+  if (_quoteSelections[0].type !== _quoteSuggested.type || _quoteSelections[0].id !== _quoteSuggested.id) return true;
   if (Object.values(_quoteOptions).some(Boolean)) return true;
   if (Object.values(_quoteAccompagnement).some(Boolean)) return true;
   return false;
@@ -460,9 +481,9 @@ function _quoteBuildDevisObject(lead) {
   const isModified = _quoteIsModifiedFromSuggestion();
 
   return {
-    prestation_label: _quoteSelection.label,
-    prestation_id: _quoteSelection.id || null,
-    selection_type: _quoteSelection.type || null,
+    prestation_label: _quoteSelections.map(s => s.label).join(' + ') || 'Intervention 17Cyber',
+    prestation_id: _quoteSelections.map(s => s.id).filter(Boolean).join(',') || null,
+    selection_type: _quoteSelections[0]?.type || null,
     lines,
     prix_initial: prixInitial,
     remise,
@@ -484,7 +505,7 @@ function _quoteShowSendStatus(message, type) {
 async function _quoteDownloadPdf() {
   const lead = _v17Leads.find(l => l.id === _quoteLeadId);
   if (!lead) return;
-  if (!_quoteSelection) { alert("Sélectionnez une prestation (étape 1)."); _quoteGoToStep(1); return; }
+  if (!_quoteSelections.length) { alert("Sélectionnez au moins une prestation (étape 1)."); _quoteGoToStep(1); return; }
   if (typeof window.VictimPDF === 'undefined' || !window.VictimPDF.generateQuoteV2) {
     alert('Générateur de devis indisponible.');
     return;
@@ -508,7 +529,7 @@ async function _quoteDownloadPdf() {
       donnees:    'Téléchargement local du devis PDF (contrôle avant envoi)',
       criticite:  'Info',
       details:    {
-        prestation_id: _quoteSelection.id, prestation_label: _quoteSelection.label,
+        prestation_id: devis.prestation_id, prestation_label: devis.prestation_label,
         prix_initial: devis.prix_initial, remise: devis.remise, ht: devis.ht, ttc: devis.ttc,
         source: devis.source, diagnostic_code: devis.diagnostic_code,
       },
@@ -525,7 +546,7 @@ async function _quoteDownloadPdf() {
 async function _quoteSendToClient() {
   const lead = _v17Leads.find(l => l.id === _quoteLeadId);
   if (!lead) return;
-  if (!_quoteSelection) { alert("Sélectionnez une prestation (étape 1)."); _quoteGoToStep(1); return; }
+  if (!_quoteSelections.length) { alert("Sélectionnez au moins une prestation (étape 1)."); _quoteGoToStep(1); return; }
   if (!lead.email) { alert("Aucun e-mail renseigné pour ce dossier — impossible d'envoyer."); return; }
   if (typeof window.VictimPDF === 'undefined' || !window.VictimPDF.getQuoteV2PdfBase64) {
     alert('Générateur de devis indisponible.');
@@ -565,7 +586,7 @@ async function _quoteSendToClient() {
       donnees:    'Envoi du devis par e-mail (Brevo) avec lien de paiement Stripe',
       criticite:  'Info',
       details:    {
-        prestation_id: _quoteSelection.id, prestation_label: _quoteSelection.label,
+        prestation_id: devis.prestation_id, prestation_label: devis.prestation_label,
         prix_initial: devis.prix_initial, remise: devis.remise, ht: devis.ht, ttc: devis.ttc,
         source: devis.source, diagnostic_code: devis.diagnostic_code,
         recipient: lead.email, stripe_session_id: lead.stripe_session_id,
@@ -592,10 +613,10 @@ function _quoteInit() {
   const hoursInput = document.getElementById('quote-complexe-hours');
   hoursInput.addEventListener('input', () => {
     const hours = parseFloat(hoursInput.value) || 0;
-    _quoteSelection = {
+    _quoteSelections = [{
       type: 'complexe', id: null, label: _quoteTarifs.cas_complexe.label,
       ht: hours * _quoteTarifs.cas_complexe.taux_horaire, source: 'manuel', diagnosticCode: null,
-    };
+    }];
     document.querySelectorAll('.quote-prestation-card, .quote-pack-card').forEach(c => c.classList.remove('selected'));
     _quoteRenderSummaryLive();
   });

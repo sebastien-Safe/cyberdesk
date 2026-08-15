@@ -132,8 +132,7 @@ Deno.serve(async (req) => {
           📅 Réserver un créneau d'intervention
         </a>
       </p>
-      <p style="font-size:13px;color:#666">Devis gratuit et sans engagement, valable 30 jours.
-      Garantie de reprise de 7 jours si l'incident n'est pas résolu par l'intervention.</p>
+      <p style="font-size:13px;color:#666">Devis gratuit et sans engagement, valable 30 jours.</p>
       <p style="font-size:12px;color:#999;margin-top:24px">
         S@FE — 66 avenue des Champs-Élysées, 75008 Paris — contact@safe-digitalisation.fr
       </p>

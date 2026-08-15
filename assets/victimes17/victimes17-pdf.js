@@ -404,7 +404,6 @@ window.VictimPDF = (function () {
       "Paiement valant pour signature du présent devis.",
       "Moyens de paiement acceptés : virement bancaire ou carte.",
       "Devis gratuit et sans engagement, valable 30 jours à compter de sa date d'émission.",
-      "Garantie de reprise de 7 jours si l'incident n'est pas résolu par l'intervention.",
       "En cas d'intervention réalisée mais incident non résolu du fait de contraintes techniques imprévues, la prestation reste due.",
       "Conformément à l'art. L.221-18 du Code de la consommation, le client particulier dispose d'un délai de rétractation de 14 jours, sauf demande expresse d'exécution immédiate.",
     ];

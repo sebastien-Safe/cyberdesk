@@ -802,9 +802,38 @@ pistes).
 tarifaire** pour la modale devis à 3 étapes (`victimes17-quote.js`,
 chargée en `fetch()` côté client) : 4 niveaux de prestations (N1-N4),
 des packs, des options, un tarif horaire pour les cas complexes, la
-TVA, et la politique (devis gratuit, garantie de reprise 7 jours). Le
-conseiller peut toujours modifier manuellement le montant HT final
-(`quote-ht-override`) quel que soit le calcul automatique en amont.
+TVA, et la politique (devis gratuit). Le conseiller peut toujours
+modifier manuellement le montant HT final (`quote-ht-override`) quel
+que soit le calcul automatique en amont.
+
+**Étape 1 (prestation) : sélection multiple par niveau.** Contrairement
+aux packs et au mode "cas complexe" (toujours un choix unique, exclusif
+des prestations par niveau), l'onglet "Par niveau" permet de cocher
+plusieurs prestations à la fois, y compris sur des niveaux différents
+(`_quoteSelections`, tableau — a remplacé l'ancien `_quoteSelection`
+singulier). Cliquer une carte prestation la bascule dans le tableau ;
+choisir un pack ou saisir des heures en mode complexe remplace tout le
+tableau par cette unique sélection. `devis.prestation_label`/
+`prestation_id` (envoyés à `send-cybervictim-quote` et utilisés dans le
+PDF) deviennent respectivement la concaténation des libellés (" + ") et
+des identifiants (`,`) quand plusieurs prestations sont sélectionnées —
+`_shared/google-calendar.ts` (`durationForPrestation`) additionne la
+durée estimée de chaque identifiant pour dimensionner le lien de
+réservation de créneau.
+
+**Option "Heure(s) supplémentaire(s)" (O1) : quantité, pas une case à
+cocher.** Seule option de `tarifs-cyberdesk.json.options` au type
+`"unitaire"` (nouveau, à côté de `fixe`/`pourcentage`/`bareme`) : un
+champ nombre remplace la case à cocher, le montant est `ht × quantité`.
+
+**"Garantie de reprise 7 jours" retirée** (décision produit) — plus
+mentionnée nulle part côté client : notice de la modale devis
+(`index.html`), e-mail client (`send-cybervictim-quote`), PDF devis
+(`victimes17-pdf.js`), ni dans `tarifs-cyberdesk.json.politique`
+(champ `garantie_reprise_jours` supprimé). Les mentions "garantie" de
+l'annexe CGS (Article 9.3, `cgs-content.ts`) sont sans rapport — clause
+juridique générique de garantie d'éviction, pas cette politique
+commerciale.
 
 **Source unique depuis la migration `025_drop_cybervictim_products.sql`.**
 Il existait auparavant une seconde table, `cybervictim_products`
