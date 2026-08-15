@@ -71,7 +71,7 @@
 
 .tt-empty { color:var(--mut); font-size:.85rem; font-style:italic; padding:16px 0; }
 
-.tt-phases { display:flex; flex-direction:column; gap:8px; max-height:52vh; overflow-y:auto; padding-right:4px; }
+.tt-phases { display:flex; flex-direction:column; gap:8px; }
 
 .tt-phase { background:#fafafa; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
 .tt-phase-summary {
@@ -103,7 +103,6 @@
 
 @media (max-width: 720px) {
   .tt-toolbar { flex-direction:column; }
-  .tt-phases { max-height:none; }
 }
 
 /* ─── Modale « Diagnostic dossier victime » (5 étapes) ─── */
