@@ -29,6 +29,7 @@
         <button type="submit" class="btn btn-pri btn--full" id="login-btn">Se connecter</button>
         <p class="error" id="login-error"></p>
         <p class="link-row"><a href="#" class="link-muted" id="forgot-password-link">Mot de passe oublié ?</a></p>
+        <p class="link-row"><a href="#" class="link-muted" id="magic-link-link">Recevoir un lien de connexion par e-mail</a></p>
       </form>
     </div>
 
@@ -40,6 +41,17 @@
         <button type="submit" class="btn btn-pri btn--full" id="forgot-password-btn">Envoyer le lien de réinitialisation</button>
         <p class="error" id="forgot-password-error"></p>
         <p class="link-row"><a href="#" class="link-muted" id="back-to-login-link">← Retour à la connexion</a></p>
+      </form>
+    </div>
+
+    <div id="magic-link-panel" class="is-hidden">
+      <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
+      <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Lien de connexion par e-mail</p>
+      <form id="magic-link-form" onsubmit="return false">
+        <div class="field"><label>E-mail</label><input id="magic-link-email" type="email" autocomplete="username"></div>
+        <button type="submit" class="btn btn-pri btn--full" id="magic-link-btn">Envoyer le lien de connexion</button>
+        <p class="error" id="magic-link-error"></p>
+        <p class="link-row"><a href="#" class="link-muted" id="back-to-login-link-magic">← Retour à la connexion</a></p>
       </form>
     </div>
 
@@ -1135,6 +1147,7 @@ async function logout() {
 // ── Mot de passe oublié ──────────────────────────────────
 function showLoginPanel() {
   document.getElementById('forgot-password-panel').classList.add('is-hidden');
+  document.getElementById('magic-link-panel').classList.add('is-hidden');
   document.getElementById('reset-password-panel').classList.add('is-hidden');
   document.getElementById('login-panel').classList.remove('is-hidden');
 }
@@ -1150,6 +1163,38 @@ document.getElementById('forgot-password-link').addEventListener('click', (e) =>
 document.getElementById('back-to-login-link').addEventListener('click', (e) => {
   e.preventDefault();
   showLoginPanel();
+});
+
+document.getElementById('magic-link-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('magic-link-email').value = document.getElementById('login-email').value.trim();
+  document.getElementById('magic-link-error').textContent = '';
+  document.getElementById('login-panel').classList.add('is-hidden');
+  document.getElementById('magic-link-panel').classList.remove('is-hidden');
+});
+
+document.getElementById('back-to-login-link-magic').addEventListener('click', (e) => {
+  e.preventDefault();
+  showLoginPanel();
+});
+
+document.getElementById('magic-link-form').addEventListener('submit', async () => {
+  const email = document.getElementById('magic-link-email').value.trim();
+  const errEl = document.getElementById('magic-link-error');
+  const btn   = document.getElementById('magic-link-btn');
+  errEl.style.color = '';
+  errEl.textContent = '';
+  if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
+  btn.disabled = true;
+  // Passe par notre propre Edge Function (Brevo) plutôt que
+  // sb.auth.signInWithOtp() — même raison que cyberdesk-forgot-password :
+  // quota d'e-mail intégré Supabase trop bas, et on garde un seul pipeline
+  // d'envoi (Brevo) pour tous les e-mails d'auth de cette app.
+  const { error } = await sb.functions.invoke('cyberdesk-magic-link', { body: { email } });
+  btn.disabled = false;
+  if (error) { errEl.textContent = "Une erreur est survenue, réessayez plus tard."; return; }
+  errEl.style.color = 'var(--accent)';
+  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de connexion vient d'être envoyé.";
 });
 
 /** Affiche le message "lien invalide" à la place du formulaire nouveau mot de passe, sans jamais l'écran générique de connexion (l'utilisateur vient de cliquer un lien e-mail, pas de rouvrir l'app). */

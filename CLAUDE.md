@@ -623,6 +623,43 @@ l'événement `PASSWORD_RECOVERY` côté client, saisie du nouveau mot de
 passe via `sb.auth.updateUser()`) est géré directement dans `index.html`,
 inchangé par rapport à un lien Supabase natif.
 
+## Connexion par lien magique (cyberdesk-magic-link)
+
+Le lien « Recevoir un lien de connexion par e-mail ? » de l'écran de
+connexion suit le même contournement que `cyberdesk-forgot-password` (Brevo
+plutôt que le service e-mail intégré de Supabase) — voir section
+précédente pour le pourquoi. `POST { email }` → toujours `{ success: true }`.
+
+**Différence importante avec le flux mot de passe oublié : le garde-fou
+anti-énumération ne suffit pas ici.** `auth.admin.generateLink({type:
+'recovery'})` échoue silencieusement pour un e-mail inconnu (aucun risque
+de création de compte). `auth.admin.generateLink({type: 'magiclink'})`, en
+revanche, **crée un utilisateur `auth.users` non confirmé s'il n'existe
+pas déjà** (même comportement que `signInWithOtp({shouldCreateUser:
+true})` côté client — vérifié empiriquement sur ce projet, pas seulement
+documenté). Sans contrôle supplémentaire, n'importe quelle adresse e-mail
+saisie dans ce formulaire recevrait un e-mail de connexion et laisserait
+un compte fantôme dans `auth.users`.
+
+La fonction reproduit donc manuellement `has_module_access('cyberdesk')`
+(qui s'appuie normalement sur `auth.uid()`, indisponible côté serveur ici)
+avec l'id cible explicite : `profiles.role = 'super_admin'` OU une ligne
+dans `staff_module_access(user_id, module='cyberdesk')`. L'e-mail n'est
+envoyé — et le log `audit_logs` (`action: 'lien_connexion_envoye'`) écrit —
+que si ce contrôle passe. Un compte qui n'a jamais eu accès à CyberDesk
+(y compris un compte Vente/safe-crm sans droit CyberDesk) ne reçoit rien,
+mais peut laisser un utilisateur `auth.users` fantôme sans ligne
+`profiles` ni accès — sans conséquence fonctionnelle (aucun module
+n'est accessible sans `staff_module_access`), à surveiller si le volume
+d'abus augmente.
+
+Contrairement au mot de passe oublié, **aucun changement n'était
+nécessaire côté 2FA** : `checkSession()` (index.html) ne challenge le TOTP
+que dans le flux de récupération de mot de passe (`maybeRequireRecoveryMFA`)
+— CyberDesk n'impose pas de 2FA obligatoire au login normal (contrairement
+à safe-crm/Vente, voir son propre CLAUDE.md), donc une session issue d'un
+lien magique est traitée exactement comme une session mot de passe.
+
 ## Paramétrage, RGPD (DPO) et avis clients
 
 **Modale Paramétrage** (`assets/js/settings.js`) : fiche profil par
