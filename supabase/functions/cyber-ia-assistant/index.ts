@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
 
   const context = buildContext(lead);
   const pseudoQuestion = pseudonymize(question, lead.first_name, lead.last_name);
-  const message = context + pseudoQuestion;
 
   const anthropicResp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -137,8 +136,29 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
       max_tokens: 1536,
-      system: CYBER_SYSTEM,
-      messages: [{ role: "user", content: message }],
+      // Prompt caching : CYBER_SYSTEM est strictement identique à chaque appel,
+      // pour tous les dossiers et tous les utilisateurs — c'est le candidat
+      // idéal pour cache_control (breakpoint "ephemeral", ~5 min glissantes).
+      // Sans effet ni coût si le texte est sous le seuil minimum de mise en
+      // cache d'Anthropic pour ce modèle (~1024 tokens).
+      system: [
+        { type: "text", text: CYBER_SYSTEM, cache_control: { type: "ephemeral" } },
+      ],
+      messages: [
+        {
+          role: "user",
+          content: [
+            // Contexte du dossier : identique tant que le conseiller pose
+            // plusieurs questions de suite sur le même dossier (cas fréquent)
+            // → mis en cache séparément de la question, qui elle change à
+            // chaque appel et reste donc hors cache.
+            ...(context
+              ? [{ type: "text", text: context, cache_control: { type: "ephemeral" } }]
+              : []),
+            { type: "text", text: pseudoQuestion },
+          ],
+        },
+      ],
     }),
   });
 
