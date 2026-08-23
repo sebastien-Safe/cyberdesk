@@ -1,0 +1,549 @@
+{
+  "version": "1.0.0",
+  "_lisez_moi": [
+    "Surcouche éditoriale publique de assets/data/task_trees.json.",
+    "task_trees.json est rédigé pour un technicien (3e personne, phases 'analyse' et",
+    "'rapport' internes). Ce fichier décide, pour chaque page publique, quelles phases",
+    "sont publiées, dans quel ordre, et ajoute les sections rédigées à la main pour la",
+    "victime. Les étapes issues de l'arbre de tâches ne sont JAMAIS recopiées ici : le",
+    "générateur scripts/build-aide-publique.mjs les lit dans task_trees.json.",
+    "Les phases 'analyse' et 'rapport' ne sont jamais publiables (contenu technicien).",
+    "attack_type : valeur du CHECK de cybervictim_leads. Voir _mapping_attack_type."
+  ],
+  "site": {
+    "base_url": "https://cyberdesk.safe-digitalisation.fr",
+    "nom": "S@FE CYBER PILOT",
+    "editeur": "S@FE SAS",
+    "contact": "contact@safe-digitalisation.fr",
+    "referencement": "Prestataire référencé cybermalveillance.gouv.fr / 17Cyber"
+  },
+  "consentement": {
+    "version": "aide-publique-v1",
+    "texte": "J'autorise S@FE à conserver mes coordonnées et ma question pour me répondre et me recontacter au sujet de cet incident. Ma question est conservée sous forme pseudonymisée pendant 90 jours maximum, puis supprimée automatiquement. Aucune donnée n'est transmise à des tiers à des fins commerciales (art. 13 RGPD)."
+  },
+  "_mapping_attack_type": {
+    "_note": "Le CHECK de cybervictim_leads.attack_type ne recouvre pas les clés de task_trees.json. Approximations assumées, requalifiées par le conseiller à l'étape qualification : virus_informatique → ransomware (valeur la plus proche, déjà utilisée comme famille malware par ATTACK_TYPE_TO_PRODUCT_CODE), faux_conseiller → fraude_telephonique (collision volontaire avec faux_support dans le sens inverse), fraude_cb / cyberharcelement / fiches transversales → autre (aucune valeur correspondante)."
+  },
+  "phases_publiques": {
+    "confinement": {
+      "titre": "À faire tout de suite",
+      "intro": "Ces gestes limitent les dégâts. Commencez par là, même si vous ne comprenez pas encore tout ce qui s'est passé."
+    },
+    "securisation": {
+      "titre": "Sécuriser durablement",
+      "intro": "Une fois l'urgence passée, ces mesures évitent que cela se reproduise."
+    },
+    "preuves": {
+      "titre": "Conserver les preuves",
+      "intro": "Faites ces captures avant toute réinitialisation : sans elles, une plainte ou une demande de remboursement est beaucoup plus difficile à défendre."
+    },
+    "declarations": {
+      "titre": "Signaler et faire valoir vos droits",
+      "intro": "Ces démarches sont gratuites et vous y avez droit, même si le montant en jeu vous paraît faible."
+    }
+  },
+  "appareils": {
+    "windows": "Sur Windows",
+    "mac": "Sur Mac",
+    "ios": "Sur iPhone / iPad",
+    "android": "Sur Android"
+  },
+  "fiches": [
+    {
+      "slug": "verifier-si-mon-smartphone-est-compromis",
+      "situation_key": null,
+      "attack_type": "autre",
+      "icone": "📱",
+      "titre_seo": "Vérifier si son smartphone est piraté : 8 contrôles à faire soi-même",
+      "meta_description": "Comment savoir si votre téléphone est compromis : les 8 vérifications concrètes à faire sur iPhone et Android, les signes qui ne trompent pas, et quoi faire si le doute est confirmé.",
+      "h1": "Vérifier l'intégrité de mon smartphone",
+      "intro": "Batterie qui fond, téléphone chaud à l'arrêt, applications inconnues, SMS que vous n'avez pas envoyés : ces signes peuvent avoir une cause banale comme une cause grave. Les vérifications ci-dessous se font en quelques minutes, sans rien installer, et permettent de lever le doute dans la grande majorité des cas.",
+      "urgence": [
+        "Si votre téléphone sert à valider vos paiements ou vos connexions bancaires, prévenez votre banque avant toute chose.",
+        "Ne désinstallez rien et ne réinitialisez pas l'appareil avant d'avoir fait les captures d'écran de la section « Conserver les preuves » : ce sont vos seules preuves."
+      ],
+      "sections": [
+        {
+          "type": "custom",
+          "titre": "Les 8 vérifications à faire maintenant",
+          "intro": "Faites-les dans l'ordre. Aucune ne modifie votre téléphone : vous ne faites que regarder.",
+          "etapes": [
+            {
+              "label": "1. Vérifier qu'aucun profil de configuration ni administrateur d'appareil n'a été installé",
+              "detail": "C'est le contrôle le plus révélateur : un profil ou une application administrateur donne un contrôle quasi total sur l'appareil, et c'est précisément ce que laissent derrière eux la plupart des faux supports techniques.",
+              "par_appareil": {
+                "ios": "Réglages > Général > VPN et gestion de l'appareil. En dehors d'un téléphone fourni par votre employeur ou votre école, cette rubrique doit être vide ou absente.",
+                "android": "Paramètres > Sécurité > Paramètres de sécurité avancés > Applications d'administration de l'appareil (le chemin varie selon la marque : cherchez « administrateur » dans la recherche des paramètres). Désactivez toute entrée que vous ne reconnaissez pas."
+              }
+            },
+            {
+              "label": "2. Passer en revue la liste complète des applications installées",
+              "detail": "Cherchez ce que vous n'avez pas installé vous-même, et les applications au nom générique (« Service », « System Update », « Assistance ») sans éditeur identifiable.",
+              "par_appareil": {
+                "ios": "Réglages > Général > Stockage iPhone affiche toutes les applications, y compris celles absentes de l'écran d'accueil.",
+                "android": "Paramètres > Applications > Voir toutes les applications, puis menu ⋮ > Afficher les applications système."
+              }
+            },
+            {
+              "label": "3. Contrôler les autorisations sensibles : micro, caméra, position, accessibilité",
+              "detail": "Un logiciel espion a besoin de ces accès. Une application qui détient l'accessibilité peut lire l'écran et saisir à votre place : c'est l'autorisation la plus critique de toutes.",
+              "par_appareil": {
+                "ios": "Réglages > Confidentialité et sécurité : passez Localisation, Micro, Appareil photo et Analyse des données un par un.",
+                "android": "Paramètres > Sécurité et confidentialité > Gestionnaire d'autorisations, puis Paramètres > Accessibilité : aucune application inconnue ne doit y figurer."
+              }
+            },
+            {
+              "label": "4. Vérifier les appareils connectés à votre compte Apple ou Google",
+              "detail": "Un appareil inconnu dans cette liste signifie que votre compte, et donc vos sauvegardes, sont accessibles à quelqu'un d'autre. C'est plus grave qu'une application suspecte.",
+              "par_appareil": {
+                "ios": "Réglages > [votre nom] : la liste des appareils est en bas de l'écran.",
+                "android": "Paramètres > Google > Gérer votre compte Google > Sécurité > Vos appareils."
+              }
+            },
+            {
+              "label": "5. Chercher un renvoi d'appel ou de SMS que vous n'avez pas mis en place",
+              "detail": "Technique classique pour intercepter les codes de validation bancaires : les messages arrivent bien, mais chez quelqu'un d'autre.",
+              "par_appareil": {
+                "ios": "Réglages > Téléphone > Transfert d'appel doit être désactivé.",
+                "android": "Application Téléphone > menu ⋮ > Paramètres > Appels > Transfert d'appel."
+              }
+            },
+            {
+              "label": "6. Vérifier que le système est à jour",
+              "detail": "Une version en retard de plusieurs mois est la porte d'entrée la plus courante. La mise à jour ferme la faille mais n'expulse pas un intrus déjà installé : faites les autres vérifications d'abord.",
+              "par_appareil": {
+                "ios": "Réglages > Général > Mise à jour logicielle.",
+                "android": "Paramètres > Système > Mise à jour du système, et Play Store > profil > Gérer les applications pour les applications."
+              }
+            },
+            {
+              "label": "7. Lancer l'analyse de sécurité intégrée",
+              "detail": "Gratuite et déjà présente sur l'appareil. Utile, mais elle ne détecte pas tout : un résultat propre ne suffit pas à lever le doute à lui seul.",
+              "par_appareil": {
+                "ios": "iOS n'a pas d'antivirus : le véritable équivalent est le Bilan de sécurité, dans Réglages > Confidentialité et sécurité > Bilan de sécurité, qui montre tout ce que vous partagez et avec qui.",
+                "android": "Play Store > icône de profil > Play Protect > Analyser."
+              }
+            },
+            {
+              "label": "8. Vérifier si vos identifiants circulent déjà",
+              "detail": "Saisissez votre adresse e-mail sur haveibeenpwned.com : le site indique dans quelles fuites connues elle apparaît. Si elle y figure, changez le mot de passe des comptes concernés en priorité, en commençant par votre messagerie."
+            }
+          ]
+        },
+        {
+          "type": "custom",
+          "titre": "Ce que ces signes veulent dire",
+          "etapes": [
+            {
+              "label": "Un seul signe isolé : le plus souvent bénin",
+              "detail": "Une batterie qui se vide plus vite ou un téléphone tiède s'expliquent presque toujours par une mise à jour récente, une application météo ou GPS trop bavarde, ou une batterie qui vieillit."
+            },
+            {
+              "label": "Plusieurs signes ensemble : à prendre au sérieux",
+              "detail": "Surchauffe à l'arrêt, consommation de données inexpliquée, applications inconnues et publicités en plein écran qui apparaissent en même temps forment un faisceau cohérent."
+            },
+            {
+              "label": "Un profil, un administrateur d'appareil ou un renvoi que vous n'avez pas créé : arrêtez-vous là",
+              "detail": "Ces trois éléments ne se créent pas tout seuls. Passez directement aux preuves puis aux démarches, et faites vérifier l'appareil."
+            },
+            {
+              "label": "Vous avez donné la main à distance à un faux conseiller ou un faux support",
+              "detail": "Considérez l'appareil comme compromis quel que soit le résultat des vérifications, et suivez la fiche dédiée à l'arnaque au faux support technique."
+            }
+          ]
+        },
+        {
+          "type": "custom",
+          "titre": "Conserver les preuves",
+          "intro": "Avant toute réinitialisation, et même si vous hésitez encore à porter plainte.",
+          "etapes": [
+            { "label": "Photographiez ou capturez chaque écran anormal", "detail": "Profil de configuration, application inconnue, autorisation d'accessibilité, appareil connecté que vous ne reconnaissez pas, renvoi d'appel actif." },
+            { "label": "Notez les dates et l'ordre des événements", "detail": "Quand les symptômes ont commencé, ce que vous avez installé ou cliqué juste avant, les appels ou SMS reçus dans la même période." },
+            { "label": "Conservez les messages et les numéros", "detail": "Ne supprimez ni les SMS ni l'historique d'appels : ce sont des éléments exploitables par les enquêteurs." }
+          ]
+        },
+        {
+          "type": "custom",
+          "titre": "Signaler et faire valoir vos droits",
+          "etapes": [
+            { "label": "Signalez l'incident sur cybermalveillance.gouv.fr", "detail": "Gratuit, et c'est le dispositif public officiel d'assistance aux victimes." },
+            { "label": "Déposez plainte s'il y a un préjudice financier ou une usurpation", "detail": "En commissariat, en gendarmerie, ou en ligne via THESEE pour les escroqueries. Conservez le récépissé : votre banque et votre assurance le demanderont." },
+            { "label": "Prévenez votre banque si le téléphone valide vos paiements", "detail": "Faites opposition et demandez le blocage des validations par ce numéro." },
+            { "label": "Prévenez vos proches si des messages sont partis en votre nom", "detail": "Par un autre canal que le téléphone concerné, pour éviter qu'ils soient escroqués à leur tour." }
+          ]
+        }
+      ],
+      "requetes_associees": [
+        "comment savoir si mon téléphone est piraté",
+        "vérifier l'intégrité de son smartphone",
+        "téléphone espionné que faire",
+        "application espion iPhone comment vérifier",
+        "mon Android chauffe et la batterie se vide"
+      ],
+      "prestations_proposees": ["N1-2", "N1-4", "N4-1"],
+      "aussi_voir": ["arnaque-au-faux-support-technique", "piratage-de-compte-en-ligne", "virus-informatique"]
+    },
+
+    {
+      "slug": "piratage-de-compte-en-ligne",
+      "situation_key": "piratage_compte",
+      "attack_type": "violation_compte",
+      "icone": "🔑",
+      "titre_seo": "Compte piraté : que faire immédiatement ? Guide pas à pas",
+      "meta_description": "Votre compte e-mail, Facebook, Instagram ou Google a été piraté : les gestes à faire dans l'heure, comment reprendre le contrôle, conserver les preuves et porter plainte.",
+      "h1": "Un de mes comptes en ligne a été piraté",
+      "intro": "Un compte piraté se reprend d'autant plus facilement qu'on agit vite. L'ordre compte : sécurisez d'abord votre messagerie, car c'est elle qui permet de réinitialiser tous les autres comptes.",
+      "urgence": [
+        "Agissez depuis un autre appareil que celui qui vous inquiète.",
+        "Commencez par votre messagerie principale, même si ce n'est pas le compte piraté : c'est la clé de tous les autres.",
+        "Si de l'argent a bougé, appelez votre banque avant de continuer."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Vérifier l'ampleur de la compromission",
+          "etapes": [
+            { "label": "Consultez l'historique de connexion du compte", "detail": "La plupart des services affichent les dernières connexions avec date, appareil et pays. Notez tout ce qui n'est pas vous." },
+            { "label": "Vérifiez si votre adresse apparaît dans une fuite connue", "detail": "haveibeenpwned.com vous dira dans quelles fuites votre adresse figure. Si le mot de passe piraté servait ailleurs, ces comptes-là sont à traiter aussi." },
+            { "label": "Cherchez les traces laissées derrière", "detail": "Règle de transfert automatique, filtre qui archive les messages, adresse de récupération modifiée, application tierce autorisée : ce sont les portes dérobées les plus courantes, et elles survivent au changement de mot de passe." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "compte Facebook piraté que faire",
+        "boîte mail piratée que faire",
+        "récupérer un compte Instagram piraté",
+        "compte Google piraté sécuriser"
+      ],
+      "prestations_proposees": ["N1-2", "N1-3", "N2-1", "N2-3", "N4-2"],
+      "aussi_voir": ["hameconnage-phishing", "verifier-si-mon-smartphone-est-compromis"]
+    },
+
+    {
+      "slug": "hameconnage-phishing",
+      "situation_key": "hameconnage",
+      "attack_type": "hameconnage",
+      "icone": "🎣",
+      "titre_seo": "J'ai cliqué sur un lien de phishing : que faire maintenant ?",
+      "meta_description": "Vous avez cliqué sur un lien frauduleux ou saisi vos identifiants sur un faux site : les gestes à faire dans l'heure, comment limiter les dégâts et signaler l'hameçonnage.",
+      "h1": "J'ai cliqué sur un lien d'hameçonnage",
+      "intro": "Avoir cliqué ne signifie pas forcément être victime. Ce qui compte, c'est ce que vous avez saisi ensuite : identifiants, coordonnées bancaires, ou code reçu par SMS. Les gestes ci-dessous partent du plus urgent.",
+      "urgence": [
+        "Si vous avez saisi des données bancaires ou validé un code reçu par SMS, appelez votre banque immédiatement : c'est la seule action vraiment urgente.",
+        "Ne supprimez pas le message frauduleux : il servira de preuve."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Mesurer ce qui a réellement fuité",
+          "etapes": [
+            { "label": "Faites la liste de ce que vous avez saisi", "detail": "Identifiant seul, identifiant et mot de passe, numéro de carte, code reçu par SMS : le risque et les démarches ne sont pas les mêmes." },
+            { "label": "Ne retournez pas sur le site frauduleux pour vérifier", "detail": "Même sans rien saisir, cela confirme aux escrocs que l'adresse est active et vous exposera à davantage de tentatives." },
+            { "label": "Vérifiez si le mot de passe concerné servait ailleurs", "detail": "C'est le vrai risque de propagation. Tout compte partageant ce mot de passe doit être changé, en commençant par la messagerie et la banque." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "j'ai cliqué sur un lien frauduleux que faire",
+        "faux SMS colis que faire",
+        "phishing mot de passe saisi",
+        "signaler un mail de phishing"
+      ],
+      "prestations_proposees": ["N1-2", "N1-3", "N3-4"],
+      "aussi_voir": ["piratage-de-compte-en-ligne", "fraude-a-la-carte-bancaire"]
+    },
+
+    {
+      "slug": "arnaque-au-faux-support-technique",
+      "situation_key": "faux_support",
+      "attack_type": "fraude_telephonique",
+      "icone": "🛠️",
+      "titre_seo": "Faux support technique : j'ai donné l'accès à mon ordinateur, que faire ?",
+      "meta_description": "Un faux technicien Microsoft ou Apple a pris la main sur votre ordinateur : comment couper l'accès, vérifier ce qui a été installé, vous faire rembourser et porter plainte.",
+      "h1": "J'ai été victime d'un faux support technique",
+      "intro": "Un écran de blocage alarmant, un numéro à appeler, puis un « technicien » qui prend la main à distance : ce scénario est l'une des arnaques les plus répandues. Si vous lui avez donné l'accès, considérez l'appareil comme compromis, même si tout semble normal.",
+      "urgence": [
+        "Coupez la connexion internet de l'appareil : c'est ce qui met fin à l'accès à distance.",
+        "Si vous avez payé ou communiqué vos coordonnées bancaires, appelez votre banque et faites opposition.",
+        "Ne rappelez pas le numéro, même pour demander une annulation ou un remboursement."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Vérifier ce qui a été laissé sur l'appareil",
+          "etapes": [
+            {
+              "label": "Cherchez le logiciel de prise en main à distance",
+              "detail": "TeamViewer, AnyDesk, UltraViewer, LogMeIn, Supremo et équivalents : désinstallez-les si vous ne les utilisez pas vous-même.",
+              "par_appareil": {
+                "windows": "Paramètres > Applications > Applications installées, trié par date d'installation.",
+                "mac": "Dossier Applications, puis Réglages Système > Confidentialité et sécurité > Accessibilité et Enregistrement de l'écran.",
+                "ios": "Réglages > Général > VPN et gestion de l'appareil : supprimez tout profil non reconnu.",
+                "android": "Paramètres > Applications, puis Paramètres > Accessibilité."
+              }
+            },
+            { "label": "Vérifiez qu'aucun compte utilisateur n'a été ajouté", "detail": "Un compte supplémentaire permet de revenir plus tard, même après désinstallation du logiciel d'accès à distance." },
+            { "label": "Changez les mots de passe saisis pendant l'appel", "detail": "Depuis un autre appareil : tout ce que vous avez tapé pendant que l'escroc voyait votre écran est à considérer comme connu de lui." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "faux technicien Microsoft que faire",
+        "j'ai donné accès à mon ordinateur à distance",
+        "arnaque support technique remboursement",
+        "désinstaller TeamViewer après une arnaque"
+      ],
+      "prestations_proposees": ["N1-4", "N3-2", "N3-4"],
+      "aussi_voir": ["virus-informatique", "verifier-si-mon-smartphone-est-compromis"]
+    },
+
+    {
+      "slug": "virus-informatique",
+      "situation_key": "virus_informatique",
+      "attack_type": "ransomware",
+      "icone": "🦠",
+      "titre_seo": "Virus, logiciel malveillant ou rançongiciel : que faire tout de suite ?",
+      "meta_description": "Fichiers chiffrés, demande de rançon, publicités intempestives ou ordinateur ralenti : les gestes à faire immédiatement, ce qu'il ne faut surtout pas faire, et comment récupérer vos données.",
+      "h1": "Mon appareil est infecté",
+      "intro": "Un appareil infecté demande deux réflexes contraires à l'intuition : l'isoler du réseau, mais ne pas l'éteindre si vos fichiers sont chiffrés. La suite dépend de ce que vous constatez.",
+      "urgence": [
+        "Débranchez le câble réseau et coupez le Wi-Fi : cela empêche la propagation aux autres appareils et aux sauvegardes.",
+        "Si vos fichiers sont chiffrés et qu'une rançon est demandée, n'éteignez pas l'appareil et ne payez pas.",
+        "Débranchez les disques externes et les clés USB encore connectés."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Identifier ce à quoi vous avez affaire",
+          "etapes": [
+            { "label": "Vos fichiers sont-ils chiffrés, ou seulement inaccessibles ?", "detail": "Des noms de fichiers modifiés, une extension inconnue et un message de rançon signent un rançongiciel : c'est le cas le plus grave, et le plus urgent à documenter." },
+            { "label": "Publicités en plein écran, page d'accueil modifiée, extensions inconnues ?", "detail": "Il s'agit le plus souvent d'un logiciel indésirable, gênant mais sans vol de fichiers, qui se retire correctement." },
+            { "label": "Ralentissement, ventilateur constant, activité réseau inexpliquée ?", "detail": "Possible logiciel de minage ou espion. Documentez avant de nettoyer : un nettoyage efface aussi les traces." },
+            { "label": "Ne payez jamais la rançon", "detail": "Rien ne garantit la restitution des fichiers, et le paiement finance directement l'activité criminelle. Des outils de déchiffrement gratuits existent pour certaines familles connues." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "fichiers chiffrés rançon que faire",
+        "supprimer un virus sur son ordinateur",
+        "rançongiciel que faire",
+        "publicités intempestives navigateur supprimer"
+      ],
+      "prestations_proposees": ["N1-4", "N3-1", "N4-1"],
+      "aussi_voir": ["arnaque-au-faux-support-technique", "verifier-si-mon-smartphone-est-compromis"]
+    },
+
+    {
+      "slug": "fuite-de-donnees-personnelles",
+      "situation_key": "fuite_donnees",
+      "attack_type": "usurpation_identite",
+      "icone": "🗂️",
+      "titre_seo": "Mes données personnelles ont fuité : quels sont mes droits ?",
+      "meta_description": "Vos données ont été exposées lors d'une fuite : comment mesurer le risque, quoi changer en priorité, et comment exercer vos droits RGPD ou saisir la CNIL.",
+      "h1": "Mes données personnelles ont fuité",
+      "intro": "Une fuite de données n'est pas un piratage de vos comptes : ce sont des informations détenues par une entreprise ou une administration qui se retrouvent dans de mauvaises mains. Le risque réel dépend de ce qui a fuité, et vous avez des droits opposables.",
+      "urgence": [
+        "Si un mot de passe figure dans la fuite, changez-le partout où il servait, en commençant par votre messagerie.",
+        "Si des données d'identité ont fuité (pièce d'identité, RIB, numéro de sécurité sociale), attendez-vous à des tentatives d'usurpation dans les mois qui suivent."
+      ],
+      "sections": [
+        {
+          "type": "custom",
+          "titre": "Mesurer ce qui a réellement fuité",
+          "etapes": [
+            { "label": "Vérifiez l'exposition de votre adresse e-mail", "detail": "haveibeenpwned.com liste les fuites connues où votre adresse apparaît, et le type de données concernées." },
+            { "label": "Relisez la notification que vous avez reçue", "detail": "L'organisme est tenu de vous dire quelles catégories de données sont concernées. C'est ce qui détermine vos démarches." },
+            { "label": "Distinguez les données remplaçables de celles qui ne le sont pas", "detail": "Un mot de passe se change, un numéro de carte se fait refaire. Une date de naissance, un numéro de sécurité sociale ou une copie de pièce d'identité, non : le risque d'usurpation reste, et il dure." }
+          ]
+        },
+        { "type": "phase", "phase": "confinement" },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "mes données ont fuité que faire",
+        "fuite de données droits RGPD",
+        "saisir la CNIL après une fuite de données",
+        "numéro de sécurité sociale volé"
+      ],
+      "prestations_proposees": ["N1-2", "N3-5", "N4-3"],
+      "aussi_voir": ["piratage-de-compte-en-ligne", "hameconnage-phishing"]
+    },
+
+    {
+      "slug": "fraude-a-la-carte-bancaire",
+      "situation_key": "fraude_cb",
+      "attack_type": "autre",
+      "icone": "💳",
+      "titre_seo": "Débit frauduleux sur ma carte bancaire : comment se faire rembourser ?",
+      "meta_description": "Prélèvement inconnu sur votre compte : le délai pour contester, la procédure de remboursement prévue par la loi, et les démarches à ne pas oublier.",
+      "h1": "Ma carte bancaire a été utilisée frauduleusement",
+      "intro": "La loi vous protège : un paiement que vous n'avez pas autorisé doit vous être remboursé par votre banque. Ce qui compte, c'est de contester dans les délais et de garder la trace écrite de vos démarches.",
+      "urgence": [
+        "Faites opposition immédiatement, par votre application bancaire ou le serveur interbancaire au 0 892 705 705.",
+        "Vous avez 13 mois pour contester un débit frauduleux (70 jours si l'opération a eu lieu hors Union européenne).",
+        "Ne communiquez jamais un code reçu par SMS à quelqu'un qui vous appelle, même au nom de votre banque : c'est ainsi que la fraude se poursuit."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Obtenir le remboursement",
+          "etapes": [
+            { "label": "Contestez par écrit, pas seulement par téléphone", "detail": "Un e-mail ou un courrier recommandé date votre demande et vous servira si la banque tarde." },
+            { "label": "Listez précisément les opérations contestées", "detail": "Date, montant, libellé. Un relevé annoté fait très bien l'affaire." },
+            { "label": "Déposez plainte : votre banque peut le demander", "detail": "En commissariat, en gendarmerie, ou en ligne via THESEE pour une escroquerie en ligne. Conservez le récépissé." },
+            { "label": "En cas de refus, saisissez le médiateur bancaire", "detail": "Gratuit, avant toute action en justice. Ses coordonnées figurent dans vos conditions générales et sur le site de votre banque." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "débit frauduleux carte bancaire remboursement",
+        "prélèvement inconnu sur mon compte",
+        "contester un paiement par carte délai",
+        "faire opposition carte bancaire"
+      ],
+      "prestations_proposees": ["N1-1", "N3-4"],
+      "aussi_voir": ["fraude-au-faux-conseiller-bancaire", "hameconnage-phishing"]
+    },
+
+    {
+      "slug": "fraude-au-faux-conseiller-bancaire",
+      "situation_key": "faux_conseiller",
+      "attack_type": "fraude_telephonique",
+      "icone": "🏦",
+      "titre_seo": "Faux conseiller bancaire : que faire après avoir validé une opération ?",
+      "meta_description": "Un faux conseiller vous a fait valider un virement ou communiquer un code : les gestes immédiats, comment contester, et pourquoi le remboursement reste possible.",
+      "h1": "J'ai été appelé par un faux conseiller bancaire",
+      "intro": "L'escroc connaît votre nom, votre banque, parfois vos dernières opérations, et le numéro affiché est celui de votre agence. C'est une escroquerie très construite : être tombé dedans n'a rien à voir avec un manque de vigilance, et cela ne vous prive pas de vos droits.",
+      "urgence": [
+        "Appelez votre banque par le numéro figurant sur votre carte ou dans votre application, jamais par le numéro qui vous a appelé.",
+        "Demandez le blocage immédiat des opérations en cours : un virement peut parfois encore être arrêté.",
+        "Notez l'heure de l'appel et l'heure de votre signalement : ce délai comptera dans la discussion sur le remboursement."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Faire valoir votre droit au remboursement",
+          "etapes": [
+            { "label": "Contestez par écrit en décrivant précisément la manipulation subie", "detail": "Numéro affiché, informations que l'interlocuteur connaissait déjà, pression exercée, ce qu'il vous a fait valider. Ces détails comptent." },
+            { "label": "Ne vous laissez pas opposer votre « négligence » sans discuter", "detail": "La jurisprudence récente est favorable aux victimes lorsque l'escroc a usurpé le numéro de la banque et connaissait des informations confidentielles. Un refus n'est pas le dernier mot." },
+            { "label": "Déposez plainte", "detail": "En commissariat, en gendarmerie, ou en ligne via THESEE. Le récépissé appuie votre demande de remboursement." },
+            { "label": "En cas de refus, saisissez le médiateur bancaire", "detail": "Gratuit et souvent efficace. Ses coordonnées sont sur le site de votre banque." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "faux conseiller bancaire remboursement",
+        "arnaque au conseiller bancaire que faire",
+        "j'ai validé un virement frauduleux",
+        "usurpation du numéro de ma banque recours"
+      ],
+      "prestations_proposees": ["N1-1", "N1-3", "N3-4"],
+      "aussi_voir": ["fraude-a-la-carte-bancaire", "fraude-au-virement-faux-rib"]
+    },
+
+    {
+      "slug": "fraude-au-virement-faux-rib",
+      "situation_key": "faux_rib",
+      "attack_type": "arnaque_virement",
+      "icone": "💸",
+      "titre_seo": "Virement envoyé sur un faux RIB : peut-on encore le récupérer ?",
+      "meta_description": "Un faux RIB vous a fait payer sur le mauvais compte : les gestes à faire dans les premières heures pour tenter le rappel de fonds, et les démarches ensuite.",
+      "h1": "J'ai fait un virement sur un faux RIB",
+      "intro": "Le facteur décisif est le temps : dans les toutes premières heures, un rappel de fonds peut encore aboutir. Passé ce délai, la récupération devient difficile mais les démarches restent utiles, notamment face à l'entreprise dont la messagerie a été détournée.",
+      "urgence": [
+        "Appelez votre banque immédiatement et demandez un rappel de fonds : c'est la seule action qui compte dans les premières heures.",
+        "Prévenez le vrai destinataire : sa messagerie est probablement compromise, et d'autres clients sont visés.",
+        "Ne répondez plus sur le fil d'e-mails concerné : l'escroc le lit."
+      ],
+      "sections": [
+        { "type": "phase", "phase": "confinement" },
+        {
+          "type": "custom",
+          "titre": "Comprendre par où est passée la fraude",
+          "etapes": [
+            { "label": "Comparez l'adresse d'expédition à celle des échanges précédents", "detail": "Une lettre changée, un domaine très proche, ou un champ « répondre à » différent suffisent. Conservez le message avec ses en-têtes complets." },
+            { "label": "Vérifiez si votre propre messagerie est concernée", "detail": "Règle de transfert automatique, filtre qui masque des messages, connexion inconnue dans l'historique : si l'interception a eu lieu chez vous, tout autre paiement en cours est menacé." },
+            { "label": "Reprenez tous les paiements en cours", "detail": "Confirmez chaque coordonnée bancaire par téléphone, sur un numéro que vous connaissez déjà, jamais celui indiqué dans l'e-mail." }
+          ]
+        },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "virement sur un faux RIB récupérer",
+        "fraude au président que faire",
+        "changement de RIB frauduleux sur une facture",
+        "rappel de fonds virement bancaire"
+      ],
+      "prestations_proposees": ["N1-1", "N3-3", "N3-4"],
+      "aussi_voir": ["piratage-de-compte-en-ligne", "hameconnage-phishing"]
+    },
+
+    {
+      "slug": "cyberharcelement",
+      "situation_key": "cyberharcelement",
+      "attack_type": "autre",
+      "icone": "🗣️",
+      "titre_seo": "Cyberharcèlement : comment réagir et faire retirer les contenus ?",
+      "meta_description": "Insultes, menaces, diffusion d'images sans consentement : comment vous protéger, constituer un dossier de preuves solide, faire supprimer les contenus et porter plainte.",
+      "h1": "Je suis victime de cyberharcèlement",
+      "intro": "Le cyberharcèlement est un délit, y compris lorsqu'il vient de plusieurs personnes qui ne se coordonnent pas. Ne répondez pas, mais ne supprimez rien : la preuve est ce qui fera avancer votre dossier.",
+      "urgence": [
+        "Le 3018 est gratuit, anonyme et joignable 7 jours sur 7 : il peut obtenir le retrait de contenus en urgence auprès des plateformes.",
+        "En cas de menace de mort ou de danger immédiat, appelez le 17.",
+        "Ne répondez pas et ne supprimez rien : capturez d'abord."
+      ],
+      "sections": [
+        {
+          "type": "custom",
+          "titre": "Vous mettre à l'abri sans détruire les preuves",
+          "etapes": [
+            { "label": "Capturez avant de bloquer", "detail": "Le blocage fait souvent disparaître les messages de votre côté. Capturez d'abord, bloquez ensuite." },
+            { "label": "Appelez le 3018", "detail": "Numéro national contre les violences numériques, gratuit et anonyme. Il dispose d'un canal direct avec les plateformes pour obtenir des retraits rapides." },
+            { "label": "Restreignez vos comptes sans les supprimer", "detail": "Passer en privé limite l'exposition ; supprimer le compte détruit les preuves." },
+            { "label": "Parlez-en à quelqu'un", "detail": "Un proche, un professionnel de santé, un service d'écoute. L'isolement est ce sur quoi comptent les harceleurs." }
+          ]
+        },
+        { "type": "phase", "phase": "confinement" },
+        { "type": "phase", "phase": "preuves" },
+        { "type": "phase", "phase": "securisation" },
+        { "type": "phase", "phase": "declarations" }
+      ],
+      "requetes_associees": [
+        "cyberharcèlement que faire",
+        "faire supprimer une photo de moi sur internet",
+        "porter plainte pour harcèlement en ligne",
+        "3018 cyberharcèlement"
+      ],
+      "prestations_proposees": ["N1-1", "N3-4", "N4-4"],
+      "aussi_voir": ["fuite-de-donnees-personnelles", "piratage-de-compte-en-ligne"]
+    }
+  ]
+}

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cyberharcèlement : comment réagir et faire retirer les contenus ?</title>
+<meta name="description" content="Insultes, menaces, diffusion d&#39;images sans consentement : comment vous protéger, constituer un dossier de preuves solide, faire supprimer les contenus et porter plainte.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://cyberdesk.safe-digitalisation.fr/aide/cyberharcelement/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Cyberharcèlement : comment réagir et faire retirer les contenus ?">
+<meta property="og:description" content="Insultes, menaces, diffusion d&#39;images sans consentement : comment vous protéger, constituer un dossier de preuves solide, faire supprimer les contenus et porter plainte.">
+<meta property="og:url" content="https://cyberdesk.safe-digitalisation.fr/aide/cyberharcelement/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+/* =========================================================
+   S@FE CYBER PILOT — Aide publique aux victimes
+   Feuille de style des pages générées sous /aide/.
+   Inlinée dans chaque page par scripts/build-aide-publique.mjs
+   (pages publiques autosuffisantes, même convention que
+   mission-cyber.html et avis-client.html).
+   Variables reprises de assets/css/base.css — thème clair
+   inspiré du Système de Design de l'État (DSFR).
+   ========================================================= */
+:root{
+  --bg:#f6f6f6; --panel:#ffffff; --line:#dddddd;
+  --txt:#1d1d1b; --mut:#666666; --mut-2:#3a3a3a;
+  --m:#000091; --m2:#1212a5; --alert:#e1000f; --ok:#18753c; --warn:#b34000;
+  --r:14px;
+  --ff-disp:'Sora',system-ui,sans-serif;
+  --ff-body:'IBM Plex Sans',system-ui,sans-serif;
+  --ff-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--ff-body);background:var(--bg);color:var(--mut-2);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--ff-disp);color:var(--txt);line-height:1.25;letter-spacing:-.02em}
+a{color:var(--m)}
+
+/* ── Bandeau ── */
+.topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 20px;height:54px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.brand{font-family:var(--ff-disp);font-weight:800;font-size:1.05rem;color:var(--txt);text-decoration:none}
+.brand b{color:var(--alert)}
+.chip{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.1em;color:var(--m);text-transform:uppercase;border:1px solid rgba(0,0,145,.3);padding:3px 9px;border-radius:20px}
+.topbar .spacer{margin-left:auto}
+.topbar a.ret{font-size:.8rem;color:var(--mut);text-decoration:none}
+.topbar a.ret:hover{color:var(--m)}
+
+/* ── Structure ── */
+.wrap{max-width:760px;margin:0 auto;padding:22px 20px 60px}
+.bc{font-size:.75rem;color:var(--mut);margin-bottom:16px}
+.bc a{color:var(--mut);text-decoration:none}
+.bc a:hover{color:var(--m);text-decoration:underline}
+h1{font-size:1.75rem;margin-bottom:12px}
+.lede{font-size:1.02rem;color:var(--mut-2);margin-bottom:22px}
+.ico-h1{font-size:1.5rem;margin-right:6px}
+
+/* ── Encadré urgence ── */
+.urgence{background:#fff5f5;border:1px solid rgba(225,0,15,.3);border-left:4px solid var(--alert);border-radius:var(--r);padding:16px 18px;margin-bottom:26px}
+.urgence-t{font-family:var(--ff-disp);font-weight:700;color:var(--alert);font-size:.95rem;margin-bottom:8px}
+.urgence ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.urgence li{padding-left:18px;position:relative;font-size:.9rem;color:var(--mut-2)}
+.urgence li::before{content:"→";position:absolute;left:0;color:var(--alert);font-weight:700}
+
+/* ── Sections ── */
+section{margin-bottom:30px}
+h2{font-size:1.22rem;margin-bottom:6px;padding-bottom:8px;border-bottom:2px solid var(--m)}
+.sec-intro{font-size:.9rem;color:var(--mut);margin:8px 0 14px}
+ol.etapes{list-style:none;counter-reset:et;display:flex;flex-direction:column;gap:12px}
+ol.etapes>li{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;counter-increment:et;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+ol.etapes>li::before{content:counter(et);position:absolute;left:-11px;top:14px;width:23px;height:23px;border-radius:50%;background:var(--m);color:#fff;font-family:var(--ff-mono);font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+@media(max-width:520px){ol.etapes>li::before{position:static;margin-bottom:7px}}
+.et-l{font-weight:600;color:var(--txt);font-size:.96rem;margin-bottom:4px}
+.et-d{font-size:.88rem;color:var(--mut-2)}
+.et-critique .et-l::after{content:"à faire en priorité";font-family:var(--ff-mono);font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;background:rgba(225,0,15,.1);color:var(--alert);border-radius:20px;padding:2px 8px;margin-left:8px;white-space:nowrap;font-weight:700}
+.appareils{margin-top:9px;display:flex;flex-direction:column;gap:5px;border-top:1px dashed var(--line);padding-top:9px}
+.ap{font-size:.85rem;color:var(--mut-2)}
+.ap b{font-family:var(--ff-mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--m);display:block;margin-bottom:1px}
+
+/* ── Assistant IA ── */
+.ia{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--m);border-radius:var(--r);padding:20px;margin-bottom:30px}
+.ia h2{border:none;padding:0;margin-bottom:6px}
+.ia .sec-intro{margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-family:var(--ff-mono);font-size:.66rem;letter-spacing:.05em;color:var(--mut);text-transform:uppercase}
+.field input,.field textarea,.field select{background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--txt);font-family:var(--ff-body);font-size:.9rem;width:100%}
+.field textarea{min-height:96px;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--m)}
+.consent{display:flex;gap:10px;align-items:flex-start;background:rgba(0,0,145,.04);border:1px solid rgba(0,0,145,.2);border-radius:10px;padding:11px;font-size:.76rem;color:var(--mut-2);margin-bottom:12px;cursor:pointer}
+.consent input{width:17px;height:17px;flex-shrink:0;margin-top:2px;accent-color:var(--m);cursor:pointer}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--m),var(--m2));color:#fff;font-family:var(--ff-disp);font-weight:700;font-size:.92rem;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.ia-out{display:none;margin-top:16px;background:#f7f7fb;border:1px solid var(--line);border-left:3px solid var(--m);border-radius:10px;padding:14px 16px;font-size:.92rem;white-space:pre-wrap}
+.ia-out.show{display:block}
+.ia-msg{display:none;margin-top:12px;font-size:.85rem;padding:11px 13px;border-radius:10px}
+.ia-msg.show{display:block}
+.ia-msg.err{background:rgba(225,0,15,.07);border:1px solid rgba(225,0,15,.3);color:var(--alert)}
+.ia-msg.ok{background:rgba(24,117,60,.07);border:1px solid rgba(24,117,60,.3);color:var(--ok)}
+.ia-note{font-size:.72rem;color:var(--mut);margin-top:10px}
+
+/* ── Prestations ── */
+.presta{display:flex;flex-direction:column;gap:9px}
+.p{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.p-txt{flex:1;min-width:180px}
+.p-l{font-weight:600;color:var(--txt);font-size:.93rem}
+.p-n{font-family:var(--ff-mono);font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.p-prix{font-family:var(--ff-disp);font-weight:800;color:var(--m);font-size:1.02rem;white-space:nowrap}
+.p-prix small{display:block;font-family:var(--ff-body);font-weight:400;font-size:.66rem;color:var(--mut)}
+.p-cta{padding:9px 15px;border-radius:10px;border:1.5px solid var(--m);background:#fff;color:var(--m);font-family:var(--ff-body);font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.p-cta:hover{background:var(--m);color:#fff}
+.p-cta:disabled{opacity:.5;cursor:not-allowed}
+.p-cta.direct{background:var(--m);color:#fff}
+.p-cta.direct:hover{background:var(--m2)}
+
+/* ── Liens et pied de page ── */
+.liens{display:flex;flex-wrap:wrap;gap:8px}
+.liens a{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:7px 14px;font-size:.84rem;text-decoration:none;color:var(--mut-2)}
+.liens a:hover{border-color:var(--m);color:var(--m)}
+.req{font-size:.8rem;color:var(--mut)}
+.req span{display:inline-block;margin-right:12px}
+footer{border-top:1px solid var(--line);background:#fff;padding:22px 20px;font-size:.78rem;color:var(--mut)}
+footer .in{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+footer a{color:var(--mut)}
+.avert{background:#fffbf0;border:1px solid rgba(179,64,0,.28);border-radius:10px;padding:12px 14px;font-size:.8rem;color:var(--mut-2);margin-bottom:22px}
+
+/* ── Accueil /aide/ ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-decoration:none;display:block;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card:hover{border-color:var(--m);transform:translateY(-2px)}
+.card-i{font-size:1.5rem;margin-bottom:7px}
+.card-t{font-family:var(--ff-disp);font-weight:700;color:var(--txt);font-size:.98rem;margin-bottom:4px;line-height:1.3}
+.card-d{font-size:.82rem;color:var(--mut)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"Je suis victime de cyberharcèlement","description":"Insultes, menaces, diffusion d'images sans consentement : comment vous protéger, constituer un dossier de preuves solide, faire supprimer les contenus et porter plainte.","inLanguage":"fr-FR","totalTime":"PT30M","publisher":{"@type":"Organization","name":"S@FE CYBER PILOT","url":"https://cyberdesk.safe-digitalisation.fr"},"step":[{"@type":"HowToStep","position":1,"name":"Capturez avant de bloquer","text":"Le blocage fait souvent disparaître les messages de votre côté. Capturez d'abord, bloquez ensuite."},{"@type":"HowToStep","position":2,"name":"Appelez le 3018","text":"Numéro national contre les violences numériques, gratuit et anonyme. Il dispose d'un canal direct avec les plateformes pour obtenir des retraits rapides."},{"@type":"HowToStep","position":3,"name":"Restreignez vos comptes sans les supprimer","text":"Passer en privé limite l'exposition ; supprimer le compte détruit les preuves."},{"@type":"HowToStep","position":4,"name":"Parlez-en à quelqu'un","text":"Un proche, un professionnel de santé, un service d'écoute. L'isolement est ce sur quoi comptent les harceleurs."},{"@type":"HowToStep","position":5,"name":"Bloquer l'auteur sur l'ensemble des plateformes concernées","text":"Bloquer l'auteur sur l'ensemble des plateformes concernées"},{"@type":"HowToStep","position":6,"name":"Passer les comptes en privé et restreindre les contacts","text":"Localisation, liste d'amis, possibilité d'être tagué·e"},{"@type":"HowToStep","position":7,"name":"Ne pas répondre aux messages et ne pas supprimer les preuves","text":"Conserver l'intégralité des échanges avant tout blocage ou signalement"},{"@type":"HowToStep","position":8,"name":"Réaliser des captures d'écran horodatées et certifiées","text":"Inclure l'URL, le pseudo de l'auteur et la date/heure visibles — envisager un constat d'huissier numérique pour les faits graves"},{"@type":"HowToStep","position":9,"name":"Conserver les URLs et identifiants des comptes auteurs","text":"Conserver les URLs et identifiants des comptes auteurs"},{"@type":"HowToStep","position":10,"name":"Renforcer la confidentialité des comptes","text":"Localisation, listes d'amis, tags, visibilité des publications passées"},{"@type":"HowToStep","position":11,"name":"Activer le MFA sur les comptes concernés","text":"Activer le MFA sur les comptes concernés"},{"@type":"HowToStep","position":12,"name":"Signaler les faux comptes ou usurpations à la plateforme","text":"Signaler les faux comptes ou usurpations à la plateforme"},{"@type":"HowToStep","position":13,"name":"Signaler les contenus aux plateformes via leurs formulaires de signalement","text":"Signaler les contenus aux plateformes via leurs formulaires de signalement"},{"@type":"HowToStep","position":14,"name":"Signaler à Pharos si le contenu est manifestement illicite","text":"internet-signalement.gouv.fr"},{"@type":"HowToStep","position":15,"name":"Déposer plainte pour cyberharcèlement","text":"Art. 222-33-2-2 et suivants du Code pénal — conserver le récépissé de dépôt"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Aide aux victimes","item":"https://cyberdesk.safe-digitalisation.fr/aide/"},{"@type":"ListItem","position":2,"name":"Je suis victime de cyberharcèlement","item":"https://cyberdesk.safe-digitalisation.fr/aide/cyberharcelement/"}]}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/aide/">S<b>@</b>FE</a>
+  <span class="chip">Aide aux victimes</span>
+  <span class="spacer"></span>
+  <a class="ret" href="/aide/">Toutes les situations</a>
+</header>
+<main class="wrap">
+    <nav class="bc"><a href="/aide/">Aide aux victimes</a> › Je suis victime de cyberharcèlement</nav>
+
+    <h1><span class="ico-h1">🗣️</span>Je suis victime de cyberharcèlement</h1>
+
+    <p class="lede">Le cyberharcèlement est un délit, y compris lorsqu&#39;il vient de plusieurs personnes qui ne se coordonnent pas. Ne répondez pas, mais ne supprimez rien : la preuve est ce qui fera avancer votre dossier.</p>
+
+    <div class="urgence"><div class="urgence-t">À faire en priorité</div><ul><li>Le 3018 est gratuit, anonyme et joignable 7 jours sur 7 : il peut obtenir le retrait de contenus en urgence auprès des plateformes.</li><li>En cas de menace de mort ou de danger immédiat, appelez le 17.</li><li>Ne répondez pas et ne supprimez rien : capturez d&#39;abord.</li></ul></div>
+
+    <div class="avert">Ces étapes sont des conseils généraux, établis d'après les bonnes pratiques de l'ANSSI et de Cybermalveillance.gouv.fr. Elles ne remplacent pas l'examen de votre appareil par un professionnel. <strong>Ne communiquez jamais vos mots de passe ni les codes reçus par SMS</strong>, à personne — pas même à un technicien.</div>
+
+    <section>
+      <h2>Vous mettre à l&#39;abri sans détruire les preuves</h2>
+      <ol class="etapes">
+      <li>
+        <div class="et-l">Capturez avant de bloquer</div>
+        <div class="et-d">Le blocage fait souvent disparaître les messages de votre côté. Capturez d&#39;abord, bloquez ensuite.</div>
+      </li>
+      <li>
+        <div class="et-l">Appelez le 3018</div>
+        <div class="et-d">Numéro national contre les violences numériques, gratuit et anonyme. Il dispose d&#39;un canal direct avec les plateformes pour obtenir des retraits rapides.</div>
+      </li>
+      <li>
+        <div class="et-l">Restreignez vos comptes sans les supprimer</div>
+        <div class="et-d">Passer en privé limite l&#39;exposition ; supprimer le compte détruit les preuves.</div>
+      </li>
+      <li>
+        <div class="et-l">Parlez-en à quelqu&#39;un</div>
+        <div class="et-d">Un proche, un professionnel de santé, un service d&#39;écoute. L&#39;isolement est ce sur quoi comptent les harceleurs.</div>
+      </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>À faire tout de suite</h2>
+      <p class="sec-intro">Ces gestes limitent les dégâts. Commencez par là, même si vous ne comprenez pas encore tout ce qui s&#39;est passé.</p>
+      <ol class="etapes">
+      <li class="et-critique">
+        <div class="et-l">Bloquer l&#39;auteur sur l&#39;ensemble des plateformes concernées</div>
+      </li>
+      <li>
+        <div class="et-l">Passer les comptes en privé et restreindre les contacts</div>
+        <div class="et-d">Localisation, liste d&#39;amis, possibilité d&#39;être tagué·e</div>
+      </li>
+      <li class="et-critique">
+        <div class="et-l">Ne pas répondre aux messages et ne pas supprimer les preuves</div>
+        <div class="et-d">Conserver l&#39;intégralité des échanges avant tout blocage ou signalement</div>
+      </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Conserver les preuves</h2>
+      <p class="sec-intro">Faites ces captures avant toute réinitialisation : sans elles, une plainte ou une demande de remboursement est beaucoup plus difficile à défendre.</p>
+      <ol class="etapes">
+      <li class="et-critique">
+        <div class="et-l">Réaliser des captures d&#39;écran horodatées et certifiées</div>
+        <div class="et-d">Inclure l&#39;URL, le pseudo de l&#39;auteur et la date/heure visibles — envisager un constat d&#39;huissier numérique pour les faits graves</div>
+      </li>
+      <li>
+        <div class="et-l">Conserver les URLs et identifiants des comptes auteurs</div>
+      </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Sécuriser durablement</h2>
+      <p class="sec-intro">Une fois l&#39;urgence passée, ces mesures évitent que cela se reproduise.</p>
+      <ol class="etapes">
+      <li>
+        <div class="et-l">Renforcer la confidentialité des comptes</div>
+        <div class="et-d">Localisation, listes d&#39;amis, tags, visibilité des publications passées</div>
+      </li>
+      <li>
+        <div class="et-l">Activer le MFA sur les comptes concernés</div>
+      </li>
+      <li>
+        <div class="et-l">Signaler les faux comptes ou usurpations à la plateforme</div>
+      </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Signaler et faire valoir vos droits</h2>
+      <p class="sec-intro">Ces démarches sont gratuites et vous y avez droit, même si le montant en jeu vous paraît faible.</p>
+      <ol class="etapes">
+      <li>
+        <div class="et-l">Signaler les contenus aux plateformes via leurs formulaires de signalement</div>
+      </li>
+      <li>
+        <div class="et-l">Signaler à Pharos si le contenu est manifestement illicite</div>
+        <div class="et-d">internet-signalement.gouv.fr</div>
+      </li>
+      <li>
+        <div class="et-l">Déposer plainte pour cyberharcèlement</div>
+        <div class="et-d">Art. 222-33-2-2 et suivants du Code pénal — conserver le récépissé de dépôt</div>
+      </li>
+      </ol>
+    </section>
+
+    <section class="ia" id="assistant">
+      <h2>Ma question n'est pas dans cette fiche</h2>
+      <p class="sec-intro">Décrivez votre situation en quelques lignes : notre assistant vous répond immédiatement, et un conseiller peut vous rappeler ensuite si nécessaire.</p>
+      <form id="ia-form" autocomplete="on">
+        <div class="grid2">
+          <div class="field"><label for="f-prenom">Prénom *</label><input id="f-prenom" name="prenom" type="text" required autocomplete="given-name"></div>
+          <div class="field"><label for="f-nom">Nom *</label><input id="f-nom" name="nom" type="text" required autocomplete="family-name"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="f-email">E-mail *</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+          <div class="field"><label for="f-appareil">Appareil concerné</label>
+            <select id="f-appareil" name="appareil">
+              <option value="">Je ne sais pas</option>
+              <option value="windows">Ordinateur Windows</option>
+              <option value="mac">Mac</option>
+              <option value="ios">iPhone / iPad</option>
+              <option value="android">Téléphone Android</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label for="f-question">Votre question *</label><textarea id="f-question" name="question" required maxlength="1500" placeholder="Ex. : mon téléphone chauffe et une application inconnue est apparue hier, que dois-je vérifier ?"></textarea></div>
+        <label class="consent" for="f-consent">
+          <input type="checkbox" id="f-consent" required>
+          <span>J&#39;autorise S@FE à conserver mes coordonnées et ma question pour me répondre et me recontacter au sujet de cet incident. Ma question est conservée sous forme pseudonymisée pendant 90 jours maximum, puis supprimée automatiquement. Aucune donnée n&#39;est transmise à des tiers à des fins commerciales (art. 13 RGPD).</span>
+        </label>
+        <button class="btn" type="submit" id="ia-submit">Obtenir une réponse</button>
+      </form>
+      <div class="ia-msg" id="ia-msg"></div>
+      <div class="ia-out" id="ia-out"></div>
+      <p class="ia-note">Réponse générée automatiquement à partir de nos procédures d'intervention. Elle ne remplace pas un diagnostic personnalisé et n'a pas de valeur juridique. N'indiquez jamais de mot de passe ni de code de validation dans ce formulaire.</p>
+    </section>
+
+    <section>
+      <h2>Faire intervenir un professionnel</h2>
+      <p class="sec-intro">Le diagnostic est gratuit. Les prestations ci-dessous sont réalisées par S@FE, prestataire référencé cybermalveillance.gouv.fr / 17Cyber. Pour être recontacté, renseignez d'abord vos coordonnées dans le bloc ci-dessus.</p>
+      <div class="presta">
+      <div class="p">
+        <div class="p-txt"><div class="p-n">Niveau 1 — Assistance simple</div><div class="p-l">Conseils de sécurisation</div></div>
+        <div class="p-prix">42,00 €<small>TTC · 35,00 € HT</small></div>
+        <button class="p-cta direct" data-presta="N1-1" data-direct="1">Commander</button>
+      </div>
+      <div class="p">
+        <div class="p-txt"><div class="p-n">Niveau 3 — Incident important</div><div class="p-l">Accompagnement dépôt de plainte + preuves</div></div>
+        <div class="p-prix">82,80 €<small>TTC · 69,00 € HT</small></div>
+        <button class="p-cta" data-presta="N3-4" data-direct="0">Être rappelé</button>
+      </div>
+      <div class="p">
+        <div class="p-txt"><div class="p-n">Niveau 4 — Incident critique</div><div class="p-l">Sextorsion / Deepfake</div></div>
+        <div class="p-prix">334,80 €<small>TTC · 279,00 € HT</small></div>
+        <button class="p-cta" data-presta="N4-4" data-direct="0">Être rappelé</button>
+      </div>
+      </div>
+    </section>
+
+    <section><h2>Autres situations</h2><div class="liens"><a href="/aide/fuite-de-donnees-personnelles/">🗂️ Mes données personnelles ont fuité</a><a href="/aide/piratage-de-compte-en-ligne/">🔑 Un de mes comptes en ligne a été piraté</a></div></section>
+
+    <section><h2>Cette page répond aussi à</h2><p class="req"><span>« cyberharcèlement que faire »</span><span>« faire supprimer une photo de moi sur internet »</span><span>« porter plainte pour harcèlement en ligne »</span><span>« 3018 cyberharcèlement »</span></p></section>
+</main>
+<footer><div class="in">
+  <div><strong>S@FE CYBER PILOT</strong> — Prestataire référencé cybermalveillance.gouv.fr / 17Cyber.</div>
+  <div>Urgence : en cas de danger immédiat, appelez le <strong>17</strong>. Cyberharcèlement : <strong>3018</strong> (gratuit, anonyme). Signalement : <a href="https://www.cybermalveillance.gouv.fr" rel="noopener">cybermalveillance.gouv.fr</a>.</div>
+  <div>Éditeur S@FE SAS — <a href="mailto:contact@safe-digitalisation.fr">contact@safe-digitalisation.fr</a>. Conseils généraux issus de nos procédures d'intervention, sans valeur de diagnostic personnalisé ni de conseil juridique.</div>
+</div></footer>
+<script>
+(function(){
+  var SB='https://bgkijldrmdhklkadkeua.supabase.co', KEY='sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32';
+  var SITUATION="cyberharcelement", SLUG="cyberharcelement";
+  var form=document.getElementById('ia-form'), out=document.getElementById('ia-out'),
+      msg=document.getElementById('ia-msg'), btn=document.getElementById('ia-submit');
+  var leadId=null;
+
+  function show(el,txt,cls){ el.textContent=txt; el.className=(cls||'')+' show'; }
+  function note(txt,type){ msg.textContent=txt; msg.className='ia-msg '+(type||'')+' show'; }
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    if(!document.getElementById('f-consent').checked){ note('Merci de cocher la case de consentement.','err'); return; }
+    btn.disabled=true; btn.textContent='Analyse en cours…'; msg.className='ia-msg'; out.className='ia-out';
+    fetch(SB+'/functions/v1/cyberdesk-public-assistant',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':KEY},
+      body:JSON.stringify({
+        first_name:document.getElementById('f-prenom').value.trim(),
+        last_name:document.getElementById('f-nom').value.trim(),
+        email:document.getElementById('f-email').value.trim(),
+        consent:true,
+        consent_version:"aide-publique-v1",
+        situation_key:SITUATION, page_slug:SLUG,
+        device:document.getElementById('f-appareil').value||null,
+        question:document.getElementById('f-question').value.trim()
+      })
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,body:j}; }); })
+      .then(function(res){
+        if(res.body && res.body.lead_id) leadId=res.body.lead_id;
+        if(res.ok && res.body.reply){ show(out,res.body.reply,'ia-out'); note('Vos coordonnées ont été enregistrées : un conseiller peut vous rappeler.','ok'); }
+        else if(res.status===429){ note(res.body.message||"L'assistant a atteint sa limite d'utilisation. Les étapes de cette page restent valables — un conseiller peut aussi vous rappeler.",'err'); }
+        else { note(res.body.message||"L'assistant est momentanément indisponible. Suivez les étapes de cette page : elles couvrent la très grande majorité des situations.",'err'); }
+      })
+      .catch(function(){ note("Connexion impossible. Suivez les étapes de cette page, elles ne nécessitent aucun outil.",'err'); })
+      .finally(function(){ btn.disabled=false; btn.textContent='Obtenir une réponse'; });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.p-cta'), function(b){
+    b.addEventListener('click', function(){
+      if(!leadId){ note('Renseignez d\'abord vos coordonnées dans le formulaire ci-dessus.','err');
+        document.getElementById('assistant').scrollIntoView({behavior:'smooth'}); return; }
+      if(b.dataset.direct!=='1'){ note('Votre demande est enregistrée : un conseiller vous rappelle pour établir un devis gratuit.','ok'); return; }
+      b.disabled=true; b.textContent='Redirection…';
+      fetch(SB+'/functions/v1/cyberdesk-public-checkout',{
+        method:'POST', headers:{'Content-Type':'application/json','apikey':KEY},
+        body:JSON.stringify({lead_id:leadId, prestation_id:b.dataset.presta})
+      }).then(function(r){ return r.json(); })
+        .then(function(j){ if(j.checkout_url){ window.location.href=j.checkout_url; }
+          else { note(j.message||'Commande indisponible pour le moment. Un conseiller vous rappellera.','err'); b.disabled=false; b.textContent='Commander'; } })
+        .catch(function(){ note('Commande indisponible pour le moment. Un conseiller vous rappellera.','err'); b.disabled=false; b.textContent='Commander'; });
+    });
+  });
+})();
+</script>
+</body>
+</html>
