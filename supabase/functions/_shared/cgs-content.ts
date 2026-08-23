@@ -23,11 +23,11 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "S@FE SASU, ci-après dénommée « S@FE » ou « le Prestataire », est une société par actions simplifiée unipersonnelle immatriculée au Registre du Commerce et des Sociétés de Paris sous le numéro SIRET 104 699 558 00011, dont le siège social est situé 66 avenue des Champs-Élysées, 75008 Paris."
+    "text": "S@FE SAS, ci-après dénommée « S@FE » ou « le Prestataire », est une société par actions simplifiée à capital variable de 1 000 € à 100 000 € immatriculée au Registre du Commerce et des Sociétés de Paris sous le numéro SIRET 104 699 558 00011, dont le siège social est situé 66 avenue des Champs-Élysées, 75008 Paris."
   },
   {
     "type": "p",
-    "text": "S@FE Digitalisation, branche spécialisée de S@FE SASU, est référencée comme prestataire de confiance sur la plateforme cybermalveillance.gouv.fr et le service 17Cyber, opérés par le Groupement d'Intérêt Public Action contre la Cybermalveillance (GIP ACYMA). À ce titre, S@FE intervient auprès de particuliers et de professionnels victimes d'actes de cybermalveillance."
+    "text": "S@FE Digitalisation, branche spécialisée de S@FE SAS, est référencée comme prestataire de confiance sur la plateforme cybermalveillance.gouv.fr et le service 17Cyber, opérés par le Groupement d'Intérêt Public Action contre la Cybermalveillance (GIP ACYMA). À ce titre, S@FE intervient auprès de particuliers et de professionnels victimes d'actes de cybermalveillance."
   },
   {
     "type": "p",
@@ -46,15 +46,15 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "Les présentes CGS ont pour objet de définir les conditions dans lesquelles S@FE SASU fournit des prestations d'assistance cybersécurité aux personnes physiques et morales victimes d'actes de cybermalveillance, notamment dans le cadre des mises en relation effectuées via la plateforme cybermalveillance.gouv.fr ou le service 17Cyber."
+    "text": "Les présentes CGS ont pour objet de définir les conditions dans lesquelles S@FE SAS fournit des prestations d'assistance cybersécurité aux personnes physiques et morales victimes d'actes de cybermalveillance, notamment dans le cadre des mises en relation effectuées via la plateforme cybermalveillance.gouv.fr ou le service 17Cyber."
   },
   {
     "type": "p",
-    "text": "Elles s'appliquent à toute prestation commandée auprès de S@FE SASU, à l'exclusion des produits SaaS C@NDY et C@NDY-e qui font l'objet de contrats distincts, et des activités de courtage en assurances relevant de la branche S@FE Assurances."
+    "text": "Elles s'appliquent à toute prestation commandée auprès de S@FE SAS, à l'exclusion des produits SaaS C@NDY et C@NDY-e qui font l'objet de contrats distincts, et des activités de courtage en assurances relevant de la branche S@FE Assurances."
   },
   {
     "type": "p",
-    "text": "Toute dérogation aux présentes CGS doit faire l'objet d'un accord écrit signé par le Président de S@FE SASU. Les conditions particulières mentionnées dans un devis ou contrat signé prévalent sur les présentes CGS en cas de contradiction."
+    "text": "Toute dérogation aux présentes CGS doit faire l'objet d'un accord écrit signé par le Président de S@FE SAS. Les conditions particulières mentionnées dans un devis ou contrat signé prévalent sur les présentes CGS en cas de contradiction."
   },
   {
     "type": "h2",
@@ -66,11 +66,11 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "bullet",
-    "text": "\"Prestataire\" : S@FE SASU, agissant sous sa branche S@FE Digitalisation."
+    "text": "\"Prestataire\" : S@FE SAS, agissant sous sa branche S@FE Digitalisation."
   },
   {
     "type": "bullet",
-    "text": "\"Client\" : toute personne physique ou morale ayant conclu ou souhaitant conclure un contrat de prestation avec S@FE SASU dans le cadre des présentes CGS."
+    "text": "\"Client\" : toute personne physique ou morale ayant conclu ou souhaitant conclure un contrat de prestation avec S@FE SAS dans le cadre des présentes CGS."
   },
   {
     "type": "bullet",
@@ -109,11 +109,15 @@ export const CGS_BLOCKS: CgsBlock[] = [
     "rows": [
       [
         "Dénomination",
-        "S@FE SASU"
+        "S@FE SAS"
       ],
       [
         "Forme juridique",
-        "Société par Actions Simplifiée Unipersonnelle"
+        "Société par Actions Simplifiée à capital variable"
+      ],
+      [
+        "Capital social",
+        "de 1 000 € à 100 000 €"
       ],
       [
         "SIRET",
@@ -171,7 +175,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "S@FE SASU propose des prestations d'assistance pour les neuf catégories d'incidents de cybermalveillance suivantes. Pour chaque cas, les prestations comprennent a minima : un diagnostic initial, un rapport d'intervention et des recommandations de remédiation."
+    "text": "S@FE SAS propose des prestations d'assistance pour les neuf catégories d'incidents de cybermalveillance suivantes. Pour chaque cas, les prestations comprennent a minima : un diagnostic initial, un rapport d'intervention et des recommandations de remédiation."
   },
   {
     "type": "cas",
@@ -356,7 +360,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "h2",
-    "text": "Article 7 — Obligations de S@FE SASU"
+    "text": "Article 7 — Obligations de S@FE SAS"
   },
   {
     "type": "h3",
@@ -511,7 +515,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "S@FE SASU agit en qualité de Responsable de traitement pour les données collectées dans le cadre de la gestion de la relation client (coordonnées, facturation, historique des interventions). S@FE agit en qualité de Sous-traitant pour les données relatives à l'incident communiquées par le Client dans le cadre de la prestation."
+    "text": "S@FE SAS agit en qualité de Responsable de traitement pour les données collectées dans le cadre de la gestion de la relation client (coordonnées, facturation, historique des interventions). S@FE agit en qualité de Sous-traitant pour les données relatives à l'incident communiquées par le Client dans le cadre de la prestation."
   },
   {
     "type": "h3",
@@ -599,7 +603,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
   },
   {
     "type": "p",
-    "text": "Les méthodes, outils, templates, scripts et documents produits par S@FE dans le cadre de ses prestations restent la propriété intellectuelle exclusive de S@FE SASU. Le rapport d'intervention remis au Client constitue une œuvre dérivée dont S@FE concède au Client une licence d'utilisation personnelle, non exclusive et non cessible."
+    "text": "Les méthodes, outils, templates, scripts et documents produits par S@FE dans le cadre de ses prestations restent la propriété intellectuelle exclusive de S@FE SAS. Le rapport d'intervention remis au Client constitue une œuvre dérivée dont S@FE concède au Client une licence d'utilisation personnelle, non exclusive et non cessible."
   },
   {
     "type": "h3",
@@ -718,7 +722,7 @@ export const CGS_BLOCKS: CgsBlock[] = [
     "rows": [
       [
         "Prestataire",
-        "S@FE SASU — S@FE Digitalisation"
+        "S@FE SAS — S@FE Digitalisation"
       ],
       [
         "Adresse",

@@ -8,7 +8,8 @@ window.VictimPDF = (function () {
   const { jsPDF } = window.jspdf || {};
 
   const PRESTATAIRE = {
-    nom:           'S@FE',
+    nom:           'S@FE SAS',
+    forme:         'SAS à capital variable de 1 000 € à 100 000 €',
     adresse:       '66 avenue des Champs-Élysées, 75008 Paris',
     siret:         '104 699 558 00011',
     representant:  'Michel Sébastien Alonso, Président',
@@ -55,7 +56,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
     doc.text(
-      `${PRESTATAIRE.nom} — SIRET ${PRESTATAIRE.siret} — ${PRESTATAIRE.adresse} — ${PRESTATAIRE.email} — ${PRESTATAIRE.referencement}`,
+      `${PRESTATAIRE.nom}, ${PRESTATAIRE.forme} — SIRET ${PRESTATAIRE.siret} — ${PRESTATAIRE.adresse} — ${PRESTATAIRE.email} — ${PRESTATAIRE.referencement}`,
       15, h - 10, { maxWidth: 180 }
     );
   }
@@ -72,7 +73,7 @@ window.VictimPDF = (function () {
     doc.setFontSize(8.5);
     doc.setTextColor(40, 40, 40);
     const left = [
-      PRESTATAIRE.nom, PRESTATAIRE.adresse,
+      PRESTATAIRE.nom, PRESTATAIRE.forme, PRESTATAIRE.adresse,
       `SIRET : ${PRESTATAIRE.siret}`,
       PRESTATAIRE.email, PRESTATAIRE.referencement,
     ];

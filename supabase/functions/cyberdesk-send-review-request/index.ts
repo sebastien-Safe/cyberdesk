@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
         </a>
       </p>
       <p style="font-size:13px;color:#666">Ce lien reste valable ${REVIEW_VALIDITY_DAYS} jours.</p>
-      <p style="font-size:12px;color:#999;margin-top:24px">S@FE — contact@safe-digitalisation.fr</p>
+      <p style="font-size:12px;color:#999;margin-top:24px">S@FE SAS — contact@safe-digitalisation.fr</p>
     </div>
   `;
 

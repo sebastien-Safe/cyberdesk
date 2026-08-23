@@ -978,6 +978,40 @@ contredisant cette convention — corrigé pour "S@FE SAS" dans les deux
 fichiers (le champ n'était utilisé que dans le rapport ; dans le devis
 c'était du code mort).
 
+⚠️ **Décision du 2026-08-11 : seule raison sociale légale = "S@FE
+SAS — Société par Actions Simplifiée à capital variable de 1 000 €
+à 100 000 €, SIRET 104 699 558 00011, 66 avenue des Champs-Élysées,
+75008 Paris."** Toute mention "SASU", ou toute mention de "S@FE" seule
+sans le suffixe légal, est une erreur dans un contexte d'identification
+du prestataire (parties d'un devis/rapport, mentions légales, pied de
+page de document contractuel, CGS, signature d'email). Le nom de marque
+"S@FE" ou "S@FE Digitalisation" reste correct dans un contexte de
+marque/produit (bannières, titres d'interface, libellé produit) — ne
+pas confondre les deux usages.
+
+Corrigé le 2026-08-23 : `_shared/cgs-content.ts` affichait encore
+"S@FE SASU" / "Société par Actions Simplifiée Unipersonnelle" dans
+onze blocs (préambule, Articles 1, 2, 3.1, 4, 7, 11, 12, 16.5) malgré
+le commentaire de portage d'origine ("kept verbatim") — corrigé pour
+"S@FE SAS", et la mention "à capital variable de 1 000 € à 100 000 €"
+ajoutée au préambule et à la table d'identification (Article 3.1,
+nouvelle ligne "Capital social"). `assets/victimes17/victimes17-pdf.js`
+(`PRESTATAIRE.nom`) affichait "S@FE" seule sans suffixe légal ; corrigé
+en "S@FE SAS" avec un nouveau champ `PRESTATAIRE.forme` ("SAS à
+capital variable de 1 000 € à 100 000 €") repris dans `drawParties()`
+et `drawFooter()`, à côté du SIRET dans les deux blocs. Les Edge
+Functions `generate-cybervictim-report`/`generate-cybervictim-quote`
+(objet `SAFE` const) et `_shared/docx-helpers.ts`/`_shared/
+product-texts.ts` étaient déjà conformes ("S@FE SAS" / mentions
+marque uniquement) — seule la ligne `intervenant` du rapport
+("Président et DPO de S@FE") ne portait pas le suffixe légal ; corrigée
+en "Président et DPO de S@FE SAS". **Point de vigilance récurrent** :
+un audit du 12/08 avait déjà trouvé un écart doc/prod sur ce point
+précis (prod affichait "S@FE SASU" alors que le dépôt disait autre
+chose) — toujours vérifier la version réellement déployée des Edge
+Functions sur le projet Supabase de production après un correctif de
+ce type, pas seulement le dépôt local.
+
 ## Feuille de route
 
 ### MVP (en cours)

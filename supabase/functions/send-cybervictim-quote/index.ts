@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
       </p>
       <p style="font-size:13px;color:#666">Devis gratuit et sans engagement, valable 30 jours.</p>
       <p style="font-size:12px;color:#999;margin-top:24px">
-        S@FE — 66 avenue des Champs-Élysées, 75008 Paris — contact@safe-digitalisation.fr
+        S@FE SAS — 66 avenue des Champs-Élysées, 75008 Paris — contact@safe-digitalisation.fr
       </p>
     </div>
   `;

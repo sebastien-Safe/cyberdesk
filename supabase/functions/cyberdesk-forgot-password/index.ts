@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       </p>
       <p style="font-size:13px;color:#666">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail —
       votre mot de passe actuel reste valide.</p>
-      <p style="font-size:12px;color:#999;margin-top:24px">S@FE — contact@safe-digitalisation.fr</p>
+      <p style="font-size:12px;color:#999;margin-top:24px">S@FE SAS — contact@safe-digitalisation.fr</p>
     </div>
   `;
 
