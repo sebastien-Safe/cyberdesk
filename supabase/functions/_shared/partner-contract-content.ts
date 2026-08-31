@@ -9,8 +9,10 @@
 // engagent l'entreprise et ne doivent pas être rédigés par un outil de
 // développement.
 //
-// Piste Mandataire  → 3 documents distincts à signer : NDA, DPA (Art. 28
-//   RGPD, Annexe A), Clause de sous-traitance compatible Cybermalveillance.
+// Piste Mandataire  → 4 documents distincts à signer : NDA, DPA (Art. 28
+//   RGPD, Annexe A), Clause de sous-traitance compatible Cybermalveillance,
+//   Annexe "Frais de déplacement" (bordereau, délai de paiement, vigilance
+//   SIRET — ajoutée le 2026-08-24, hors périmètre SEP).
 // Piste Associé SEP → 1 document : Statuts SEP (son Article 11 couvre déjà
 //   secret professionnel/RGPD pour cette piste — pas de NDA/DPA/Clause
 //   redondants, décision produit actée).
@@ -22,7 +24,7 @@
 // ==========================================================================
 
 export type RemunerationStatus = "mandataire" | "associe_sep";
-export type DocumentKey = "nda" | "dpa" | "clause_sous_traitance" | "sep_statuts";
+export type DocumentKey = "nda" | "dpa" | "clause_sous_traitance" | "annexe_frais_deplacement" | "sep_statuts";
 
 /** Champs collectés lors du tunnel d'onboarding, utilisés pour composer le texte des documents. */
 export interface OnboardingFields {
@@ -97,6 +99,67 @@ entre professionnels. Il s'engage à respecter le périmètre d'intervention,
 la transparence vis-à-vis du bénéficiaire, les engagements éthiques et
 déontologiques et la conservation des traces numériques définis par la
 Charte d'engagement des prestataires Cybermalveillance.gouv.fr v2.5.
+
+Les modalités de prise en charge et de reversement des frais de déplacement
+engagés par le mandataire dans le cadre de ses interventions sur site sont
+régies par l'Annexe "Frais de déplacement", qui fait partie intégrante du
+présent accord.
+`.trim(),
+};
+
+const ANNEXE_FRAIS_DEPLACEMENT: PartnerDocument = {
+  key: "annexe_frais_deplacement",
+  version: "v1",
+  title: "Annexe — Frais de déplacement",
+  buildText: (f) => `
+[PLACEHOLDER — à valider par un juriste avant mise en production]
+
+La présente Annexe est conclue en application et en complément de la Clause
+de sous-traitance liant les Parties. Elle a pour objet exclusif de définir
+les conditions de prise en charge, de facturation et de règlement des frais
+de déplacement engagés par le mandataire ${na(f.first_name)} ${na(f.last_name)}
+(${na(f.billing_name)}, SIRET ${na(f.siret)}) dans le cadre de ses
+interventions sur site pour le compte des clients de la plateforme
+S@FE CYBER PILOT. Les modalités relatives à la commission sur chiffre
+d'affaires demeurent régies exclusivement par la Clause de sous-traitance.
+
+Article 1 — Absence d'avance de trésorerie et barème. Le mandataire n'a
+aucune avance de trésorerie à faire au titre de ses frais de déplacement.
+Il détermine et met à jour librement son propre barème (forfait de base et
+coefficient kilométrique) depuis son espace personnel sur la plateforme.
+
+Article 2 — Collecte et clôture du dossier. La victime règle à S@FE, avant
+tout déplacement du mandataire, l'intégralité des frais de déplacement
+calculés selon ce barème. Les sommes collectées deviennent éligibles au
+reversement dès la clôture du dossier, laquelle intervient soit par le
+dépôt d'un avis de satisfaction par la victime, soit, à défaut, de plein
+droit à l'expiration d'un délai de quinze (15) jours calendaires suivant
+la fin de l'intervention, en l'absence de toute réclamation formalisée
+durant ce délai.
+
+Article 3 — Facturation. En fin de mois, S@FE transmet au mandataire un
+bordereau récapitulatif des dossiers clos sur la période (montant des
+frais de déplacement validés, TVA applicable, solde dû). Ce bordereau est
+un document de calcul et de contrôle ; il ne constitue en aucun cas une
+convention d'autofacturation au sens de l'article 289 du Code général des
+impôts. Sur cette base, le mandataire établit et transmet à S@FE sa propre
+facture du solde, sous sa responsabilité juridique, fiscale et facturière,
+en appliquant le régime de TVA qui lui est légalement applicable.
+
+Article 4 — Délai de paiement. Par dérogation expresse au délai supplétif
+de l'article L. 441-10 du Code de commerce, S@FE s'engage à régler la
+facture du mandataire dans un délai de dix (10) jours ouvrés à compter de
+sa réception, par virement sur le compte dont les coordonnées ont été
+renseignées par le mandataire sur son espace personnel.
+
+Article 5 — Vigilance et lutte contre le travail dissimulé. Conformément
+aux articles L. 8222-1 et suivants du Code du travail, S@FE vérifie le
+statut d'indépendant du mandataire (SIRET actif, immatriculation en cours
+de validité) avant tout premier reversement, puis selon la périodicité
+prévue par l'article R. 8222-1 dès lors que les sommes versées au
+mandataire (commission et frais de déplacement inclus) atteignent le
+seuil légal annuel. Le mandataire s'engage à fournir à S@FE, à première
+demande, les justificatifs requis par la réglementation.
 `.trim(),
 };
 
@@ -120,7 +183,7 @@ secondaire.
 };
 
 export const DOCUMENTS_BY_STATUS: Record<RemunerationStatus, PartnerDocument[]> = {
-  mandataire: [NDA, DPA, CLAUSE_SOUS_TRAITANCE],
+  mandataire: [NDA, DPA, CLAUSE_SOUS_TRAITANCE, ANNEXE_FRAIS_DEPLACEMENT],
   associe_sep: [SEP_STATUTS],
 };
 

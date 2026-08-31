@@ -447,6 +447,14 @@ export const CGS_BLOCKS: CgsBlock[] = [
     "text": "Le Client s'engage à mettre en œuvre dans des délais raisonnables les recommandations formulées par S@FE dans le rapport d'intervention. S@FE ne saurait être tenu responsable de préjudices résultant du non-respect de ces recommandations."
   },
   {
+    "type": "h3",
+    "text": "8.6 Validation de l'intervention"
+  },
+  {
+    "type": "p",
+    "text": "À l'issue de toute intervention réalisée sur site, le Client est invité à déposer un avis de satisfaction via le lien qui lui est communiqué par S@FE. À défaut de contestation formalisée auprès de S@FE dans un délai de quinze (15) jours calendaires suivant la date de fin de l'intervention, celle-ci est réputée conforme et acceptée sans réserve par le Client. Cette validation, expresse ou tacite, conditionne notamment le reversement des frais de déplacement au mandataire intervenant, dans les conditions prévues par les accords conclus entre S@FE et ce dernier."
+  },
+  {
     "type": "h2",
     "text": "Article 9 — Responsabilité et limitation"
   },
