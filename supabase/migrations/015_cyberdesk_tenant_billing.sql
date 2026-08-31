@@ -30,10 +30,22 @@
 --
 -- Ne recrée PAS : profiles, contacts, audit_logs, is_admin()/is_super_admin()
 -- (déjà en place). Additive uniquement.
+--
+-- 2026-08-31 — Ordre des instructions corrigé : les policies de
+-- cyberdesk_tenants / cyberdesk_tenant_invoices référencent
+-- staff_module_access.tenant_id, or CREATE POLICY valide les colonnes à la
+-- création. La colonne tenant_id (dont la clé étrangère pointe vers
+-- cyberdesk_tenants) est donc désormais ajoutée AVANT la création des
+-- policies : (1) create table cyberdesk_tenants → (2) add column
+-- staff_module_access.tenant_id → (3) RLS + policies. Sans ce réordonnancement
+-- la migration échouait sur "42703: column sma.tenant_id does not exist"
+-- (constaté lors de la première tentative d'application). Contenu inchangé
+-- par ailleurs.
 -- ==========================================================================
 
 -- ══════════════════════════════════════════════════════════════════════
--- 1. TENANTS
+-- 1. TABLE TENANTS (structure seule — RLS/policies plus bas, § 3, une fois
+--    staff_module_access.tenant_id créée)
 -- ══════════════════════════════════════════════════════════════════════
 
 create table "public"."cyberdesk_tenants" (
@@ -54,6 +66,29 @@ create table "public"."cyberdesk_tenants" (
 comment on table public.cyberdesk_tenants
   is 'Un tenant = un prestataire cyber qui paie un abonnement CyberDesk. subscription_status piloté par cyberdesk-billing-webhook (Stripe). past_due ne coupe pas l''accès (voir has_module_access) — seuls canceled/unpaid le font.';
 
+-- ══════════════════════════════════════════════════════════════════════
+-- 2. RATTACHEMENT staff_module_access -> TENANT
+--    (avant les policies du § 3, qui référencent sma.tenant_id)
+-- ══════════════════════════════════════════════════════════════════════
+
+alter table "public"."staff_module_access"
+  add column if not exists "tenant_id" uuid references public.cyberdesk_tenants(id) on delete set null;
+
+create index if not exists staff_module_access_tenant_id_idx
+  on public.staff_module_access (tenant_id);
+
+comment on column public.staff_module_access.tenant_id
+  is 'Tenant facturé pour cet accès module (nullable). NULL = accès accordé hors facturation SaaS (comportement historique inchangé, ex. les accès accordés avant ce module) — has_module_access() ne bloque jamais un accès à tenant_id NULL.';
+
+-- Les lignes existantes gardent tenant_id = NULL (comportement inchangé).
+-- Le rattachement du client actuel au premier tenant créé est une
+-- correction de donnée ponctuelle faite à la main après cette migration,
+-- pas un changement de schéma.
+
+-- ══════════════════════════════════════════════════════════════════════
+-- 3. RLS + POLICIES (tenants et tenant_invoices)
+-- ══════════════════════════════════════════════════════════════════════
+
 alter table "public"."cyberdesk_tenants" enable row level security;
 
 create policy "cyberdesk_tenants_select_member_or_admin"
@@ -71,7 +106,7 @@ create policy "cyberdesk_tenants_admin_write"
   using (is_super_admin())
   with check (is_super_admin());
 
--- ── Détail des factures Stripe (alimente payments par trigger, § 3) ──
+-- ── Détail des factures Stripe (alimente payments par trigger, § 4) ──
 
 create table "public"."cyberdesk_tenant_invoices" (
   "id"                 uuid primary key default gen_random_uuid(),
@@ -105,25 +140,7 @@ create policy "cyberdesk_tenant_invoices_select_member_or_admin"
 -- Stripe (service_role, hors RLS) écrit dans cette table.
 
 -- ══════════════════════════════════════════════════════════════════════
--- 2. RATTACHEMENT staff_module_access -> TENANT
--- ══════════════════════════════════════════════════════════════════════
-
-alter table "public"."staff_module_access"
-  add column if not exists "tenant_id" uuid references public.cyberdesk_tenants(id) on delete set null;
-
-create index if not exists staff_module_access_tenant_id_idx
-  on public.staff_module_access (tenant_id);
-
-comment on column public.staff_module_access.tenant_id
-  is 'Tenant facturé pour cet accès module (nullable). NULL = accès accordé hors facturation SaaS (comportement historique inchangé, ex. les accès accordés avant ce module) — has_module_access() ne bloque jamais un accès à tenant_id NULL.';
-
--- Les lignes existantes gardent tenant_id = NULL (comportement inchangé).
--- Le rattachement du client actuel au premier tenant créé est une
--- correction de donnée ponctuelle faite à la main après cette migration,
--- pas un changement de schéma.
-
--- ══════════════════════════════════════════════════════════════════════
--- 3. SYNCHRONISATION FACTURES -> payments (même patron que
+-- 4. SYNCHRONISATION FACTURES -> payments (même patron que
 --    sync_cybervictim_payment, migration 008)
 -- ══════════════════════════════════════════════════════════════════════
 
@@ -166,7 +183,7 @@ create trigger trg_sync_cyberdesk_tenant_invoice
 -- collision possible avec l'index unique payments_stripe_session_id_idx.
 
 -- ══════════════════════════════════════════════════════════════════════
--- 4. GATE D'ACCÈS — has_module_access() étendue à l'état d'abonnement
+-- 5. GATE D'ACCÈS — has_module_access() étendue à l'état d'abonnement
 -- ══════════════════════════════════════════════════════════════════════
 
 create or replace function public.has_module_access(p_module text)
@@ -189,7 +206,7 @@ revoke all on function public.has_module_access(text) from public, anon;
 grant execute on function public.has_module_access(text) to authenticated;
 
 -- ══════════════════════════════════════════════════════════════════════
--- 5. REPORTING (même patron que migration 010 — SECURITY DEFINER,
+-- 6. REPORTING (même patron que migration 010 — SECURITY DEFINER,
 --    jamais une nouvelle policy RLS large)
 -- ══════════════════════════════════════════════════════════════════════
 

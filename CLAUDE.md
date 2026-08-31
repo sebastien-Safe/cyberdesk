@@ -166,6 +166,11 @@ cyberdesk/
 │   │   ├── cyberdesk-forgot-password/      ← mot de passe oublié, envoi via Brevo
 │   │   │                                     (contourne le service e-mail intégré Supabase,
 │   │   │                                     quota par défaut trop bas — voir section dédiée)
+│   │   ├── cyberdesk-magic-link/           ← connexion par lien magique, envoi via Brevo
+│   │   │                                     (même contournement ; garde d'éligibilité module
+│   │   │                                     obligatoire — voir section dédiée)
+│   │   ├── cyberdesk-send-signature-otp/   ← OTP e-mail du tunnel d'onboarding partenaire
+│   │   ├── cyberdesk-verify-signature/     ← vérif OTP + écriture cyberdesk_partner_contracts
 │   │   ├── cyberdesk-dpo-request/          ← demande d'exercice de droits RGPD → email au DPO
 │   │   ├── cyberdesk-send-review-request/  ← envoi du lien d'avis client à la clôture du dossier
 │   │   ├── cyberdesk-submit-review/        ← soumission publique de l'avis (avis-client.html)
@@ -447,6 +452,9 @@ supabase functions deploy cyberdesk-stripe-webhook --no-verify-jwt
 supabase functions deploy cyber-ia-assistant
 supabase functions deploy cyberdesk-send-audit-email
 supabase functions deploy cyberdesk-forgot-password --no-verify-jwt
+supabase functions deploy cyberdesk-magic-link --no-verify-jwt
+supabase functions deploy cyberdesk-send-signature-otp
+supabase functions deploy cyberdesk-verify-signature
 supabase functions deploy cyberdesk-dpo-request
 supabase functions deploy cyberdesk-send-review-request
 supabase functions deploy cyberdesk-submit-review --no-verify-jwt
@@ -475,13 +483,16 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 7. cyber-ia-assistant
 8. cyberdesk-send-audit-email
 9. cyberdesk-forgot-password (`--no-verify-jwt` — appelée avant toute connexion, aucun JWT utilisateur)
-10. cyberdesk-dpo-request (JWT utilisateur normal)
-11. cyberdesk-send-review-request (JWT utilisateur normal)
-12. cyberdesk-submit-review (`--no-verify-jwt` — soumission publique via `avis-client.html`)
-13. cyberdesk-billing-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
-14. cyberdesk-create-tenant-checkout (JWT utilisateur, `is_super_admin()` vérifié en interne)
-15. cyberdesk-billing-portal (JWT utilisateur normal)
-16. cyberdesk-compute-travel-fee (JWT utilisateur normal)
+10. cyberdesk-magic-link (`--no-verify-jwt` — appelée avant toute connexion, aucun JWT utilisateur ; garde d'éligibilité module en interne — voir section dédiée)
+11. cyberdesk-send-signature-otp (JWT utilisateur normal)
+12. cyberdesk-verify-signature (JWT utilisateur normal — seul point d'écriture de `cyberdesk_partner_contracts`)
+13. cyberdesk-dpo-request (JWT utilisateur normal)
+14. cyberdesk-send-review-request (JWT utilisateur normal)
+15. cyberdesk-submit-review (`--no-verify-jwt` — soumission publique via `avis-client.html`)
+16. cyberdesk-billing-webhook (`--no-verify-jwt` — appelée par Stripe sans JWT utilisateur)
+17. cyberdesk-create-tenant-checkout (JWT utilisateur, `is_super_admin()` vérifié en interne)
+18. cyberdesk-billing-portal (JWT utilisateur normal)
+19. cyberdesk-compute-travel-fee (JWT utilisateur normal)
 
 ## Facturation SaaS des tenants (cyberdesk-billing-*)
 
