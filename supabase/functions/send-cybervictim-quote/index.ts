@@ -2,10 +2,21 @@
 // S@FE CYBER PILOT — Envoi du devis par e-mail (Brevo) + création d'une session
 // Stripe Checkout au montant exact du devis composé côté client.
 // POST { lead_id, devis, pdf_base64, pdf_filename }
-//   devis: { prestation_label, ht, tva, ttc, ... } (voir victimes17-quote.js)
+//   devis: { prestation_label, lines[], ht, tva, ttc, remise, prix_initial,
+//            source, diagnostic_code, ... } (voir victimes17-quote.js
+//            _quoteBuildDevisObject)
 // Le PDF est généré côté client (jsPDF, source de vérité visuelle unique
 // avec le téléchargement local) et transmis ici en base64 pour être joint
 // à l'e-mail — pas de re-génération serveur.
+//
+// Avant de créer la session Stripe, `devis` est verrouillé tel quel sur
+// cybervictim_leads.quote_breakdown (+ quote_total_ht/quote_total_ttc à
+// plat, quote_locked_at) — c'est cette Edge Function, pas le client, qui
+// fait foi : le montant Stripe est relu depuis la ligne qui vient d'être
+// écrite, jamais recalculé une seconde fois depuis le corps de la requête.
+// generate-cybervictim-quote (modale "Suivi d'intervention") lit ensuite ce
+// même quote_breakdown pour produire un document CGS toujours cohérent avec
+// ce qui a été effectivement facturé.
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
@@ -59,7 +70,7 @@ Deno.serve(async (req) => {
   }
 
   const { lead_id, devis, pdf_base64, pdf_filename } = body;
-  if (!lead_id || !devis || !pdf_base64) return json({ error: "missing_fields" }, 400);
+  if (!lead_id || !devis || !pdf_base64 || !Array.isArray(devis.lines)) return json({ error: "missing_fields" }, 400);
   const ttc = Number(devis.ttc);
   if (!ttc || ttc <= 0) return json({ error: "invalid_amount" }, 400);
   const ht = Number(devis.ht) || null;
@@ -74,6 +85,42 @@ Deno.serve(async (req) => {
   if (eLead || !lead) return json({ error: "not_found" }, 404);
   if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
   if (!lead.email) return json({ error: "no_email", details: "Aucun e-mail renseigné pour ce dossier." }, 400);
+
+  // Verrouillage serveur du devis AVANT toute création de session Stripe :
+  // c'est cette ligne qui fait foi (paiement + document CGS), pas le corps
+  // de la requête. Un nouvel envoi de devis pour ce dossier réécrit ces
+  // colonnes — le dernier devis validé fait foi.
+  const lockedAt = new Date().toISOString();
+  const { data: lockedLead, error: eLock } = await sb
+    .from("cybervictim_leads")
+    .update({
+      quote_breakdown: devis,
+      quote_total_ht: ht,
+      quote_total_ttc: ttc,
+      quote_locked_at: lockedAt,
+      quote_amount_ht: ht,
+    })
+    .eq("id", lead_id)
+    .select("quote_total_ttc")
+    .single();
+  if (eLock || !lockedLead) return json({ error: "lock_failed", details: eLock?.message }, 500);
+
+  await sb.from("audit_logs").insert({
+    user_id: user.id,
+    action: "quote_breakdown_locked",
+    module: "CyberDesk",
+    entity_type: "cybervictim_lead",
+    entity_id: lead_id,
+    donnees_concernees: "Verrouillage du devis (montant faisant foi pour le paiement Stripe et le document CGS)",
+    criticite: "Info",
+    resultat: "Succès",
+    details: { quote_breakdown: devis, quote_total_ht: ht, quote_total_ttc: lockedLead.quote_total_ttc, locked_at: lockedAt },
+  });
+
+  // Montant Stripe relu depuis la ligne qui vient d'être écrite — jamais
+  // recalculé une seconde fois depuis `devis` du corps de la requête.
+  const lockedTtc = Number(lockedLead.quote_total_ttc);
+  if (!lockedTtc || lockedTtc <= 0) return json({ error: "invalid_amount" }, 400);
 
   let stripeKey: string, brevoKey: string;
   try {
@@ -97,7 +144,7 @@ Deno.serve(async (req) => {
         price_data: {
           currency: "eur",
           product_data: { name: devis.prestation_label || "Intervention 17Cyber" },
-          unit_amount: Math.round(ttc * 100),
+          unit_amount: Math.round(lockedTtc * 100),
         },
         quantity: 1,
       }],
@@ -121,7 +168,7 @@ Deno.serve(async (req) => {
       </div>
       <p>Bonjour ${clientNom},</p>
       <p>Vous trouverez ci-joint votre devis d'intervention <strong>${devis.prestation_label || "17Cyber"}</strong>
-      d'un montant de <strong>${ttc.toFixed(2)} € TTC</strong>.</p>
+      d'un montant de <strong>${lockedTtc.toFixed(2)} € TTC</strong>.</p>
       <p style="text-align:center;margin:24px 0 10px">
         <a href="${session.url}" style="background:#000091;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">
           Payer en ligne
@@ -146,7 +193,7 @@ Deno.serve(async (req) => {
       sender: SENDER,
       to: [{ email: lead.email, name: clientNom }],
       bcc: [{ email: "cyberdesk@safe-digitalisation.fr", name: "S@FE CYBER PILOT Team" }],
-      subject: `Votre devis d'intervention 17Cyber — ${ttc.toFixed(2)} € TTC`,
+      subject: `Votre devis d'intervention 17Cyber — ${lockedTtc.toFixed(2)} € TTC`,
       htmlContent,
       attachment: [{ content: pdf_base64, name: pdf_filename || "devis-17cyber.pdf" }],
     }),
@@ -158,7 +205,6 @@ Deno.serve(async (req) => {
 
   const updatePayload: Record<string, unknown> = {
     quote_sent_at: new Date().toISOString(),
-    quote_amount_ht: ht,
     stripe_session_id: session.id,
     stripe_checkout_url: session.url,
     payment_status: "en_attente",

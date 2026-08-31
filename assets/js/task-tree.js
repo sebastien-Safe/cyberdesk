@@ -219,6 +219,10 @@ window.TaskTree = (function () {
         body: JSON.stringify({ lead_id: _state.leadId }),
       });
       const result = await resp.json();
+      if (result.error === 'quote_not_generated') {
+        alert('⚠️ ' + (result.message || "Aucun devis validé pour ce dossier — générez-le d'abord depuis la carte Kanban (bouton « Devis »)."));
+        return;
+      }
       if (!resp.ok || result.error) throw new Error(result.details || result.error || 'Erreur inconnue');
 
       _downloadBase64Docx(result.docx_base64, result.filename);

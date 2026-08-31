@@ -4,15 +4,17 @@
 // Le détail de la prestation se complète automatiquement à partir des actes
 // techniques cochés dans l'arbre de tâches (intervention_tasks) ; à défaut,
 // repli sur la liste des prestations type du produit. Le tarif est celui du
-// devis déjà composé et envoyé côté modale 3 étapes (cybervictim_leads.
-// quote_amount_ht, persisté par send-cybervictim-quote) — pas de catalogue
-// de prix séparé, ni de tarification à l'acte ici.
+// devis Kanban déjà composé, envoyé au client et verrouillé côté serveur
+// (cybervictim_leads.quote_breakdown, écrit par send-cybervictim-quote) —
+// pas de catalogue de prix séparé, ni de tarification à l'acte ici. Aucun
+// devis verrouillé ⇒ erreur explicite (quote_not_generated), jamais de repli
+// sur un prix par défaut.
 // Document calculé à la volée et retourné dans la réponse HTTP : aucun stockage
 // serveur (cohérent avec le registre RGPD T11).
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { Document, Packer, Paragraph } from "docx";
-import { h1, h2, p, bullet, infoTable, pricingTable, centered } from "../_shared/docx-helpers.ts";
+import { h1, h2, p, bullet, infoTable, quoteBreakdownTable, centered, QuoteBreakdown } from "../_shared/docx-helpers.ts";
 import { renderCgsBlocks } from "../_shared/cgs-render.ts";
 import { PRODUCT_TEXTS, ATTACK_TYPE_TO_PRODUCT_CODE, ATTACK_TYPE_LABELS, TARIFS_INDICATIFS_CGS } from "../_shared/product-texts.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -79,11 +81,19 @@ Deno.serve(async (req) => {
   const sb = createClient(SB_URL, SB_SR);
   const { data: lead, error: eLead } = await sb
     .from("cybervictim_leads")
-    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, attack_type, quote_amount_ht, created_by")
+    .select("id, first_name, last_name, email, phone, ticket_number, intervention_tasks, created_at, attack_type, quote_breakdown, created_by")
     .eq("id", leadId)
     .single();
   if (eLead || !lead) return json({ error: "not_found" }, 404);
   if (!(await canAccessLead(sbAnon, lead.created_by, user.id))) return json({ error: "forbidden" }, 403);
+
+  if (!lead.quote_breakdown) {
+    return json({
+      error: "quote_not_generated",
+      message: "Générez et validez d'abord le devis depuis la carte Kanban avant de produire le document CGS.",
+    }, 422);
+  }
+  const devis = lead.quote_breakdown as QuoteBreakdown;
 
   const code = ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type as string] || null;
   const alertType = ATTACK_TYPE_LABELS[lead.attack_type as string] || "Intervention 17Cyber";
@@ -113,9 +123,6 @@ Deno.serve(async (req) => {
     for (const item of texts.prestationsType) detailChildren.push(bullet(item));
   }
 
-  const ht = Number(lead.quote_amount_ht) || 0;
-  const ttc = ht * 1.2;
-
   const doc = new Document({
     sections: [
       {
@@ -141,7 +148,7 @@ Deno.serve(async (req) => {
           ...detailChildren,
 
           h2("Tarif"),
-          pricingTable(ht, ttc, product.alert_type || "Intervention S@FE"),
+          quoteBreakdownTable(devis),
 
           h2("Modalités de règlement"),
           bullet("Acompte de 50 % à la signature du présent devis ; solde à la remise du rapport d'intervention."),

@@ -301,6 +301,87 @@ export function pricingTable(ht: number, ttc: number, label = "Intervention S@FE
   });
 }
 
+export interface QuoteBreakdownLine {
+  label: string;
+  montant: number;
+  inclus?: boolean;
+  note?: string;
+}
+
+export interface QuoteBreakdown {
+  lines?: QuoteBreakdownLine[];
+  remise?: number;
+  prix_initial?: number;
+  ht: number;
+  tva: number;
+  ttc: number;
+}
+
+/**
+ * Tableau tarifaire détaillé (une ligne par prestation/option/accompagnement,
+ * puis remise éventuelle et totaux) — miroir exact du PDF devis Kanban
+ * (assets/victimes17/victimes17-pdf.js `_buildQuoteV2Doc`), pour que le
+ * document CGS affiche les mêmes lignes et la même remise que le devis
+ * envoyé au client.
+ */
+export function quoteBreakdownTable(devis: QuoteBreakdown): Table {
+  const money = (n: number) => (n || 0).toFixed(2).replace(".", ",") + " €";
+  const labelW = Math.round(CONTENT_WIDTH_DXA * 0.7);
+  const valueW = CONTENT_WIDTH_DXA - labelW;
+  const tvaPct = devis.ht > 0 ? Math.round((devis.tva / devis.ht) * 100) : 20;
+  const REMISE_GREEN = "12753C";
+  const MAJORATION_ORANGE = "B34000";
+
+  type Row = { label: string; value: string; isTotal?: boolean; remiseColor?: string };
+
+  const rows: Row[] = (devis.lines || []).map((l) => ({
+    label: l.label,
+    value: l.inclus ? "Inclus" : l.note ? l.note : money(l.montant),
+  }));
+
+  const hasRemise = Math.abs(devis.remise || 0) >= 0.005;
+  if (hasRemise) {
+    const remise = devis.remise || 0;
+    rows.push({ label: "Prix initial HT", value: money(devis.prix_initial || 0) });
+    rows.push({
+      label: remise > 0 ? "Remise accordée" : "Majoration",
+      value: (remise > 0 ? "-" : "+") + money(Math.abs(remise)),
+      remiseColor: remise > 0 ? REMISE_GREEN : MAJORATION_ORANGE,
+    });
+  }
+  rows.push({ label: "TOTAL HT", value: money(devis.ht) });
+  rows.push({ label: `TVA ${tvaPct} %`, value: money(devis.tva) });
+  rows.push({ label: "TOTAL TTC", value: money(devis.ttc), isTotal: true });
+
+  return new Table({
+    width: { size: CONTENT_WIDTH_DXA, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [labelW, valueW],
+    borders: tableGrid,
+    rows: rows.map((r) => {
+      const textColor = r.isTotal ? "FFFFFF" : r.remiseColor || "222222";
+      return new TableRow({
+        children: [
+          new TableCell({
+            width: { size: labelW, type: WidthType.DXA },
+            shading: { fill: r.isTotal ? NAVY : "FFFFFF" },
+            margins: cellMargins,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ children: [new TextRun({ text: r.label, bold: r.isTotal, color: textColor, size: r.isTotal ? 21 : 19 })] })],
+          }),
+          new TableCell({
+            width: { size: valueW, type: WidthType.DXA },
+            shading: { fill: r.isTotal ? NAVY : "FFFFFF" },
+            margins: cellMargins,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: r.value, bold: r.isTotal, color: textColor, size: r.isTotal ? 21 : 19 })] })],
+          }),
+        ],
+      });
+    }),
+  });
+}
+
 export function centered(text: string, opts: { bold?: boolean; color?: string; size?: number } = {}): Paragraph {
   return new Paragraph({
     alignment: AlignmentType.CENTER,
