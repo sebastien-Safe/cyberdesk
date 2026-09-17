@@ -899,16 +899,20 @@
 
       <!-- ÉTAPE 2 — Choix de la piste -->
       <div class="diag-section" id="pc-section-2">
-        <p class="diag-label-hint">Deux façons de rejoindre le réseau S@FE Cyber Pilot — choisissez celle qui correspond à votre projet. Ce choix reste modifiable tant qu'aucun document n'a été signé.</p>
-        <div class="diag-row-2">
+        <p class="diag-label-hint">Rejoignez le réseau S@FE Cyber Pilot en tant que Mandataire technique. Ce choix reste modifiable tant qu'aucun document n'a été signé.</p>
+        <div class="diag-row-2" style="grid-template-columns:1fr">
           <label style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
             <input type="radio" name="pc-status" id="pc-status-mandataire" onchange="_pcSelectStatus('mandataire')" style="margin-top:4px">
             <div>
               <strong>Mandataire technique</strong>
-              <p class="diag-label-hint">Intervenant indépendant rémunéré à la commission (<span id="pc-pct-mandataire">0.00</span>% du CA HT, facturée par vous à S@FE). Pas de structure dédiée requise, pas de droit d'entrée. 3 documents à signer : accord de confidentialité (NDA), accord de traitement des données (DPA), clause de sous-traitance Cybermalveillance.gouv.fr.</p>
+              <p class="diag-label-hint">Intervenant indépendant rémunéré à la commission (<span id="pc-pct-mandataire">0.00</span>% du CA HT, facturée par vous à S@FE). Pas de structure dédiée requise, pas de droit d'entrée. 4 documents à signer : accord de confidentialité (NDA), accord de traitement des données (DPA), clause de sous-traitance Cybermalveillance.gouv.fr, annexe frais de déplacement.</p>
             </div>
           </label>
-          <label style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
+          <!-- Piste Associé SEP masquée : texte (Statuts SEP) toujours placeholder,
+               non validé par un juriste, et non nécessaire pour l'heure (décision
+               produit 2026-09-17). Ne pas supprimer — DB/back-end inchangés,
+               il suffit de retirer ce style pour la réactiver le jour venu. -->
+          <label style="display:none;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
             <input type="radio" name="pc-status" id="pc-status-associe_sep" onchange="_pcSelectStatus('associe_sep')" style="margin-top:4px">
             <div>
               <strong>Associé en Société en Participation (SEP)</strong>

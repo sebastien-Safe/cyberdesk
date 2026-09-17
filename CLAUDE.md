@@ -808,6 +808,23 @@ Statuts SEP).
   juridique propre (nom, forme juridique, SIRET, adresse du siège) et un
   taux d'apurement du droit d'entrée choisi entre 10 et 30 %.
 
+⚠️ **Piste Associé SEP masquée côté UI depuis le 2026-09-17** (décision
+produit : pas de besoin pour l'heure, et son texte — Statuts SEP — reste
+placeholder, non validé par un juriste, contrairement aux 4 documents
+Mandataire). Le radio de l'étape 2 du tunnel (`#pc-status-associe_sep`,
+`index.html`) est passé en `display:none`, commenté en place — **rien de
+supprimé côté DB/back-end** (`cyberdesk_remuneration_rates`,
+`_shared/partner-contract-content.ts`, contraintes `check` sur
+`remuneration_status`, RPC `cyberdesk_my_onboarding_status` inchangés).
+Un candidat qui aurait déjà choisi cette piste avant le masquage n'est pas
+affecté (son état est déjà en base, le tunnel reprend normalement). Pour
+réactiver : retirer le `style="display:none"` du label, et valider le
+texte des Statuts SEP par un juriste avant toute exposition réelle.
+Conséquence directe : `cyberdesk_feature_flags.contract_gate` (un seul
+flag, pas par piste — voir plus bas) peut désormais être activé sans le
+risque de forcer un texte non validé, puisque personne ne peut plus
+choisir la piste Associé SEP tant qu'elle reste masquée.
+
 **Étapes du tunnel** (`assets/js/partner-contract.js`, modale
 `#partner-contract-modal` dans `index.html`) :
 1. **Identité** — prénom/nom (nouveaux sur `cyberdesk_user_settings`,
@@ -881,12 +898,17 @@ proposer la signature de ces 4 documents au prochain passage du tunnel.
 
 ⚠️ **Piste Associé SEP (Statuts SEP) : texte encore PLACEHOLDER, sans
 valeur juridique** — explicitement marqué comme tel dans
-`_shared/partner-contract-content.ts`, resté en version `v1`. Ne jamais
-activer `contract_gate` en production tant que ce document n'a pas, lui
-aussi, été relu et validé par un juriste (le gate s'applique aux deux
-pistes indifféremment) — et fixer les taux réels dans
-`cyberdesk_remuneration_rates` (0 % par défaut pour les deux pistes,
-inchangé).
+`_shared/partner-contract-content.ts`, resté en version `v1`. Cette piste
+est **masquée côté UI depuis le 2026-09-17** (voir plus haut, "Deux
+pistes, documents distincts") précisément pour cette raison — tant
+qu'elle reste masquée, `contract_gate` peut être activé sans risque de
+forcer ce texte non validé sur un candidat (le flag reste unique, pas par
+piste, donc l'activer l'appliquerait aussi à la piste SEP si elle était
+un jour réexposée sans que son texte ait été validé entretemps — à
+vérifier explicitement avant toute réactivation du radio masqué).
+`cyberdesk_remuneration_rates` porte déjà des taux réels (vérifié en
+base, plus le défaut 0 % documenté à l'origine — à reconfirmer avant
+tout premier encaissement réel).
 
 ## Grille tarifaire et devis 17Cyber
 
