@@ -90,12 +90,14 @@ const _SETTINGS_CONTRACT_LABELS = {
 async function _settingsRefreshContractStatus() {
   const badge = document.getElementById('settings-contract-badge');
   const detail = document.getElementById('settings-contract-detail');
+  const docPanel = document.getElementById('settings-contract-doc-panel');
   const { data, error } = await sb.rpc('cyberdesk_my_onboarding_status');
   const status = !error && Array.isArray(data) ? data[0] : null;
   if (!status || !status.chosen_remuneration_status) {
     badge.textContent = 'Non démarré';
     badge.className = 'badge badge-gray';
     detail.textContent = '';
+    docPanel.textContent = 'Signez un statut de rémunération pour voir votre contrat ici.';
     return;
   }
   const label = _SETTINGS_CONTRACT_LABELS[status.chosen_remuneration_status] || status.chosen_remuneration_status;
@@ -113,6 +115,72 @@ async function _settingsRefreshContractStatus() {
   badge.textContent = `${label} — ${complete ? 'complet' : 'en cours'}`;
   badge.className = 'badge ' + (complete ? 'badge-green' : 'badge-orange');
   detail.textContent = `${nSigned}/${docs.length} document(s) signé(s)`;
+  await _settingsRenderContractDocs(status, docs, signedKeys);
+}
+
+/**
+ * Remplit « Mon contrat » (onglet Documents légaux) : un bloc dépliable par
+ * document déjà signé, texte reconstruit à partir des champs actuels
+ * (même patron que _pcRenderCurrentDoc() dans partner-contract.js — le
+ * texte signé n'est jamais stocké verbatim, seul son hash l'est) + la
+ * signature capturée (cyberdesk_partner_contracts.signature_svg, lecture
+ * directe autorisée par la RLS cyberdesk_partner_contracts_select_own_or_admin).
+ */
+async function _settingsRenderContractDocs(status, docs, signedKeys) {
+  const panel = document.getElementById('settings-contract-doc-panel');
+  const signedDocs = docs.filter(d => signedKeys.has(d.key));
+  if (!signedDocs.length) {
+    panel.textContent = 'Signez un statut de rémunération pour voir votre contrat ici.';
+    return;
+  }
+
+  const [{ data: rateRow }, { data: rows }] = await Promise.all([
+    sb.from('cyberdesk_remuneration_rates').select('pct').eq('status', status.chosen_remuneration_status).maybeSingle(),
+    sb.from('cyberdesk_partner_contracts')
+      .select('document_key, signature_svg, signed_at')
+      .eq('user_id', _settingsUserId)
+      .order('signed_at', { ascending: false }),
+  ]);
+  const pct = Number(rateRow?.pct || 0);
+  const latestByKey = new Map();
+  (rows || []).forEach(r => { if (!latestByKey.has(r.document_key)) latestByKey.set(r.document_key, r); });
+
+  const fields = {
+    first_name: status.first_name, last_name: status.last_name, billing_name: status.billing_name,
+    siret: status.siret, billing_address: status.billing_address,
+    sep_structure_nom: status.sep_structure_nom, sep_structure_forme_juridique: status.sep_structure_forme_juridique,
+    sep_structure_siret: status.sep_structure_siret, sep_structure_adresse: status.sep_structure_adresse,
+    sep_taux_apurement_pct: status.sep_taux_apurement_pct,
+  };
+
+  panel.innerHTML = signedDocs.map((d, i) => {
+    const row = latestByKey.get(d.key);
+    const dateStr = row?.signed_at ? new Date(row.signed_at).toLocaleString('fr-FR') : '';
+    const text = buildPartnerDocumentText(status.chosen_remuneration_status, d.key, fields, pct);
+    const sigImg = row?.signature_svg
+      ? `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(row.signature_svg)}" alt="Signature" style="max-width:200px;border:1px solid var(--line);border-radius:6px;background:#fff;display:block;margin-top:8px">`
+      : '';
+    const docId = `settings-contract-doc-${i}`;
+    return `
+      <div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <strong>${escapeHtml(d.title)}</strong>
+            <div class="diag-label-hint">Signé le ${dateStr}</div>
+          </div>
+          <button type="button" class="btn btn-out btn-sm" onclick="_settingsToggleContractDoc('${docId}')">Voir</button>
+        </div>
+        <div id="${docId}" style="display:none;margin-top:10px">
+          <pre style="white-space:pre-wrap;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:220px;overflow-y:auto">${escapeHtml(text)}</pre>
+          ${sigImg}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _settingsToggleContractDoc(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function closeSettingsModal() {
