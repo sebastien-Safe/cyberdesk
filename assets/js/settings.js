@@ -48,7 +48,7 @@ async function openSettingsModal() {
   await _settingsRefresh2FAStatus();
   await _settingsRefreshSubscription();
   await _settingsRefreshContractStatus();
-  _settingsRenderCommissionDocsPlaceholder();
+  await _settingsRenderCommissionDocs();
 }
 
 // ── Onglets (Profil / Finances / Documents légaux) ──
@@ -68,13 +68,56 @@ function _settingsOpenAccounting() {
   openAccountingModal();
 }
 
-// Génération PDF des bordereaux de commissionnement pas encore implémentée
-// (cyberdesk_commission_ledger, migration 019/023, suit déjà le statut/
-// montant — la génération PDF avec mentions obligatoires reste à faire).
-// Placeholder honnête plutôt qu'une liste vide sans explication.
-function _settingsRenderCommissionDocsPlaceholder() {
-  document.getElementById('settings-commission-docs-list').innerHTML =
-    '<div class="diag-label-hint">Génération automatique des bordereaux PDF — bientôt disponible.</div>';
+// ── Bordereaux de commissionnement (cyberdesk_commission_bordereaux) ──
+// Un bordereau PDF par mois calendaire, généré automatiquement le 1er de
+// chaque mois (cron → cyberdesk-generate-commission-bordereaux, migration
+// 034) à partir de cyberdesk_commission_ledger — document de calcul et de
+// contrôle, jamais une facture. Téléchargement via URL signée, même
+// patron que _settingsRefreshAvatar().
+
+const _SETTINGS_COMMISSION_MONTHS_FR = [
+  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+];
+
+function _settingsCommissionPeriodLabel(period) {
+  const [y, m] = period.split('-').map(Number);
+  return `${_SETTINGS_COMMISSION_MONTHS_FR[m - 1]} ${y}`;
+}
+
+async function _settingsRenderCommissionDocs() {
+  const listEl = document.getElementById('settings-commission-docs-list');
+  const { data, error } = await sb.rpc('cyberdesk_reporting_commission_bordereaux');
+  if (error) {
+    listEl.innerHTML = '<div class="diag-label-hint">Erreur de chargement des bordereaux.</div>';
+    return;
+  }
+  if (!data || !data.length) {
+    listEl.innerHTML = '<div class="diag-label-hint">Aucun bordereau généré pour le moment.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(b => {
+    const montant = b.total_ttc != null ? b.total_ttc : b.total_amount_due;
+    const suffix = b.total_ttc != null ? '' : ' (HT)';
+    const warning = b.generation_warning === 'regime_tva_non_renseigne'
+      ? '<div class="diag-label-hint" style="color:#a33">⚠ Régime de TVA non renseigné pour ce mois — complétez votre profil (onglet Finances).</div>'
+      : '';
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div>
+          <strong>${escapeHtml(_settingsCommissionPeriodLabel(b.period))}</strong>
+          <div class="diag-label-hint">${Number(montant).toFixed(2)} €${suffix} — ${b.line_count} commission(s)</div>
+          ${warning}
+        </div>
+        <button type="button" class="btn btn-out btn-sm" onclick="_settingsDownloadBordereau('${b.file_path}')">Télécharger</button>
+      </div>`;
+  }).join('');
+}
+
+async function _settingsDownloadBordereau(filePath) {
+  const { data, error } = await sb.storage.from('cyberdesk-commission-bordereaux').createSignedUrl(filePath, 3600);
+  if (error || !data) { alert('Erreur : impossible de générer le lien de téléchargement.'); return; }
+  window.open(data.signedUrl, '_blank');
 }
 
 // ── Statut du tunnel d'onboarding (Mandataire / Associé SEP) ──

@@ -109,7 +109,10 @@ chaque déploiement qui modifie un fichier sous `assets/css/` ou
 un tout nouveau fichier), remonter la valeur `?v=` de toutes les balises
 `<link>`/`<script>` locales dans `index.html` (recherche/remplacement global
 de l'ancienne date vers la date du jour) — sinon le correctif ne sera pas
-visible en production avant l'expiration du cache.
+visible en production avant l'expiration du cache. **Second déploiement le
+même jour** : la date seule ne change pas — ajouter un suffixe lettre
+(`20260917` → `20260917b` → `20260917c`...) pour forcer quand même un
+nouveau cache-bust.
 
 ## Projet Supabase
 
@@ -197,6 +200,7 @@ cyberdesk/
 │   │   ├── cyberdesk-create-tenant-checkout/ ← admin : crée un tenant + lien Stripe Checkout
 │   │   ├── cyberdesk-billing-portal/       ← lien portail client Stripe (self-service)
 │   │   ├── cyberdesk-compute-travel-fee/   ← frais de déplacement (option O4 devis, itinéraire ORS)
+│   │   ├── cyberdesk-generate-commission-bordereaux/ ← bordereau mensuel de commission (cron 1er du mois)
 │   │   ├── deno.json
 │   │   └── import_map.json
 │   └── migrations/
@@ -238,6 +242,8 @@ cyberdesk/
 | `cyberdesk_travel_fee_settings` | Réglage à une seule ligne : forfaits bas/haut (€) et coefficient €/km du barème kilométrique (option Déplacement du devis), ajustables par un admin — **propre à S@FE CYBER PILOT** |
 | `cyberdesk_partner_contracts` | Documents signés du tunnel d'onboarding partenaire (une ligne par document, `document_key`), append-only — **propre à S@FE CYBER PILOT**, voir *Onboarding partenaire* |
 | `cyberdesk_remuneration_rates`, `cyberdesk_signature_otp`, `cyberdesk_feature_flags` | Barème par piste, OTP de signature, feature flags (`contract_gate`) du tunnel d'onboarding partenaire — **propres à S@FE CYBER PILOT**, voir *Onboarding partenaire* |
+| `cyberdesk_commission_ledger` | Commission due par paiement de dossier encaissé, calculée automatiquement par trigger — **propre à S@FE CYBER PILOT**, voir *Commissionnement partenaire* |
+| `cyberdesk_commission_bordereaux` | Un bordereau PDF par agent par mois calendaire, récapitulatif de `cyberdesk_commission_ledger` — **propre à S@FE CYBER PILOT**, voir *Commissionnement partenaire* |
 
 Tables du module B2B (`clients`, `cyber_client_profiles`, `cyber_client_audits`,
 `cyber_client_incidents`, `cyber_client_plan`, `cyber_audits`) : **hors
@@ -347,6 +353,13 @@ supprime/anonymise les dossiers au-delà de la durée de conservation
 légale. `pg_cron`/`pg_net`/`pgcrypto` sont actifs sur le projet partagé
 (vérifié).
 
+Second job, même patron : `cyberdesk-generate-commission-bordereaux`
+(créé dans `034_cyberdesk_commission_bordereaux.sql`, `0 3 1 * *` — 1er de
+chaque mois à 3h, juste après la purge de 2h), appelle l'Edge Function
+`cyberdesk-generate-commission-bordereaux` via `pg_net` pour générer le
+bordereau de commission du mois précédent (voir *Commissionnement
+partenaire*).
+
 ## Cohabitation avec safe-crm
 
 Depuis la migration `008_cyberdesk_on_safecrm.sql`, S@FE CYBER PILOT et le
@@ -441,12 +454,14 @@ essayer de les créer manuellement (l'API Management refuse tout secret
 préfixé `SUPABASE_`). Seuls ceux-ci sont à créer :
 ```
 PURGE_SECRET
+BORDEREAU_CRON_SECRET
 ```
 Secrets Vault (via `select vault.create_secret(valeur, nom)`, lus par
 `public.get_edge_secret(name)`, réservé à `service_role`) — namespace
 distinct des secrets Edge Function ci-dessus, voir section Cohabitation :
 ```
 purge_secret
+cyberdesk_bordereau_cron_secret  -- valeur identique à BORDEREAU_CRON_SECRET ci-dessus
 stripe_secret_key
 stripe_webhook_secret            -- valeur propre à cyberdesk-stripe-webhook, pas celle de Vente
 stripe_billing_webhook_secret    -- valeur propre à cyberdesk-billing-webhook, distincte de stripe_webhook_secret
@@ -479,6 +494,7 @@ supabase functions deploy cyberdesk-billing-webhook --no-verify-jwt
 supabase functions deploy cyberdesk-create-tenant-checkout
 supabase functions deploy cyberdesk-billing-portal
 supabase functions deploy cyberdesk-compute-travel-fee
+supabase functions deploy cyberdesk-generate-commission-bordereaux --no-verify-jwt
 ```
 
 ⚠️ Les slugs `stripe-webhook` et `send-audit-email` (sans préfixe) sont
@@ -510,6 +526,7 @@ Toujours déployer dans cet ordre (dépendances croissantes) :
 17. cyberdesk-create-tenant-checkout (JWT utilisateur, `is_super_admin()` vérifié en interne)
 18. cyberdesk-billing-portal (JWT utilisateur normal)
 19. cyberdesk-compute-travel-fee (JWT utilisateur normal)
+20. cyberdesk-generate-commission-bordereaux (`--no-verify-jwt` — appelée par pg_cron sans JWT utilisateur, authentifiée par secret partagé, voir *Commissionnement partenaire*)
 
 ## Facturation SaaS des tenants (cyberdesk-billing-*)
 
@@ -909,6 +926,77 @@ vérifier explicitement avant toute réactivation du radio masqué).
 `cyberdesk_remuneration_rates` porte déjà des taux réels (vérifié en
 base, plus le défaut 0 % documenté à l'origine — à reconfirmer avant
 tout premier encaissement réel).
+
+## Commissionnement partenaire (ledger + bordereau mensuel)
+
+**`cyberdesk_commission_ledger`** (migration `023_cyberdesk_commission_ledger.sql`,
+jamais documentée jusqu'ici) : une ligne par paiement de dossier victime
+encaissé, calculée automatiquement par le trigger `sync_cyberdesk_commission_ledger`
+(sur `payments`, `after insert or update of status, amount_ht`, `when (new.module
+= 'cyberdesk' and new.status = 'paye')`). Le taux appliqué est celui **signé**
+par l'agent propriétaire du dossier dans `cyberdesk_partner_contracts`
+(`remuneration_pct` figé au moment de la signature, pas le taux courant de
+`cyberdesk_remuneration_rates`) — si le propriétaire n'a jamais signé de statut
+de rémunération, aucune ligne n'est créée. `amount_due = amount_ht × pct / 100`.
+Statut initial selon la piste : `a_facturer` (Mandataire, doit facturer S@FE) ou
+`a_verser` (Associé SEP, versement automatique). Un admin fait progresser le
+statut à la main via la RPC `cyberdesk_update_commission_status` (jamais écrasé
+par un re-sync du trigger). Consultable dans la modale Comptable
+(`assets/js/accounting.js`, RPC `cyberdesk_reporting_commission`).
+
+**Bordereau mensuel** (migration `034_cyberdesk_commission_bordereaux.sql`,
+Edge Function `cyberdesk-generate-commission-bordereaux`) : un PDF par agent par
+mois calendaire, généré automatiquement par pg_cron le 1er de chaque mois à 3h
+(`cyberdesk_run_generate_commission_bordereaux()`, même patron que la purge RGPD
+de 2h) pour le mois calendaire précédent — aucun document pour un agent sans
+activité ce mois-là. **Document de calcul et de contrôle uniquement : ne modifie
+jamais `cyberdesk_commission_ledger.status`** (qui reste piloté à la main par un
+admin) et reprend **toutes** les lignes du mois quel que soit leur statut, pas
+seulement celles en attente — un récapitulatif complet, pas une relance de
+paiement. Idempotent : un ré-appel du cron sur une période déjà traitée ne
+duplique rien (`unique (beneficiary_user_id, period)` sur
+`cyberdesk_commission_bordereaux`), sauf `force: true` (backfill/correction
+admin, appel manuel).
+
+Un Mandataire doit ensuite facturer lui-même S@FE sur la base de ce bordereau
+(mention légale reprise verbatim sur le PDF, identique à celle déjà validée dans
+l'Annexe "Frais de déplacement", Article 3 : *"Ce bordereau est un document de
+calcul et de contrôle ; il ne constitue en aucun cas une convention
+d'autofacturation au sens de l'article 289 du Code général des impôts."*) — le
+PDF distingue donc HT/TVA/TTC selon `cyberdesk_user_settings.regime_tva`
+(colonne ajoutée par la migration 032 précisément pour ce module : `reel` → TVA
+20 %, `franchise_base` → TVA 0 %, `null` → **génère quand même** le bordereau
+(jamais de blocage d'un mois entier pour un agent), sans ligne TVA/TTC, avec un
+avertissement visible sur le PDF et `generation_warning = 'regime_tva_non_renseigne'`
+en base pour qu'un admin puisse relancer l'agent. Un Associé SEP n'a pas de
+notion de TVA (versement automatique, pas de facture) : juste un total versé.
+
+Stockage : bucket privé `cyberdesk-commission-bordereaux`, un dossier par
+`beneficiary_user_id` (`<user_id>/<period>.pdf`), RLS scopée strictement par
+propriétaire (`(storage.foldername(name))[1] = auth.uid()::text`) — plus stricte
+que le bucket `cyberdesk-avatars` existant (009), dont la policy n'est scopée
+que par `has_module_access()` et laisse n'importe quel utilisateur du module
+lire/écrire l'avatar de n'importe quel autre (gap connu, non corrigé ici,
+risque faible). Téléchargement côté client via URL signée
+(`_settingsDownloadBordereau()`, `assets/js/settings.js`, même patron que
+`_settingsRefreshAvatar()`), listing via la RPC `cyberdesk_reporting_commission_bordereaux`
+(même patron self-ou-admin que `cyberdesk_reporting_commission`). Secret partagé
+cron → Edge Function : `cyberdesk_bordereau_cron_secret` (Vault) /
+`BORDEREAU_CRON_SECRET` (Edge Function), même schéma que `purge_secret`/`PURGE_SECRET`.
+
+⚠️ **Ceci n'est PAS le bordereau de remboursement des frais de déplacement**
+promis par l'Annexe "Frais de déplacement" (Article 3, piste Mandataire
+uniquement) — une mécanique différente (remboursement à 100 % des frais avancés,
+pas une commission en %). Vérifié le 2026-09-17 : le montant de l'option O4 n'est
+aujourd'hui qu'une ligne de texte libre dans `cybervictim_leads.quote_breakdown`
+(pas d'identifiant structuré permettant de l'extraire de façon fiable), et
+l'Edge Function qui le calculerait (`cyberdesk-compute-travel-fee`) **n'est même
+pas déployée** — en pratique ce montant est donc saisi à la main aujourd'hui, noyé
+dans le total du devis. Construire ce second bordereau nécessite d'abord : (1)
+déployer `cyberdesk-compute-travel-fee`, (2) structurer la ligne O4 dans
+`quote_breakdown` avec un identifiant fiable (pas un label libre) pour pouvoir
+l'extraire sans ambiguïté. Chantier distinct, non commencé, à ne pas confondre
+avec le bordereau de commission ci-dessus.
 
 ## Grille tarifaire et devis 17Cyber
 
