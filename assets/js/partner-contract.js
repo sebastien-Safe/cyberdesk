@@ -167,6 +167,12 @@ function _pcGoToStep(step) {
   if (counter) counter.textContent = `Étape ${step} / 5`;
 }
 
+/** Revient à l'étape précédente (1 à 4 → 1 à 3). Navigation pure, les données déjà enregistrées aux étapes précédentes restent en base. */
+function _pcGoBack() {
+  if (_pcStep <= 1) return;
+  _pcGoToStep(_pcStep - 1);
+}
+
 // ── Étape 1 — Identité ──
 
 async function _pcSaveStep1() {

@@ -917,7 +917,10 @@
           </label>
         </div>
         <p class="error" id="pc-step2-error"></p>
-        <button type="button" class="btn btn-pri" id="pc-step2-continue" onclick="_pcSaveStep2()" disabled>Continuer</button>
+        <div style="display:flex;gap:10px">
+          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
+          <button type="button" class="btn btn-pri" id="pc-step2-continue" onclick="_pcSaveStep2()" disabled>Continuer</button>
+        </div>
       </div>
 
       <!-- ÉTAPE 3 — Compléments -->
@@ -944,7 +947,10 @@
           </label>
         </div>
         <p class="error" id="pc-step3-error"></p>
-        <button type="button" class="btn btn-pri" onclick="_pcSaveStep3()">Continuer</button>
+        <div style="display:flex;gap:10px">
+          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
+          <button type="button" class="btn btn-pri" onclick="_pcSaveStep3()">Continuer</button>
+        </div>
       </div>
 
       <!-- ÉTAPE 4 — Signature (boucle sur les documents de la piste choisie) -->
@@ -960,7 +966,10 @@
           <button type="button" class="btn btn-out btn-sm" onclick="_pcClearSignature()" style="margin-top:8px">Effacer la signature</button>
         </div>
         <p class="error" id="pc-error"></p>
-        <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()">Continuer</button>
+        <div style="display:flex;gap:10px">
+          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
+          <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()">Continuer</button>
+        </div>
         <div id="pc-otp-panel" style="display:none;margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
           <p class="diag-label-hint" style="display:block;margin-bottom:8px">
             Un code de confirmation à 6 chiffres vient de vous être envoyé par e-mail.

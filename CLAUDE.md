@@ -814,6 +814,18 @@ Statuts SEP).
    `cyberdesk_partner_contracts` — jamais le client directement).
 5. **Confirmation**.
 
+**Navigation arrière** — bouton « ← Retour » sur les étapes 2 à 4
+(`_pcGoBack()`, `assets/js/partner-contract.js`), absent de l'étape 1
+(rien avant) et de l'étape 5 (confirmation finale, documents déjà
+signés). Navigation pure : ne supprime ni ne modifie aucune donnée déjà
+enregistrée (chaque étape est persistée dès sa validation, voir
+ci-dessus) — revenir en arrière puis ré-avancer réutilise simplement les
+valeurs déjà en base (`_pcSaveStep3()` recalcule `_pcDocIndex` à partir de
+`_pcSignedKeys`, donc reprend au bon document même après un aller-retour
+étape 4 → étape 3 → étape 4). Fonctionne identiquement en mode `gate`
+(seul le bouton "Fermer" reste masqué dans ce mode, pas la navigation
+entre étapes).
+
 **`cyberdesk_partner_contracts`** : une ligne par document signé
 (`document_key`), pas une ligne par contrat — un Mandataire a 3 lignes, un
 Associé SEP en a 1. Append-only, `remuneration_status`/`document_key`
