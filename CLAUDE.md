@@ -91,8 +91,25 @@ Functions : `_shared/product-texts.ts`, `_shared/docx-helpers.ts`,
 | Auth | Supabase Auth (JWT) |
 | Génération DOCX | lib `docx` via Edge Function Deno |
 | IA | Anthropic Claude API (direct — pas de multi-connecteurs en v1) |
-| Déploiement | Vercel (frontend) + Supabase (backend) |
+| Déploiement | GitHub Pages (frontend, dépôt `sebastien-Safe/cyberdesk`, branche `main`, racine `/`, domaine `cyberdesk.safe-digitalisation.fr` via CNAME + proxy Cloudflare) + Supabase (backend) |
 | Paiement | Stripe Checkout, partagé avec Vente via `public.payments` (voir Cohabitation) |
+
+**Cache-busting des assets locaux (`?v=YYYYMMDD`).** Aucun bundler, donc
+aucun hash de contenu automatique sur les fichiers statiques — `index.html`
+référence chaque script/feuille de style local avec un paramètre
+`?v=YYYYMMDD` codé en dur (ex. `assets/js/settings.js?v=20260917`), pas sur
+les scripts CDN (déjà versionnés dans leur URL, avec SRI). Nécessaire car
+Cloudflare (proxy devant le domaine custom GitHub Pages) sert ces fichiers
+avec `cache-control: max-age=14400` (4h) : sans ce paramètre, un déploiement
+qui modifie un fichier JS/CSS existant pouvait rester invisible jusqu'à 4h
+pour un visiteur déjà passé sur le site — confondu au moins deux fois avec
+un bug fonctionnel avant d'être identifié comme un problème de cache. **À
+chaque déploiement qui modifie un fichier sous `assets/css/` ou
+`assets/js/`/`assets/victimes17/*.js` déjà existant** (pas nécessaire pour
+un tout nouveau fichier), remonter la valeur `?v=` de toutes les balises
+`<link>`/`<script>` locales dans `index.html` (recherche/remplacement global
+de l'ancienne date vers la date du jour) — sinon le correctif ne sera pas
+visible en production avant l'expiration du cache.
 
 ## Projet Supabase
 
