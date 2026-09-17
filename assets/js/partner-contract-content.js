@@ -9,13 +9,17 @@
    signature — à garder synchronisé avec la copie serveur (même
    patron que cyber-system-prompt.ts / cyber-ai-system-prompt.js).
 
-   ⚠️ TEXTE PLACEHOLDER — pas de valeur juridique en l'état, à faire
-   valider par un juriste avant toute activation réelle du parcours
-   de signature.
+   Piste Mandataire → 4 documents à signer (NDA, DPA, Clause de
+     sous-traitance, Annexe "Frais de déplacement") : texte validé par un
+     juriste le 2026-09-17, passé en version v2 (les signatures v1
+     antérieures, effectuées sur le texte placeholder, restent
+     historiques — voir cyberdesk_partner_contracts — et redemandent une
+     signature du texte v2).
 
-   Piste Mandataire  → 4 documents à signer : NDA, DPA, Clause de
-     sous-traitance, Annexe "Frais de déplacement". Piste Associé SEP →
-     1 document : Statuts SEP.
+   ⚠️ Piste Associé SEP → 1 document (Statuts SEP) : TEXTE ENCORE
+     PLACEHOLDER, pas de valeur juridique en l'état, à faire valider par
+     un juriste avant toute activation réelle du parcours de signature
+     pour cette piste (cyberdesk_feature_flags.contract_gate).
    ============================================================ */
 
 function _pcNa(v) { return (v && String(v).trim()) || '[à compléter]'; }
@@ -23,10 +27,8 @@ function _pcNa(v) { return (v && String(v).trim()) || '[à compléter]'; }
 const PARTNER_DOCUMENTS_BY_STATUS = {
   mandataire: [
     {
-      key: 'nda', version: 'v1', title: 'Accord de confidentialité (NDA)',
-      buildText: (f) => `[PLACEHOLDER — à valider par un juriste avant mise en production]
-
-ACCORD DE CONFIDENTIALITÉ entre S@FE SAS et ${_pcNa(f.first_name)} ${_pcNa(f.last_name)}
+      key: 'nda', version: 'v2', title: 'Accord de confidentialité (NDA)',
+      buildText: (f) => `ACCORD DE CONFIDENTIALITÉ entre S@FE SAS et ${_pcNa(f.first_name)} ${_pcNa(f.last_name)}
 (${_pcNa(f.billing_name)}), dans le cadre de la collaboration pour des missions
 d'assistance aux victimes de cybermalveillance (référencement S@FE SAS sur
 Cybermalveillance.gouv.fr / 17Cyber). Le signataire s'engage à ne divulguer
@@ -35,10 +37,8 @@ d'intervention, informations sur les partenaires) à un tiers, sans l'accord
 écrit préalable de S@FE SAS.`,
     },
     {
-      key: 'dpa', version: 'v1', title: 'Accord de traitement des données (DPA — Article 28 RGPD)',
-      buildText: (f) => `[PLACEHOLDER — à valider par un juriste avant mise en production]
-
-ACCORD DE TRAITEMENT DES DONNÉES conclu conformément à l'article 28 du RGPD
+      key: 'dpa', version: 'v2', title: 'Accord de traitement des données (DPA — Article 28 RGPD)',
+      buildText: (f) => `ACCORD DE TRAITEMENT DES DONNÉES conclu conformément à l'article 28 du RGPD
 entre S@FE SAS (responsable de traitement) et ${_pcNa(f.first_name)} ${_pcNa(f.last_name)}
 (${_pcNa(f.billing_name)}, SIRET ${_pcNa(f.siret)}), agissant en qualité de
 sous-traitant, dans le cadre des interventions d'assistance aux victimes de
@@ -48,10 +48,8 @@ appropriées, et notifie toute violation de données dans un délai maximum de
 24 heures.`,
     },
     {
-      key: 'clause_sous_traitance', version: 'v1', title: 'Clause de sous-traitance (compatible Charte Cybermalveillance.gouv.fr v2.5)',
-      buildText: (f) => `[PLACEHOLDER — à valider par un juriste avant mise en production]
-
-Le mandataire ${_pcNa(f.first_name)} ${_pcNa(f.last_name)} (${_pcNa(f.billing_name)},
+      key: 'clause_sous_traitance', version: 'v2', title: 'Clause de sous-traitance (compatible Charte Cybermalveillance.gouv.fr v2.5)',
+      buildText: (f) => `Le mandataire ${_pcNa(f.first_name)} ${_pcNa(f.last_name)} (${_pcNa(f.billing_name)},
 SIRET ${_pcNa(f.siret)}) perçoit une commission égale à {PCT}% du chiffre
 d'affaires Hors Taxes encaissé sur les dossiers dont il est le propriétaire
 au sein de S@FE CYBER PILOT, facturée à S@FE selon les modalités habituelles
@@ -66,10 +64,8 @@ régies par l'Annexe "Frais de déplacement", qui fait partie intégrante du
 présent accord.`,
     },
     {
-      key: 'annexe_frais_deplacement', version: 'v1', title: 'Annexe — Frais de déplacement',
-      buildText: (f) => `[PLACEHOLDER — à valider par un juriste avant mise en production]
-
-La présente Annexe est conclue en application et en complément de la Clause
+      key: 'annexe_frais_deplacement', version: 'v2', title: 'Annexe — Frais de déplacement',
+      buildText: (f) => `La présente Annexe est conclue en application et en complément de la Clause
 de sous-traitance liant les Parties. Elle a pour objet exclusif de définir
 les conditions de prise en charge, de facturation et de règlement des frais
 de déplacement engagés par le mandataire ${_pcNa(f.first_name)} ${_pcNa(f.last_name)}

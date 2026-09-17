@@ -797,9 +797,10 @@ juridiques réels (Fiche de poste, DPA, NDA, Clause de sous-traitance,
 Statuts SEP).
 
 **Deux pistes, documents distincts** (décision produit actée) :
-- **Mandataire technique** — 3 documents à signer : NDA, DPA (Article 28
+- **Mandataire technique** — 4 documents à signer : NDA, DPA (Article 28
   RGPD, Annexe A), Clause de sous-traitance compatible Charte
-  Cybermalveillance.gouv.fr v2.5. Pas de structure juridique dédiée ni de
+  Cybermalveillance.gouv.fr v2.5, Annexe "Frais de déplacement" (ajoutée le
+  2026-08-24, voir plus bas). Pas de structure juridique dédiée ni de
   droit d'entrée.
 - **Associé SEP** — 1 seul document : les Statuts de la Société en
   Participation (son Article 11 couvre déjà secret professionnel/RGPD pour
@@ -866,12 +867,26 @@ vrai — uniquement si `contract_gate` est actif. `is_super_admin()` bypasse
 toujours ce gate. Ouverture volontaire possible à tout moment depuis
 Paramétrage → onglet Documents légaux (badge "X/Y document(s) signé(s)").
 
-⚠️ **Texte des documents toujours PLACEHOLDER, sans valeur juridique** —
-explicitement marqué comme tel dans `_shared/partner-contract-content.ts`.
-Ne jamais activer `contract_gate` en production avant relecture/validation
-par un juriste du texte réel de chaque document et fixation des taux
-réels dans `cyberdesk_remuneration_rates` (0 % par défaut pour les deux
-pistes).
+**Texte des 4 documents de la piste Mandataire validé par un juriste le
+2026-09-17** (NDA, DPA, Clause de sous-traitance, Annexe "Frais de
+déplacement") — mention `[PLACEHOLDER — à valider par un juriste...]`
+retirée, documents passés en version `v2` dans les deux copies
+(`assets/js/partner-contract-content.js` / `_shared/partner-contract-
+content.ts`). Les signatures `v1` antérieures (effectuées sur le texte
+placeholder, y compris lors des tests de ce tunnel) restent des lignes
+historiques dans `cyberdesk_partner_contracts`, jamais réécrites — mais
+ne comptent plus comme "à jour" (`doc_version` ne correspond plus à la
+version courante), donc quiconque a déjà signé en v1 se voit à nouveau
+proposer la signature de ces 4 documents au prochain passage du tunnel.
+
+⚠️ **Piste Associé SEP (Statuts SEP) : texte encore PLACEHOLDER, sans
+valeur juridique** — explicitement marqué comme tel dans
+`_shared/partner-contract-content.ts`, resté en version `v1`. Ne jamais
+activer `contract_gate` en production tant que ce document n'a pas, lui
+aussi, été relu et validé par un juriste (le gate s'applique aux deux
+pistes indifféremment) — et fixer les taux réels dans
+`cyberdesk_remuneration_rates` (0 % par défaut pour les deux pistes,
+inchangé).
 
 ## Grille tarifaire et devis 17Cyber
 

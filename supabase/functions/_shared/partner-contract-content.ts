@@ -1,21 +1,23 @@
 // ==========================================================================
 // S@FE CYBER PILOT — Contenu des documents du tunnel d'onboarding partenaire.
 //
-// ⚠️ TEXTE PLACEHOLDER — PAS DE VALEUR JURIDIQUE EN L'ÉTAT. Structure
-// technique uniquement (insertion des champs collectés lors du tunnel), à
-// faire relire et valider par un juriste avant toute activation réelle du
-// parcours de signature (cyberdesk_feature_flags.contract_gate). Le contrat
-// de mandat, la convention de société en participation, le NDA et le DPA
-// engagent l'entreprise et ne doivent pas être rédigés par un outil de
-// développement.
-//
-// Piste Mandataire  → 4 documents distincts à signer : NDA, DPA (Art. 28
+// Piste Mandataire → 4 documents distincts à signer : NDA, DPA (Art. 28
 //   RGPD, Annexe A), Clause de sous-traitance compatible Cybermalveillance,
 //   Annexe "Frais de déplacement" (bordereau, délai de paiement, vigilance
-//   SIRET — ajoutée le 2026-08-24, hors périmètre SEP).
-// Piste Associé SEP → 1 document : Statuts SEP (son Article 11 couvre déjà
-//   secret professionnel/RGPD pour cette piste — pas de NDA/DPA/Clause
-//   redondants, décision produit actée).
+//   SIRET — ajoutée le 2026-08-24, hors périmètre SEP). Texte validé par un
+//   juriste le 2026-09-17, passé en version v2 (les signatures v1
+//   antérieures, effectuées sur le texte placeholder, restent historiques —
+//   voir cyberdesk_partner_contracts — et redemandent une signature v2).
+//
+// ⚠️ Piste Associé SEP → 1 document : Statuts SEP (son Article 11 couvre
+//   déjà secret professionnel/RGPD pour cette piste — pas de NDA/DPA/Clause
+//   redondants, décision produit actée). TEXTE ENCORE PLACEHOLDER, pas de
+//   valeur juridique en l'état, à faire relire et valider par un juriste
+//   avant toute activation réelle du parcours de signature pour cette piste
+//   (cyberdesk_feature_flags.contract_gate). Le contrat de mandat, la
+//   convention de société en participation, le NDA et le DPA engagent
+//   l'entreprise et ne doivent pas être rédigés par un outil de
+//   développement.
 //
 // Copie miroir de _shared/cyber-system-prompt.ts : un seul fichier ici, pas
 // de copie navigateur (le texte n'est utilisé que côté serveur, pour le
@@ -51,11 +53,9 @@ const na = (v: string | null | undefined) => (v && v.trim()) || "[à compléter]
 
 const NDA: PartnerDocument = {
   key: "nda",
-  version: "v1",
+  version: "v2",
   title: "Accord de confidentialité (NDA)",
   buildText: (f) => `
-[PLACEHOLDER — à valider par un juriste avant mise en production]
-
 ACCORD DE CONFIDENTIALITÉ entre S@FE SAS et ${na(f.first_name)} ${na(f.last_name)}
 (${na(f.billing_name)}), dans le cadre de la collaboration pour des missions
 d'assistance aux victimes de cybermalveillance (référencement S@FE SAS sur
@@ -68,11 +68,9 @@ d'intervention, informations sur les partenaires) à un tiers, sans l'accord
 
 const DPA: PartnerDocument = {
   key: "dpa",
-  version: "v1",
+  version: "v2",
   title: "Accord de traitement des données (DPA — Article 28 RGPD)",
   buildText: (f) => `
-[PLACEHOLDER — à valider par un juriste avant mise en production]
-
 ACCORD DE TRAITEMENT DES DONNÉES conclu conformément à l'article 28 du RGPD
 entre S@FE SAS (responsable de traitement) et ${na(f.first_name)} ${na(f.last_name)}
 (${na(f.billing_name)}, SIRET ${na(f.siret)}), agissant en qualité de
@@ -86,11 +84,9 @@ appropriées, et notifie toute violation de données dans un délai maximum de
 
 const CLAUSE_SOUS_TRAITANCE: PartnerDocument = {
   key: "clause_sous_traitance",
-  version: "v1",
+  version: "v2",
   title: "Clause de sous-traitance (compatible Charte Cybermalveillance.gouv.fr v2.5)",
   buildText: (f) => `
-[PLACEHOLDER — à valider par un juriste avant mise en production]
-
 Le mandataire ${na(f.first_name)} ${na(f.last_name)} (${na(f.billing_name)},
 SIRET ${na(f.siret)}) perçoit une commission égale à {PCT}% du chiffre
 d'affaires Hors Taxes encaissé sur les dossiers dont il est le propriétaire
@@ -109,11 +105,9 @@ présent accord.
 
 const ANNEXE_FRAIS_DEPLACEMENT: PartnerDocument = {
   key: "annexe_frais_deplacement",
-  version: "v1",
+  version: "v2",
   title: "Annexe — Frais de déplacement",
   buildText: (f) => `
-[PLACEHOLDER — à valider par un juriste avant mise en production]
-
 La présente Annexe est conclue en application et en complément de la Clause
 de sous-traitance liant les Parties. Elle a pour objet exclusif de définir
 les conditions de prise en charge, de facturation et de règlement des frais
