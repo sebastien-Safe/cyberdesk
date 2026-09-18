@@ -418,6 +418,37 @@ function toggleDpoPanel() {
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
+// Messages lisibles pour les codes d'erreur renvoyés par l'Edge Function
+// cyberdesk-dpo-request (voir supabase/functions/cyberdesk-dpo-request/index.ts).
+const _DPO_ERROR_MESSAGES = {
+  unauthorized: 'Session expirée — reconnectez-vous puis réessayez.',
+  forbidden: "Votre compte n'a pas accès au module CyberDesk.",
+  invalid_request_type: 'Type de demande invalide — rechargez la page et réessayez.',
+  db_insert_failed: "Échec de l'enregistrement de la demande — réessayez dans quelques instants.",
+  secrets_unavailable: 'Service de notification indisponible — contactez le support.',
+  brevo_error: "L'e-mail de notification au DPO n'a pas pu être envoyé — réessayez plus tard.",
+};
+
+// sb.functions.invoke() ne remonte que le message générique de supabase-js
+// ("Edge Function returned a non-2xx status code") : le vrai code d'erreur
+// vit dans error.context (la Response HTTP brute) et doit être relu ici.
+async function _dpoErrorMessage(error) {
+  const ctx = error?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = await ctx.clone().json();
+      if (body?.error) {
+        console.error('[DPO] cyberdesk-dpo-request a échoué', ctx.status, body);
+        return _DPO_ERROR_MESSAGES[body.error] || `Erreur (${body.error}) — réessayez plus tard.`;
+      }
+    } catch (_) {
+      // corps non-JSON ou déjà consommé — on retombe sur le message générique ci-dessous
+    }
+  }
+  console.error('[DPO] cyberdesk-dpo-request a échoué', error);
+  return error?.message || 'réessayez plus tard.';
+}
+
 async function submitDpoRequest() {
   const requestType = document.getElementById('settings-dpo-type').value;
   const message = document.getElementById('settings-dpo-message').value.trim();
@@ -436,7 +467,7 @@ async function submitDpoRequest() {
     document.getElementById('settings-dpo-message').value = '';
     document.getElementById('settings-dpo-panel').style.display = 'none';
   } catch (e) {
-    errEl.textContent = 'Erreur : ' + (e.message || 'réessayez plus tard.');
+    errEl.textContent = 'Erreur : ' + (await _dpoErrorMessage(e));
   } finally {
     btn.disabled = false;
     btn.textContent = 'Envoyer la demande au DPO';
