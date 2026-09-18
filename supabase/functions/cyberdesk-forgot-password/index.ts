@@ -13,6 +13,14 @@
 //
 // Déployée avec --no-verify-jwt (appelée avant toute connexion, comme
 // cyberdesk-stripe-webhook — voir CLAUDE.md).
+//
+// Anti-abus : aucune limite dédiée n'existait (reposait uniquement sur le
+// quota Brevo global), permettant à un tiers de spammer la boîte mail d'une
+// victime en rejouant la requête, ou d'épuiser le quota Brevo. Réutilise la
+// fonction cyberdesk_check_rate_limit() déjà en place (migration 029,
+// utilisée par cyberdesk-send-audit-email) : un budget global (volumétrie)
+// et un budget par e-mail (anti-harcèlement d'une boîte précise), tous deux
+// service_role-only et atomiques.
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -24,6 +32,21 @@ async function getSecret(sb: ReturnType<typeof createClient>, name: string): Pro
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
   if (error || !data) throw new Error(`Secret "${name}" introuvable dans le Vault.`);
   return data as string;
+}
+
+async function checkRateLimit(
+  sb: ReturnType<typeof createClient>,
+  action: string,
+  max: number,
+  windowMs: number,
+): Promise<boolean> {
+  const { data, error } = await sb.rpc("cyberdesk_check_rate_limit", {
+    p_action: action,
+    p_max: max,
+    p_window_ms: windowMs,
+  });
+  if (error) throw error;
+  return data as boolean;
 }
 
 Deno.serve(async (req) => {
@@ -51,6 +74,18 @@ Deno.serve(async (req) => {
   const SB_URL = Deno.env.get("SUPABASE_URL")!;
   const SB_SR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(SB_URL, SB_SR);
+
+  try {
+    const withinGlobalLimit = await checkRateLimit(sb, "cyberdesk_forgot_password", 30, 60 * 60 * 1000);
+    const withinEmailLimit = await checkRateLimit(sb, `cyberdesk_forgot_password:${email}`, 3, 15 * 60 * 1000);
+    if (!withinGlobalLimit || !withinEmailLimit) {
+      // Réponse générique identique au cas "compte inconnu" : ne révèle ni
+      // l'existence du compte ni le fait qu'une limite a été atteinte.
+      return json({ success: true });
+    }
+  } catch {
+    // Une erreur du compteur ne doit jamais bloquer une demande légitime.
+  }
 
   const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
     type: "recovery",
