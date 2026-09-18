@@ -10,12 +10,49 @@
 //
 // Déployée avec --no-verify-jwt (appelée avant toute connexion, comme
 // cyberdesk-forgot-password — voir CLAUDE.md).
+//
+// Anti-abus, PLACÉ AVANT generateLink pour deux raisons : (1) tout appel à
+// generateLink écrase l'unique jeton de connexion valide du compte (partagé
+// avec « mot de passe oublié ») — sans limite, un simple double clic (constaté
+// en réel, 7 s d'écart) ou un tiers qui rejoue la requête rend invalide le
+// lien de l'e-mail précédent ; (2) le type 'magiclink' crée un utilisateur
+// fantôme pour une adresse inconnue. Réutilise cyberdesk_check_rate_limit()
+// (migration 029, service_role-only, atomique) : 1 lien / 60 s / e-mail, puis
+// un budget global horaire. La réponse reste { success: true } dans tous les
+// cas, pour ne rien révéler.
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const SITE_URL = "https://cyberdesk.safe-digitalisation.fr";
 const SENDER = { name: "S@FE CYBER PILOT", email: "noreply@safe-digitalisation.fr" };
+
+const PER_EMAIL_WINDOW_MS = 60 * 1000;
+const GLOBAL_MAX_PER_HOUR = 30;
+
+async function checkRateLimit(
+  sb: ReturnType<typeof createClient<any, "public", any>>,
+  action: string,
+  max: number,
+  windowMs: number,
+): Promise<boolean> {
+  const { data, error } = await sb.rpc("cyberdesk_check_rate_limit", {
+    p_action: action,
+    p_max: max,
+    p_window_ms: windowMs,
+  });
+  if (error) throw error;
+  return data as boolean;
+}
+
+// Clé de limite par e-mail : empreinte plutôt que l'adresse brute, pour que
+// la table rate_limits (une ligne par clé, jamais purgée) ne stocke pas
+// d'adresses en clair ni de clés de longueur arbitraire fournies par un
+// appelant anonyme.
+async function emailKey(email: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
 
 async function getSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
   const { data, error } = await sb.rpc("get_edge_secret", { secret_name: name });
@@ -48,6 +85,21 @@ Deno.serve(async (req) => {
   const SB_URL = Deno.env.get("SUPABASE_URL")!;
   const SB_SR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(SB_URL, SB_SR);
+
+  // 254 = longueur maximale d'une adresse e-mail valide (RFC 5321) : au-delà,
+  // rien à envoyer — même réponse générique.
+  if (email.length > 254) return json({ success: true });
+
+  try {
+    // Par e-mail d'abord : une requête déjà refusée pour cette adresse ne doit
+    // pas entamer le budget global (sinon rejouer un même e-mail suffirait à
+    // le vider et à bloquer les connexions légitimes).
+    const withinEmailLimit = await checkRateLimit(sb, `cyberdesk_magic_link:${await emailKey(email)}`, 1, PER_EMAIL_WINDOW_MS);
+    const withinGlobalLimit = withinEmailLimit && await checkRateLimit(sb, "cyberdesk_magic_link", GLOBAL_MAX_PER_HOUR, 60 * 60 * 1000);
+    if (!withinEmailLimit || !withinGlobalLimit) return json({ success: true });
+  } catch {
+    // Une erreur du compteur ne doit jamais bloquer une demande légitime.
+  }
 
   const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
     type: "magiclink",

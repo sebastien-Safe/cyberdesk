@@ -705,6 +705,44 @@ que dans le flux de récupération de mot de passe (`maybeRequireRecoveryMFA`)
 à safe-crm/Vente, voir son propre CLAUDE.md), donc une session issue d'un
 lien magique est traitée exactement comme une session mot de passe.
 
+**Un seul jeton valide par compte — piège du « double envoi ».** Supabase
+ne garde qu'UN jeton de connexion par utilisateur, partagé entre ce flux et
+`cyberdesk-forgot-password` (les deux passent par `generateLink`, journalisé
+`user_recovery_requested` côté Auth). Chaque nouvel appel invalide le lien de
+l'e-mail précédent. Constaté en réel le 2026-09-18 : deux clics sur
+« Envoyer le lien » à 7 s d'écart → deux e-mails envoyés (`audit_logs`
+`lien_connexion_envoye` ×2), clic sur le lien du 1er → `/verify` 403
+« One-time token not found » ; le lien du 2e fonctionnait (aucun commit en cause — le dernier poussé,
+`16df417`, ne touche pas ce flux). Trois protections, dans cet ordre :
+
+- **Serveur (la vraie protection)** — `cyberdesk-magic-link` appelle
+  `cyberdesk_check_rate_limit()` (migration 029) **avant** `generateLink` :
+  1 lien / 60 s / e-mail (clé = empreinte SHA-256 de l'adresse, jamais
+  l'adresse en clair), puis budget global 30/heure (consommé seulement si la
+  limite par e-mail est passée, pour qu'on ne puisse pas le vider en rejouant
+  une même adresse). Dépassement → même `{ success: true }` que pour un compte
+  inconnu, sans e-mail ni `generateLink` (le lien déjà envoyé reste valide).
+  Erreur du compteur → on laisse passer (jamais bloquer une demande légitime).
+  Adresse > 254 caractères → réponse générique sans rien créer.
+- **Client** (`index.html`, `_magicLinkRefreshButton()`) — après un envoi
+  réussi, bouton désactivé 60 s **par adresse** avec compte à rebours
+  (« Renvoyer le lien dans 42 s »), et message rappelant que seul le lien du
+  dernier e-mail fonctionne. Pas de délai après une erreur serveur (aucun
+  lien n'est parti). Simple retour visuel : contournable, d'où la limite
+  serveur ci-dessus.
+- **Lien refusé** — quand `/verify` rejette un lien (magic link *ou* mot de
+  passe oublié), GoTrue redirige vers `redirect_to#error=access_denied&
+  error_code=otp_expired&error_description=...&sb=` (format vérifié avec un
+  jeton bidon), **sans `type`**. `supabase.client.js` lit ce hash
+  synchroniquement (`authLinkError`), le vide de l'URL, et
+  `showAuthLinkErrorIfAny()` (index.html) affiche l'explication sur l'écran
+  de connexion. Avant, l'utilisateur retombait sur un écran de connexion muet.
+  Le cas « hash de succès `type=recovery` mais pas de session » reste géré
+  séparément par `showRecoveryLinkInvalid()`.
+
+Après modification de `cyberdesk-magic-link` : redéployer avec
+`supabase functions deploy cyberdesk-magic-link --no-verify-jwt`.
+
 ## Paramétrage, RGPD (DPO) et avis clients
 
 **Modale Paramétrage** (`assets/js/settings.js`) : fiche profil par

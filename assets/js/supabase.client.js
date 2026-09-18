@@ -37,6 +37,15 @@ let inPasswordRecovery = false;
 // l'app sans jamais repasser par une authentification réelle.
 const PENDING_RECOVERY_KEY = 'cd_pending_recovery';
 
+// Renseigné quand Supabase a refusé un lien reçu par e-mail (magic link OU
+// mot de passe oublié) : GoTrue redirige alors vers
+// redirect_to#error=access_denied&error_code=otp_expired&error_description=...
+// (vérifié en réel avec un jeton bidon). Ce hash ne porte AUCUN `type`, donc
+// le bloc recovery ci-dessous ne le reconnaît pas — l'utilisateur retombait
+// sur l'écran de connexion sans la moindre explication. Consommé par
+// showAuthLinkErrorIfAny() (index.html).
+let authLinkError = null;
+
 function _enterPasswordRecoveryUI() {
   inPasswordRecovery = true;
   localStorage.setItem(PENDING_RECOVERY_KEY, '1');
@@ -69,6 +78,12 @@ if (window.location.hash) {
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   if (hashParams.get('type') === 'recovery') {
     _enterPasswordRecoveryUI();
+  } else if (hashParams.get('error') || hashParams.get('error_code')) {
+    authLinkError = { code: hashParams.get('error_code') || hashParams.get('error') };
+    // Vide le hash pour qu'un rechargement de la page ne réaffiche pas
+    // l'erreur — fait ici, de façon synchrone, avant que le SDK ne lise
+    // l'URL (il n'a de toute façon rien à en tirer : pas de jeton).
+    history.replaceState(null, '', window.location.pathname + window.location.search);
   }
 }
 

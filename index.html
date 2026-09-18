@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>S@FE CYBER PILOT — Dossiers victimes 17Cyber</title>
 <link rel="icon" href="/favicon.ico">
-<link rel="stylesheet" href="assets/css/base.css?v=20260917b">
-<link rel="stylesheet" href="assets/css/style.css?v=20260917b">
-<link rel="stylesheet" href="assets/css/pipeline.css?v=20260917b">
-<link rel="stylesheet" href="assets/victimes17/victimes17.css?v=20260917b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260918">
+<link rel="stylesheet" href="assets/css/style.css?v=20260918">
+<link rel="stylesheet" href="assets/css/pipeline.css?v=20260918">
+<link rel="stylesheet" href="assets/victimes17/victimes17.css?v=20260918">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
@@ -998,18 +998,18 @@
   </div>
 </div>
 
-<script src="assets/js/supabase.client.js?v=20260917b"></script>
-<script src="assets/js/cyber-ai-system-prompt.js?v=20260917b"></script>
-<script src="assets/js/task-tree.js?v=20260917b"></script>
-<script src="assets/victimes17/victimes17-pdf.js?v=20260917b"></script>
-<script src="assets/victimes17/victimes17-quote.js?v=20260917b"></script>
-<script src="assets/victimes17/victimes17.js?v=20260917b"></script>
-<script src="assets/victimes17/victimes17-ai.js?v=20260917b"></script>
-<script src="assets/js/settings.js?v=20260917b"></script>
-<script src="assets/js/accounting.js?v=20260917b"></script>
-<script src="assets/js/audit-clients.js?v=20260917b"></script>
-<script src="assets/js/partner-contract-content.js?v=20260917b"></script>
-<script src="assets/js/partner-contract.js?v=20260917b"></script>
+<script src="assets/js/supabase.client.js?v=20260918"></script>
+<script src="assets/js/cyber-ai-system-prompt.js?v=20260918"></script>
+<script src="assets/js/task-tree.js?v=20260918"></script>
+<script src="assets/victimes17/victimes17-pdf.js?v=20260918"></script>
+<script src="assets/victimes17/victimes17-quote.js?v=20260918"></script>
+<script src="assets/victimes17/victimes17.js?v=20260918"></script>
+<script src="assets/victimes17/victimes17-ai.js?v=20260918"></script>
+<script src="assets/js/settings.js?v=20260918"></script>
+<script src="assets/js/accounting.js?v=20260918"></script>
+<script src="assets/js/audit-clients.js?v=20260918"></script>
+<script src="assets/js/partner-contract-content.js?v=20260918"></script>
+<script src="assets/js/partner-contract.js?v=20260918"></script>
 
 <script>
 // inPasswordRecovery et PENDING_RECOVERY_KEY sont définis dans
@@ -1045,6 +1045,7 @@ async function checkSession() {
     await sb.auth.signOut();
     localStorage.removeItem(PENDING_RECOVERY_KEY);
     showLoginPanel();
+    showAuthLinkErrorIfAny();
     document.getElementById('login-screen').classList.remove('is-hidden');
     document.getElementById('app-shell').classList.add('is-hidden');
     return;
@@ -1125,9 +1126,19 @@ async function checkSession() {
     initVictimes17();
   } else {
     showLoginPanel();
+    showAuthLinkErrorIfAny();
     document.getElementById('login-screen').classList.remove('is-hidden');
     document.getElementById('app-shell').classList.add('is-hidden');
   }
+}
+
+/** Explique à l'utilisateur pourquoi il retombe sur l'écran de connexion après avoir cliqué un lien d'e-mail refusé par Supabase (voir authLinkError dans supabase.client.js). À appeler seulement quand aucune session n'est établie. */
+function showAuthLinkErrorIfAny() {
+  if (!authLinkError) return;
+  authLinkError = null;
+  document.getElementById('login-error').textContent =
+    "Ce lien n'est plus valide : il a expiré, a déjà été utilisé, ou un e-mail plus récent l'a remplacé " +
+    "(seul le dernier e-mail reçu fonctionne). Redemandez un lien de connexion ci-dessous.";
 }
 
 /** Appelé par partner-contract.js après une signature réussie en mode 'gate' — réévalue le gate et entre dans l'app si désormais valide. */
@@ -1184,11 +1195,43 @@ document.getElementById('magic-link-link').addEventListener('click', (e) => {
   document.getElementById('magic-link-error').textContent = '';
   document.getElementById('login-panel').classList.add('is-hidden');
   document.getElementById('magic-link-panel').classList.remove('is-hidden');
+  _magicLinkRefreshButton();
 });
 
 document.getElementById('back-to-login-link-magic').addEventListener('click', (e) => {
   e.preventDefault();
   showLoginPanel();
+});
+
+// Délai avant de pouvoir redemander un lien pour la même adresse. Supabase ne
+// garde qu'UN jeton de connexion valide par compte (partagé avec « mot de
+// passe oublié ») : redemander un lien invalide celui de l'e-mail précédent —
+// constaté en réel, deux clics à 7 s d'écart, lien du 1er e-mail refusé
+// « invalide ou expiré ». Aligné sur la limite côté serveur
+// (cyberdesk-magic-link : 1 lien / 60 s / e-mail), qui reste la vraie
+// protection — ce délai-ci n'est que le retour visuel.
+const MAGIC_LINK_COOLDOWN_MS = 60 * 1000;
+const _magicLinkSentAt = {};   // e-mail (minuscules) → Date.now() du dernier envoi réussi
+let _magicLinkBusy = false;
+let _magicLinkTicker = null;
+
+function _magicLinkRefreshButton() {
+  const btn = document.getElementById('magic-link-btn');
+  const email = document.getElementById('magic-link-email').value.trim().toLowerCase();
+  const left = Math.ceil(((_magicLinkSentAt[email] || 0) + MAGIC_LINK_COOLDOWN_MS - Date.now()) / 1000);
+  btn.disabled = _magicLinkBusy || left > 0;
+  btn.textContent = left > 0 ? `Renvoyer le lien dans ${left} s` : 'Envoyer le lien de connexion';
+  if (left > 0 && !_magicLinkTicker) {
+    _magicLinkTicker = setInterval(_magicLinkRefreshButton, 1000);
+  } else if (left <= 0 && _magicLinkTicker) {
+    clearInterval(_magicLinkTicker);
+    _magicLinkTicker = null;
+  }
+}
+
+document.getElementById('magic-link-email').addEventListener('input', () => {
+  document.getElementById('magic-link-error').textContent = '';
+  _magicLinkRefreshButton();
 });
 
 document.getElementById('magic-link-form').addEventListener('submit', async () => {
@@ -1198,16 +1241,26 @@ document.getElementById('magic-link-form').addEventListener('submit', async () =
   errEl.style.color = '';
   errEl.textContent = '';
   if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
-  btn.disabled = true;
+  if (_magicLinkBusy || btn.disabled) return;
+  _magicLinkBusy = true;
+  _magicLinkRefreshButton();
   // Passe par notre propre Edge Function (Brevo) plutôt que
   // sb.auth.signInWithOtp() — même raison que cyberdesk-forgot-password :
   // quota d'e-mail intégré Supabase trop bas, et on garde un seul pipeline
   // d'envoi (Brevo) pour tous les e-mails d'auth de cette app.
   const { error } = await sb.functions.invoke('cyberdesk-magic-link', { body: { email } });
-  btn.disabled = false;
-  if (error) { errEl.textContent = "Une erreur est survenue, réessayez plus tard."; return; }
+  _magicLinkBusy = false;
+  if (error) {
+    // Aucun lien n'est parti : pas de délai, l'utilisateur peut réessayer.
+    _magicLinkRefreshButton();
+    errEl.textContent = "Une erreur est survenue, réessayez plus tard.";
+    return;
+  }
+  _magicLinkSentAt[email.toLowerCase()] = Date.now();
+  _magicLinkRefreshButton();
   errEl.style.color = 'var(--accent)';
-  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de connexion vient d'être envoyé.";
+  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de connexion vient d'être envoyé. " +
+    "Utilisez uniquement le lien du dernier e-mail reçu : en redemander un rend le précédent invalide.";
 });
 
 /** Affiche le message "lien invalide" à la place du formulaire nouveau mot de passe, sans jamais l'écran générique de connexion (l'utilisateur vient de cliquer un lien e-mail, pas de rouvrir l'app). */
