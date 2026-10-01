@@ -1291,3 +1291,9 @@ Si une décision d'architecture n'est pas couverte par ce fichier,
 ne pas improviser : poser la question avant d'agir.
 Ce projet gère des données de victimes cyber — la rigueur
 sur la sécurité et la conformité RGPD est non négociable.
+
+## Registre des usages d'IA (AI Act) — obligatoire
+
+Tout changement qui ajoute, retire ou modifie un usage d'IA (appel à une API de modèle, changement de modèle ou de fournisseur, nouvel appelant d'une passerelle IA, données envoyées à l'IA, IA exposée à des visiteurs ou clients, contenu généré publié automatiquement) doit mettre à jour le registre central `../Site_safe-digitalisation/conformite-ia/REGISTRE-IA.md` dans la même tâche, sans attendre qu'on le demande.
+
+Avant de toucher au registre, lis et applique `../Site_safe-digitalisation/conformite-ia/INSTRUCTIONS-AGENTS-IA.md`. Si ces fichiers sont inaccessibles (session cloud, dépôt cloné seul), ne les recrée pas : termine ta réponse et la description de PR par le bloc « Mise à jour du registre IA » (ID, fichiers, changement, fournisseur/modèle, données envoyées, personnes concernées, niveau proposé, points à vérifier).
