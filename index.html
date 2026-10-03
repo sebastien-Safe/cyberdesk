@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss://*.supabase.co blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://bgkijldrmdhklkadkeua.supabase.co wss://bgkijldrmdhklkadkeua.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>S@FE CYBER PILOT — Dossiers victimes 17Cyber</title>
@@ -23,7 +23,7 @@
     <div id="login-panel">
       <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Gestion de dossiers victimes cyber</p>
-      <form id="login-form" onsubmit="return false">
+      <form id="login-form">
         <div class="field"><label>E-mail</label><input id="login-email" type="email" autocomplete="username"></div>
         <div class="field"><label>Mot de passe</label><input id="login-password" type="password" autocomplete="current-password"></div>
         <button type="submit" class="btn btn-pri btn--full" id="login-btn">Se connecter</button>
@@ -36,7 +36,7 @@
     <div id="forgot-password-panel" class="is-hidden">
       <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Réinitialisation du mot de passe</p>
-      <form id="forgot-password-form" onsubmit="return false">
+      <form id="forgot-password-form">
         <div class="field"><label>E-mail</label><input id="forgot-email" type="email" autocomplete="username"></div>
         <button type="submit" class="btn btn-pri btn--full" id="forgot-password-btn">Envoyer le lien de réinitialisation</button>
         <p class="error" id="forgot-password-error"></p>
@@ -47,7 +47,7 @@
     <div id="magic-link-panel" class="is-hidden">
       <h1 style="margin-bottom:4px">🛡 S@FE CYBER PILOT</h1>
       <p style="color:var(--mut);font-size:.85rem;margin-bottom:20px">Lien de connexion par e-mail</p>
-      <form id="magic-link-form" onsubmit="return false">
+      <form id="magic-link-form">
         <div class="field"><label>E-mail</label><input id="magic-link-email" type="email" autocomplete="username"></div>
         <button type="submit" class="btn btn-pri btn--full" id="magic-link-btn">Envoyer le lien de connexion</button>
         <p class="error" id="magic-link-error"></p>
@@ -77,10 +77,10 @@
       <div id="reset-password-mfa" class="is-hidden">
         <p style="color:var(--mut);font-size:.85rem;margin-bottom:12px">Ce compte a la double authentification activée — saisissez le code à 6 chiffres de votre application d'authentification pour continuer.</p>
         <div class="field"><label>Code de vérification</label><input id="reset-password-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
-        <button type="button" class="btn btn-pri btn--full" id="reset-password-mfa-btn" onclick="verifyRecoveryMFA()">Vérifier</button>
+        <button type="button" class="btn btn-pri btn--full" id="reset-password-mfa-btn">Vérifier</button>
         <p class="error" id="reset-password-mfa-error"></p>
       </div>
-      <form id="reset-password-form" onsubmit="return false">
+      <form id="reset-password-form">
         <div class="field"><label>Nouveau mot de passe</label><input id="reset-password-new" type="password" autocomplete="new-password"></div>
         <div class="field"><label>Confirmer le mot de passe</label><input id="reset-password-confirm" type="password" autocomplete="new-password"></div>
         <button type="submit" class="btn btn-pri btn--full" id="reset-password-btn">Valider le nouveau mot de passe</button>
@@ -96,10 +96,10 @@
     <span class="cyber-topbar-brand">🛡 S@FE CYBER PILOT</span>
     <span class="cyber-topbar-subtitle">Dossiers victimes 17Cyber</span>
     <div class="cyber-topbar-right" style="margin-left:auto;display:flex;gap:10px;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="openReviewsModal()">🛡 Audit clients</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAccountingModal()">📊 Comptable</button>
-      <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙️ Paramétrage</button>
-      <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
+      <button class="btn btn-ghost btn-sm" id="topbar-reviews-btn">🛡 Audit clients</button>
+      <button class="btn btn-ghost btn-sm" id="topbar-accounting-btn">📊 Comptable</button>
+      <button class="btn btn-ghost btn-sm" id="topbar-settings-btn">⚙️ Paramétrage</button>
+      <button class="btn btn-ghost btn-sm" id="topbar-logout-btn">Déconnexion</button>
     </div>
   </header>
 
@@ -108,8 +108,8 @@
       <div class="pipeline-toolbar">
         <h2 id="v17-greeting">🕵️‍♂️</h2>
         <div class="pipeline-total" id="v17-total"><span>Dossiers actifs</span> —</div>
-        <input class="pipeline-search" id="v17-search" type="text" placeholder="Rechercher (nom, ticket)…" oninput="_v17ApplySearch()">
-        <button class="pipeline-btn-add" onclick="openVictimLeadModal()">+ Nouveau dossier victime</button>
+        <input class="pipeline-search" id="v17-search" type="text" placeholder="Rechercher (nom, ticket)…">
+        <button class="pipeline-btn-add" id="v17-add-btn">+ Nouveau dossier victime</button>
       </div>
       <div class="pipeline-board" id="v17-board">
         <div class="pipeline-loading"><div class="pipeline-spinner"></div> Chargement…</div>
@@ -132,13 +132,13 @@
         <span id="victim-lead-modal-title">Nouveau dossier victime</span>
         <span class="badge-source" id="modal-source-badge">17Cyber</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeVictimLeadModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="vl-modal-close-x">&times;</button>
     </div>
 
     <!-- Réattribution — admin uniquement, dossier existant uniquement -->
     <div id="vl-owner-bar" style="display:none;padding:0 26px 10px;align-items:center;gap:10px">
       <label for="vl-owner-select" style="font-size:.78rem;color:var(--mut)">Propriétaire du dossier</label>
-      <select id="vl-owner-select" onchange="reassignLeadOwner()">
+      <select id="vl-owner-select">
         <option value="">Non attribué</option>
       </select>
     </div>
@@ -149,7 +149,7 @@
       <select id="vl-transfer-select">
         <option value="">Choisir un collègue…</option>
       </select>
-      <button type="button" class="btn-diag-ghost" onclick="transferVictimLead()">Transférer</button>
+      <button type="button" class="btn-diag-ghost" id="vl-transfer-btn">Transférer</button>
     </div>
 
     <!-- Progression -->
@@ -380,7 +380,7 @@
         <span id="quote-modal-title">Devis — dossier victime</span>
         <span class="badge-source">17Cyber</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeQuoteModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="quote-modal-close-x">&times;</button>
     </div>
 
     <div class="modal-cyber-progress"><div class="modal-cyber-progress-fill" id="quote-progress"></div></div>
@@ -436,7 +436,7 @@
           <p class="diag-label-hint" style="display:block;margin-bottom:8px">Calculé avec votre barème personnel (coefficient €/km, forfait et adresse de départ) — modifiable dans Paramétrage → Profil.</p>
           <div id="quote-o4-result" class="diag-label-hint" style="margin-bottom:8px"></div>
           <input type="text" id="quote-o4-text" placeholder="Note libre (optionnel)">
-          <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-recalc" onclick="_quoteComputeO4()" style="margin-top:8px">🔄 Recalculer</button>
+          <button type="button" class="btn btn-out btn-sm" id="btn-quote-o4-recalc" style="margin-top:8px">🔄 Recalculer</button>
         </div>
       </div>
 
@@ -503,7 +503,7 @@
     <h3 id="task-tree-modal-title">🗂️ Suivi d'intervention</h3>
     <div id="task-tree-container"></div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeTaskTreeModal()">Fermer</button>
+      <button class="btn btn-out" id="task-tree-modal-close-btn">Fermer</button>
     </div>
   </div>
 </div>
@@ -526,8 +526,8 @@
       </select>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeManualPaymentModal()">Annuler</button>
-      <button class="btn btn-pri" id="manual-payment-save-btn" onclick="saveManualPayment()">Enregistrer</button>
+      <button class="btn btn-out" id="manual-payment-cancel-btn">Annuler</button>
+      <button class="btn btn-pri" id="manual-payment-save-btn">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -541,7 +541,7 @@
         <span id="victim-ai-modal-title">Assistant IA — dossier</span>
         <span class="badge-source">17Cyber</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeVictimAiModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="ai-modal-close-x">&times;</button>
     </div>
     <div class="modal-cyber-body">
       <div class="diag-field">
@@ -559,7 +559,7 @@
         <div style="display:flex;gap:8px">
           <input type="text" id="victim-ai-input" placeholder="Posez une question sur ce dossier…" style="flex:1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendVictimAiMessage()}">
-          <button class="btn-diag-primary" id="victim-ai-send" onclick="sendVictimAiMessage()">Envoyer</button>
+          <button class="btn-diag-primary" id="victim-ai-send">Envoyer</button>
         </div>
       </div>
       <div id="victim-ai-output" class="ai-output">Prêt — posez votre question.</div>
@@ -575,14 +575,14 @@
         <span class="modal-cyber-icon">⚙️</span>
         <span>Paramétrage</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeSettingsModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="settings-modal-close-x">&times;</button>
     </div>
     <div class="modal-cyber-body">
 
       <div id="settings-tabs" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px">
-        <button type="button" class="btn btn-pri btn-sm" data-tab="profil" onclick="_settingsSwitchTab('profil')">👤 Profil</button>
-        <button type="button" class="btn btn-out btn-sm" data-tab="finances" onclick="_settingsSwitchTab('finances')">💶 Finances</button>
-        <button type="button" class="btn btn-out btn-sm" data-tab="documents" onclick="_settingsSwitchTab('documents')">📁 Documents légaux</button>
+        <button type="button" class="btn btn-pri btn-sm" data-tab="profil">👤 Profil</button>
+        <button type="button" class="btn btn-out btn-sm" data-tab="finances">💶 Finances</button>
+        <button type="button" class="btn btn-out btn-sm" data-tab="documents">📁 Documents légaux</button>
       </div>
 
       <!-- ── Onglet Profil : Identification + Facturation ── -->
@@ -595,7 +595,7 @@
               style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--line);display:none">
             <div id="settings-avatar-placeholder"
               style="width:64px;height:64px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div>
-            <input type="file" id="settings-avatar-input" accept="image/*" onchange="uploadAvatar(this.files[0])">
+            <input type="file" id="settings-avatar-input" accept="image/*">
           </div>
         </div>
 
@@ -631,7 +631,6 @@
               <span id="settings-travel-coef-value" style="font-weight:600">0,51 €/km</span>
             </div>
             <input type="range" id="settings-travel-coef" min="0.50" max="0.79" step="0.01" value="0.51"
-              oninput="document.getElementById('settings-travel-coef-value').textContent = Number(this.value).toFixed(2).replace('.', ',') + ' €/km'"
               style="width:100%">
             <div class="diag-field" style="margin-top:12px;margin-bottom:0">
               <label>Forfait de base</label>
@@ -650,7 +649,7 @@
             <input type="password" id="settings-password-new" autocomplete="new-password" placeholder="Nouveau mot de passe">
             <input type="password" id="settings-password-confirm" autocomplete="new-password" placeholder="Confirmer le mot de passe">
           </div>
-          <button type="button" class="btn btn-out btn-sm" id="settings-password-btn" onclick="changeAccountPassword()" style="margin-top:8px">Mettre à jour le mot de passe</button>
+          <button type="button" class="btn btn-out btn-sm" id="settings-password-btn" style="margin-top:8px">Mettre à jour le mot de passe</button>
           <p class="error" id="settings-password-error"></p>
           <p class="success is-hidden" id="settings-password-success">Mot de passe mis à jour.</p>
         </div>
@@ -660,7 +659,7 @@
               <div style="font-weight:600">Double authentification (2FA)</div>
               <div id="settings-2fa-status" class="diag-label-hint">Vérification…</div>
             </div>
-            <button type="button" class="btn btn-out btn-sm" id="settings-2fa-btn" onclick="toggle2FA()" disabled>…</button>
+            <button type="button" class="btn btn-out btn-sm" id="settings-2fa-btn" disabled>…</button>
           </div>
           <div id="settings-2fa-enroll-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
             <p class="diag-label-hint" style="display:block;margin-bottom:8px">
@@ -670,7 +669,7 @@
             <img id="settings-2fa-qr" alt="QR code d'activation 2FA" style="display:block;margin:0 auto 12px;max-width:180px">
             <div class="diag-row-2">
               <input type="text" id="settings-2fa-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
-              <button type="button" class="btn btn-pri" id="settings-2fa-verify-btn" onclick="verify2FAEnrollment()">Valider</button>
+              <button type="button" class="btn btn-pri" id="settings-2fa-verify-btn">Valider</button>
             </div>
             <p class="error" id="settings-2fa-error"></p>
           </div>
@@ -679,7 +678,7 @@
         <h3 style="margin:18px 0 10px">RGPD</h3>
         <div class="diag-field">
           <label>Vos droits</label>
-          <button type="button" class="btn btn-out btn-sm" onclick="toggleDpoPanel()">Faire une demande d'exercice de droits</button>
+          <button type="button" class="btn btn-out btn-sm" id="settings-dpo-toggle-btn">Faire une demande d'exercice de droits</button>
           <div id="settings-dpo-panel" style="display:none;margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:14px">
             <div class="diag-field">
               <label>Type de demande</label>
@@ -696,7 +695,7 @@
               <label>Message <span class="diag-label-hint">(facultatif)</span></label>
               <textarea id="settings-dpo-message" rows="3" placeholder="Précisez votre demande si besoin…"></textarea>
             </div>
-            <button type="button" class="btn btn-pri btn-sm" id="settings-dpo-submit-btn" onclick="submitDpoRequest()">Envoyer la demande au DPO</button>
+            <button type="button" class="btn btn-pri btn-sm" id="settings-dpo-submit-btn">Envoyer la demande au DPO</button>
             <p class="error" id="settings-dpo-error"></p>
           </div>
         </div>
@@ -713,7 +712,7 @@
               <span id="settings-subscription-badge" class="badge badge-gray">—</span>
               <div id="settings-subscription-date" class="diag-label-hint" style="margin-top:4px"></div>
             </div>
-            <button type="button" class="btn btn-out btn-sm" id="settings-subscription-btn" onclick="openBillingPortal()">Gérer mon abonnement</button>
+            <button type="button" class="btn btn-out btn-sm" id="settings-subscription-btn">Gérer mon abonnement</button>
           </div>
         </div>
 
@@ -721,7 +720,7 @@
           <label>Module Comptable</label>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px">
             <div class="diag-label-hint">Indicateurs, dossiers, paiements et rémunération.</div>
-            <button type="button" class="btn btn-out btn-sm" onclick="_settingsOpenAccounting()">Ouvrir le Comptable</button>
+            <button type="button" class="btn btn-out btn-sm" id="settings-open-accounting-btn">Ouvrir le Comptable</button>
           </div>
         </div>
 
@@ -741,7 +740,7 @@
               <span id="settings-contract-badge" class="badge badge-gray">Non signé</span>
               <div id="settings-contract-detail" class="diag-label-hint" style="margin-top:4px"></div>
             </div>
-            <button type="button" class="btn btn-out btn-sm" id="settings-contract-btn" onclick="openPartnerContractModal('voluntary')">Signer / Changer de statut</button>
+            <button type="button" class="btn btn-out btn-sm" id="settings-contract-btn">Signer / Changer de statut</button>
           </div>
         </div>
 
@@ -752,8 +751,8 @@
 
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeSettingsModal()">Fermer</button>
-      <button class="btn btn-pri" id="settings-save-btn" onclick="saveUserSettings()">Enregistrer</button>
+      <button class="btn btn-out" id="settings-modal-close-footer">Fermer</button>
+      <button class="btn btn-pri" id="settings-save-btn">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -766,12 +765,12 @@
         <span class="modal-cyber-icon">📊</span>
         <span>Comptable — Indicateurs</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeAccountingModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="accounting-modal-close-x">&times;</button>
     </div>
     <div class="modal-cyber-body">
       <div id="accounting-scope-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
         <div id="accounting-scope-label" style="font-weight:600"></div>
-        <select id="accounting-user-select" style="display:none" onchange="_acctOnScopeChange()">
+        <select id="accounting-user-select" style="display:none">
           <option value="">Vue globale</option>
         </select>
       </div>
@@ -797,7 +796,7 @@
               <div class="diag-field"><label>Mandataire (%)</label><input type="number" step="0.01" min="0" max="100" id="accounting-rate-mandataire"></div>
               <div class="diag-field"><label>Associé SEP (%)</label><input type="number" step="0.01" min="0" max="100" id="accounting-rate-associe_sep"></div>
             </div>
-            <button type="button" class="btn btn-pri btn-sm" onclick="_acctSaveRates()" style="margin-top:8px">Enregistrer le barème</button>
+            <button type="button" class="btn btn-pri btn-sm" id="accounting-rates-save-btn" style="margin-top:8px">Enregistrer le barème</button>
           </div>
           <div id="accounting-commission-kpi-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
           <div id="accounting-commission-list"></div>
@@ -812,7 +811,7 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeAccountingModal()">Fermer</button>
+      <button class="btn btn-out" id="accounting-modal-close-footer">Fermer</button>
     </div>
   </div>
 </div>
@@ -825,12 +824,12 @@
         <span class="modal-cyber-icon">🛡</span>
         <span>Audit clients — Avis & NPS</span>
       </div>
-      <button class="modal-cyber-close" type="button" onclick="closeReviewsModal()">&times;</button>
+      <button class="modal-cyber-close" type="button" id="reviews-modal-close-x">&times;</button>
     </div>
     <div class="modal-cyber-body">
       <div id="reviews-scope-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
         <div id="reviews-scope-label" style="font-weight:600"></div>
-        <select id="reviews-user-select" style="display:none" onchange="_rvOnScopeChange()">
+        <select id="reviews-user-select" style="display:none">
           <option value="">Vue globale</option>
         </select>
       </div>
@@ -849,7 +848,7 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="closeReviewsModal()">Fermer</button>
+      <button class="btn btn-out" id="reviews-modal-close-footer">Fermer</button>
     </div>
   </div>
 </div>
@@ -894,7 +893,7 @@
           <div class="diag-field"><label>Adresse</label><input type="text" id="pc-billing-address"></div>
         </div>
         <p class="error" id="pc-step1-error"></p>
-        <button type="button" class="btn btn-pri" onclick="_pcSaveStep1()">Continuer</button>
+        <button type="button" class="btn btn-pri" id="pc-step1-continue">Continuer</button>
       </div>
 
       <!-- ÉTAPE 2 — Choix de la piste -->
@@ -902,7 +901,7 @@
         <p class="diag-label-hint">Rejoignez le réseau S@FE Cyber Pilot en tant que Mandataire technique. Ce choix reste modifiable tant qu'aucun document n'a été signé.</p>
         <div class="diag-row-2" style="grid-template-columns:1fr">
           <label style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
-            <input type="radio" name="pc-status" id="pc-status-mandataire" onchange="_pcSelectStatus('mandataire')" style="margin-top:4px">
+            <input type="radio" name="pc-status" id="pc-status-mandataire" style="margin-top:4px">
             <div>
               <strong>Mandataire technique</strong>
               <p class="diag-label-hint">Intervenant indépendant rémunéré à la commission (<span id="pc-pct-mandataire">0.00</span>% du CA HT, facturée par vous à S@FE). Pas de structure dédiée requise, pas de droit d'entrée. 4 documents à signer : accord de confidentialité (NDA), accord de traitement des données (DPA), clause de sous-traitance Cybermalveillance.gouv.fr, annexe frais de déplacement.</p>
@@ -913,7 +912,7 @@
                produit 2026-09-17). Ne pas supprimer — DB/back-end inchangés,
                il suffit de retirer ce style pour la réactiver le jour venu. -->
           <label style="display:none;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer">
-            <input type="radio" name="pc-status" id="pc-status-associe_sep" onchange="_pcSelectStatus('associe_sep')" style="margin-top:4px">
+            <input type="radio" name="pc-status" id="pc-status-associe_sep" style="margin-top:4px">
             <div>
               <strong>Associé en Société en Participation (SEP)</strong>
               <p class="diag-label-hint">Double compétence Auxiliaire Technique + Directeur d'Agence sur une zone d'exclusivité de 50 km, quote-part de <span id="pc-pct-associe_sep">0.00</span>% versée automatiquement (sans facture). Nécessite une structure juridique propre et un droit d'entrée de 1 500 € HT. 1 seul document à signer : les Statuts de la SEP (son article 11 couvre déjà secret professionnel et RGPD).</p>
@@ -922,8 +921,8 @@
         </div>
         <p class="error" id="pc-step2-error"></p>
         <div style="display:flex;gap:10px">
-          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
-          <button type="button" class="btn btn-pri" id="pc-step2-continue" onclick="_pcSaveStep2()" disabled>Continuer</button>
+          <button type="button" class="btn btn-out" id="pc-step2-back">← Retour</button>
+          <button type="button" class="btn btn-pri" id="pc-step2-continue" disabled>Continuer</button>
         </div>
       </div>
 
@@ -952,8 +951,8 @@
         </div>
         <p class="error" id="pc-step3-error"></p>
         <div style="display:flex;gap:10px">
-          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
-          <button type="button" class="btn btn-pri" onclick="_pcSaveStep3()">Continuer</button>
+          <button type="button" class="btn btn-out" id="pc-step3-back">← Retour</button>
+          <button type="button" class="btn btn-pri" id="pc-step3-continue">Continuer</button>
         </div>
       </div>
 
@@ -967,12 +966,12 @@
         <div class="diag-field">
           <label>Signature</label>
           <canvas id="pc-signature-canvas" width="480" height="140" style="width:100%;max-width:480px;height:140px;border:1px solid var(--line);border-radius:10px;touch-action:none;background:#fff"></canvas>
-          <button type="button" class="btn btn-out btn-sm" onclick="_pcClearSignature()" style="margin-top:8px">Effacer la signature</button>
+          <button type="button" class="btn btn-out btn-sm" id="pc-clear-signature-btn" style="margin-top:8px">Effacer la signature</button>
         </div>
         <p class="error" id="pc-error"></p>
         <div style="display:flex;gap:10px">
-          <button type="button" class="btn btn-out" onclick="_pcGoBack()">← Retour</button>
-          <button type="button" class="btn btn-pri" id="pc-continue-btn" onclick="_pcSendOtp()">Continuer</button>
+          <button type="button" class="btn btn-out" id="pc-step4-back">← Retour</button>
+          <button type="button" class="btn btn-pri" id="pc-continue-btn">Continuer</button>
         </div>
         <div id="pc-otp-panel" style="display:none;margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px">
           <p class="diag-label-hint" style="display:block;margin-bottom:8px">
@@ -980,7 +979,7 @@
           </p>
           <div class="diag-row-2">
             <input type="text" id="pc-otp-code" placeholder="Code à 6 chiffres" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.3em">
-            <button type="button" class="btn btn-pri" id="pc-verify-btn" onclick="_pcSubmitSignature()">Valider la signature</button>
+            <button type="button" class="btn btn-pri" id="pc-verify-btn">Valider la signature</button>
           </div>
         </div>
       </div>
@@ -988,395 +987,30 @@
       <!-- ÉTAPE 5 — Confirmation -->
       <div class="diag-section" id="pc-section-5">
         <p>✅ Tous les documents de votre parcours ont été signés. Bienvenue dans le réseau S@FE Cyber Pilot.</p>
-        <button type="button" class="btn btn-pri" onclick="_pcFinish()">Continuer</button>
+        <button type="button" class="btn btn-pri" id="pc-finish-btn">Continuer</button>
       </div>
 
     </div>
     <div class="modal-actions">
-      <button class="btn btn-out" id="pc-cancel-btn" onclick="closePartnerContractModal()">Fermer</button>
+      <button class="btn btn-out" id="pc-cancel-btn">Fermer</button>
     </div>
   </div>
 </div>
 
 <script src="assets/js/supabase.client.js?v=20260918"></script>
 <script src="assets/js/cyber-ai-system-prompt.js?v=20260918"></script>
-<script src="assets/js/task-tree.js?v=20260918"></script>
+<script src="assets/js/task-tree.js?v=20261003"></script>
 <script src="assets/victimes17/victimes17-pdf.js?v=20260918"></script>
 <script src="assets/victimes17/victimes17-quote.js?v=20260918"></script>
-<script src="assets/victimes17/victimes17.js?v=20260918"></script>
+<script src="assets/victimes17/victimes17.js?v=20261003"></script>
 <script src="assets/victimes17/victimes17-ai.js?v=20260918"></script>
 <script src="assets/js/settings.js?v=20260918"></script>
 <script src="assets/js/accounting.js?v=20260918"></script>
 <script src="assets/js/audit-clients.js?v=20260918"></script>
 <script src="assets/js/partner-contract-content.js?v=20260918"></script>
 <script src="assets/js/partner-contract.js?v=20260918"></script>
-
-<script>
-// inPasswordRecovery et PENDING_RECOVERY_KEY sont définis dans
-// assets/js/supabase.client.js (chargé avant ce script), avec l'écouteur
-// onAuthStateChange('PASSWORD_RECOVERY') associé — voir ce fichier pour le
-// détail. Les scripts classiques (non-module) partagent le même scope
-// global, donc ces bindings top-level restent accessibles ici tels quels.
-
-// Calculé dans checkSession() une fois la session confirmée — conditionne
-// l'affichage du bouton "Comptable" (assets/js/accounting.js).
-let _isAdmin = false;
-
-// Renseignés par maybeRequireRecoveryMFA() ci-dessous, consommés par
-// verifyRecoveryMFA() lors de la soumission du code.
-let _recoveryMfaFactorId = null;
-let _recoveryMfaChallengeId = null;
-
-async function checkSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (inPasswordRecovery) {
-    // Le hash contenait bien type=recovery (voir supabase.client.js), mais
-    // le SDK n'a pas réussi à échanger le jeton contre une session — lien
-    // déjà utilisé/expiré, ou consommé par un scanner de liens côté
-    // messagerie avant le vrai clic de l'utilisateur. Sans ce contrôle,
-    // l'utilisateur resterait sur le formulaire "nouveau mot de passe" et
-    // ne découvrirait le problème qu'à la soumission, via l'erreur brute du
-    // SDK ("Auth session missing!").
-    if (!session) { showRecoveryLinkInvalid(); return; }
-    await maybeRequireRecoveryMFA();
-    return;
-  }
-  if (localStorage.getItem(PENDING_RECOVERY_KEY)) {
-    await sb.auth.signOut();
-    localStorage.removeItem(PENDING_RECOVERY_KEY);
-    showLoginPanel();
-    showAuthLinkErrorIfAny();
-    document.getElementById('login-screen').classList.remove('is-hidden');
-    document.getElementById('app-shell').classList.add('is-hidden');
-    return;
-  }
-  const errEl = document.getElementById('login-error');
-  if (session) {
-    // Même auth.users que safe-crm/Vente : un compte connecté n'a pas
-    // accès à S@FE CYBER PILOT pour autant — vérifie le droit par module avant
-    // d'afficher quoi que ce soit.
-    const ok = await hasCyberdeskAccess();
-    if (!ok) {
-      // Distingue un abonnement SaaS tenant suspendu (canceled/unpaid) d'un
-      // compte qui n'a simplement jamais eu accès — appelé AVANT signOut()
-      // car cyberdesk_my_tenant_status() s'appuie sur auth.uid(). Un tenant
-      // trialing/active/past_due n'atteint jamais cette branche (has_module_
-      // access reste vrai) — voir migration 015 et CLAUDE.md.
-      let blockedMessage = "Ce compte n'a pas accès à S@FE CYBER PILOT.";
-      try {
-        const { data: subRows } = await sb.rpc('cyberdesk_my_tenant_status');
-        const sub = Array.isArray(subRows) ? subRows[0] : null;
-        if (sub && ['canceled', 'unpaid'].includes(sub.subscription_status)) {
-          blockedMessage = 'Votre abonnement S@FE CYBER PILOT est suspendu — contactez-nous pour le réactiver.';
-        }
-      } catch (e) { /* repli sur le message générique */ }
-
-      await sb.auth.signOut();
-      showLoginPanel();
-      if (errEl) errEl.textContent = blockedMessage;
-      document.getElementById('login-screen').classList.remove('is-hidden');
-      document.getElementById('app-shell').classList.add('is-hidden');
-      return;
-    }
-    document.getElementById('login-screen').classList.add('is-hidden');
-
-    // Conditionne l'affichage du sélecteur "vue d'un utilisateur en
-    // particulier" dans la modale Comptable (assets/js/accounting.js) —
-    // le cloisonnement réel des données est fait côté serveur par les
-    // fonctions cyberdesk_reporting_*() (migration 010), pas ici. Résolu
-    // ici (avant l'entrée dans l'app) car aussi nécessaire pour le filet
-    // de sécurité is_super_admin() du gate contrat ci-dessous.
-    const [{ data: isAdminData }, { data: isSuperAdminData }, { data: userSettings }] = await Promise.all([
-      sb.rpc('is_admin'),
-      sb.rpc('is_super_admin'),
-      sb.from('cyberdesk_user_settings').select('first_name').eq('user_id', session.user.id).maybeSingle(),
-    ]);
-    _isAdmin = isAdminData === true || isSuperAdminData === true;
-    const isSuperAdmin = isSuperAdminData === true;
-
-    // Salutation de la barre d'outils du Kanban — prénom de l'utilisateur
-    // connecté (cyberdesk_user_settings.first_name, renseigné à l'étape
-    // Identité du tunnel d'onboarding partenaire, voir CLAUDE.md). Repli sur
-    // l'emoji seul tant que l'utilisateur n'a pas renseigné son prénom.
-    const greetingEl = document.getElementById('v17-greeting');
-    if (greetingEl) greetingEl.textContent = `🕵️‍♂️ ${userSettings?.first_name || ''}`.trim();
-
-    // Gate "tunnel d'onboarding partenaire" (identité + piste Mandataire/
-    // Associé SEP + compléments + documents signés, cyberdesk_partner_
-    // contracts) — désactivé par défaut (cyberdesk_feature_flags.contract_
-    // gate), à activer une fois le parcours validé en conditions réelles.
-    // is_super_admin() bypass toujours ce gate : un bug dans le tunnel ne
-    // doit jamais verrouiller la seule personne capable de corriger le
-    // problème en base.
-    let onboardingOk = true;
-    if (!isSuperAdmin) {
-      const { data: gateRows } = await sb.rpc('cyberdesk_my_onboarding_status');
-      const gateStatus = Array.isArray(gateRows) ? gateRows[0] : null;
-      const gateEnabled = gateStatus?.gate_enabled === true;
-      onboardingOk = !gateEnabled || (await isPartnerOnboardingComplete());
-    }
-
-    if (!onboardingOk) {
-      document.getElementById('app-shell').classList.add('is-hidden');
-      await openPartnerContractModal('gate');
-      return;
-    }
-
-    document.getElementById('app-shell').classList.remove('is-hidden');
-    initVictimes17();
-  } else {
-    showLoginPanel();
-    showAuthLinkErrorIfAny();
-    document.getElementById('login-screen').classList.remove('is-hidden');
-    document.getElementById('app-shell').classList.add('is-hidden');
-  }
-}
-
-/** Explique à l'utilisateur pourquoi il retombe sur l'écran de connexion après avoir cliqué un lien d'e-mail refusé par Supabase (voir authLinkError dans supabase.client.js). À appeler seulement quand aucune session n'est établie. */
-function showAuthLinkErrorIfAny() {
-  if (!authLinkError) return;
-  authLinkError = null;
-  document.getElementById('login-error').textContent =
-    "Ce lien n'est plus valide : il a expiré, a déjà été utilisé, ou un e-mail plus récent l'a remplacé " +
-    "(seul le dernier e-mail reçu fonctionne). Redemandez un lien de connexion ci-dessous.";
-}
-
-/** Appelé par partner-contract.js après une signature réussie en mode 'gate' — réévalue le gate et entre dans l'app si désormais valide. */
-async function continueAfterContractSigned() {
-  await checkSession();
-}
-
-document.getElementById('login-form').addEventListener('submit', async () => {
-  const email    = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl    = document.getElementById('login-error');
-  const btn      = document.getElementById('login-btn');
-  errEl.textContent = '';
-  btn.disabled = true;
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  btn.disabled = false;
-  if (error) { errEl.textContent = error.message; return; }
-  // Un login explicite au mot de passe l'emporte sur un éventuel lien de
-  // récupération abandonné plus tôt sur cet appareil.
-  localStorage.removeItem(PENDING_RECOVERY_KEY);
-  inPasswordRecovery = false;
-  checkSession();
-});
-
-async function logout() {
-  await sb.auth.signOut();
-  checkSession();
-}
-
-// ── Mot de passe oublié ──────────────────────────────────
-function showLoginPanel() {
-  document.getElementById('forgot-password-panel').classList.add('is-hidden');
-  document.getElementById('magic-link-panel').classList.add('is-hidden');
-  document.getElementById('reset-password-panel').classList.add('is-hidden');
-  document.getElementById('login-panel').classList.remove('is-hidden');
-}
-
-document.getElementById('forgot-password-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('forgot-email').value = document.getElementById('login-email').value.trim();
-  document.getElementById('forgot-password-error').textContent = '';
-  document.getElementById('login-panel').classList.add('is-hidden');
-  document.getElementById('forgot-password-panel').classList.remove('is-hidden');
-});
-
-document.getElementById('back-to-login-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  showLoginPanel();
-});
-
-document.getElementById('magic-link-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('magic-link-email').value = document.getElementById('login-email').value.trim();
-  document.getElementById('magic-link-error').textContent = '';
-  document.getElementById('login-panel').classList.add('is-hidden');
-  document.getElementById('magic-link-panel').classList.remove('is-hidden');
-  _magicLinkRefreshButton();
-});
-
-document.getElementById('back-to-login-link-magic').addEventListener('click', (e) => {
-  e.preventDefault();
-  showLoginPanel();
-});
-
-// Délai avant de pouvoir redemander un lien pour la même adresse. Supabase ne
-// garde qu'UN jeton de connexion valide par compte (partagé avec « mot de
-// passe oublié ») : redemander un lien invalide celui de l'e-mail précédent —
-// constaté en réel, deux clics à 7 s d'écart, lien du 1er e-mail refusé
-// « invalide ou expiré ». Aligné sur la limite côté serveur
-// (cyberdesk-magic-link : 1 lien / 60 s / e-mail), qui reste la vraie
-// protection — ce délai-ci n'est que le retour visuel.
-const MAGIC_LINK_COOLDOWN_MS = 60 * 1000;
-const _magicLinkSentAt = {};   // e-mail (minuscules) → Date.now() du dernier envoi réussi
-let _magicLinkBusy = false;
-let _magicLinkTicker = null;
-
-function _magicLinkRefreshButton() {
-  const btn = document.getElementById('magic-link-btn');
-  const email = document.getElementById('magic-link-email').value.trim().toLowerCase();
-  const left = Math.ceil(((_magicLinkSentAt[email] || 0) + MAGIC_LINK_COOLDOWN_MS - Date.now()) / 1000);
-  btn.disabled = _magicLinkBusy || left > 0;
-  btn.textContent = left > 0 ? `Renvoyer le lien dans ${left} s` : 'Envoyer le lien de connexion';
-  if (left > 0 && !_magicLinkTicker) {
-    _magicLinkTicker = setInterval(_magicLinkRefreshButton, 1000);
-  } else if (left <= 0 && _magicLinkTicker) {
-    clearInterval(_magicLinkTicker);
-    _magicLinkTicker = null;
-  }
-}
-
-document.getElementById('magic-link-email').addEventListener('input', () => {
-  document.getElementById('magic-link-error').textContent = '';
-  _magicLinkRefreshButton();
-});
-
-document.getElementById('magic-link-form').addEventListener('submit', async () => {
-  const email = document.getElementById('magic-link-email').value.trim();
-  const errEl = document.getElementById('magic-link-error');
-  const btn   = document.getElementById('magic-link-btn');
-  errEl.style.color = '';
-  errEl.textContent = '';
-  if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
-  if (_magicLinkBusy || btn.disabled) return;
-  _magicLinkBusy = true;
-  _magicLinkRefreshButton();
-  // Passe par notre propre Edge Function (Brevo) plutôt que
-  // sb.auth.signInWithOtp() — même raison que cyberdesk-forgot-password :
-  // quota d'e-mail intégré Supabase trop bas, et on garde un seul pipeline
-  // d'envoi (Brevo) pour tous les e-mails d'auth de cette app.
-  const { error } = await sb.functions.invoke('cyberdesk-magic-link', { body: { email } });
-  _magicLinkBusy = false;
-  if (error) {
-    // Aucun lien n'est parti : pas de délai, l'utilisateur peut réessayer.
-    _magicLinkRefreshButton();
-    errEl.textContent = "Une erreur est survenue, réessayez plus tard.";
-    return;
-  }
-  _magicLinkSentAt[email.toLowerCase()] = Date.now();
-  _magicLinkRefreshButton();
-  errEl.style.color = 'var(--accent)';
-  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de connexion vient d'être envoyé. " +
-    "Utilisez uniquement le lien du dernier e-mail reçu : en redemander un rend le précédent invalide.";
-});
-
-/** Affiche le message "lien invalide" à la place du formulaire nouveau mot de passe, sans jamais l'écran générique de connexion (l'utilisateur vient de cliquer un lien e-mail, pas de rouvrir l'app). */
-function showRecoveryLinkInvalid() {
-  localStorage.removeItem(PENDING_RECOVERY_KEY);
-  inPasswordRecovery = false;
-  document.getElementById('reset-password-mfa').classList.add('is-hidden');
-  document.getElementById('reset-password-form').classList.add('is-hidden');
-  document.getElementById('reset-password-invalid').classList.remove('is-hidden');
-}
-
-document.getElementById('reset-password-retry-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('reset-password-panel').classList.add('is-hidden');
-  document.getElementById('reset-password-mfa').classList.add('is-hidden');
-  document.getElementById('reset-password-form').classList.remove('is-hidden');
-  document.getElementById('reset-password-invalid').classList.add('is-hidden');
-  document.getElementById('forgot-password-error').textContent = '';
-  document.getElementById('forgot-password-panel').classList.remove('is-hidden');
-});
-
-/** Appelée une fois la session de récupération confirmée (voir checkSession()) : bascule sur l'étape code MFA si la 2FA est activée sur le compte, sinon laisse le formulaire "nouveau mot de passe" déjà visible tel quel. */
-async function maybeRequireRecoveryMFA() {
-  // listFactors() en premier (pas getAuthenticatorAssuranceLevel()) : ce
-  // dernier lit session.user.factors, une copie figée au moment où la
-  // session de récupération a été établie (_getSessionFromURL), qui peut
-  // ne pas refléter les facteurs MFA du compte — auquel cas l'étape MFA
-  // était sautée à tort et sb.auth.updateUser() échouait ensuite avec
-  // "AAL2 session is required...". listFactors() refait un appel réseau
-  // frais (même mécanisme que Paramétrage, assets/js/settings.js) et fait
-  // foi.
-  const { data: factorsData, error: factorsErr } = await sb.auth.mfa.listFactors();
-  if (factorsErr) return;
-  const factor = (factorsData.totp || []).find(f => f.status === 'verified');
-  if (!factor) return; // pas de 2FA sur ce compte
-
-  // Filet de sécurité seulement : ne devrait normalement jamais être vrai
-  // pour une session de récupération fraîche.
-  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal && aal.currentLevel === 'aal2') return;
-
-  const { data: challenge, error: challengeErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
-  if (challengeErr) return;
-
-  _recoveryMfaFactorId = factor.id;
-  _recoveryMfaChallengeId = challenge.id;
-  document.getElementById('reset-password-form').classList.add('is-hidden');
-  document.getElementById('reset-password-mfa-code').value = '';
-  document.getElementById('reset-password-mfa-error').textContent = '';
-  document.getElementById('reset-password-mfa').classList.remove('is-hidden');
-}
-
-async function verifyRecoveryMFA() {
-  const code = document.getElementById('reset-password-mfa-code').value.trim();
-  const errEl = document.getElementById('reset-password-mfa-error');
-  errEl.textContent = '';
-  if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Saisissez le code à 6 chiffres.'; return; }
-
-  const btn = document.getElementById('reset-password-mfa-btn');
-  btn.disabled = true;
-  const { error } = await sb.auth.mfa.verify({
-    factorId: _recoveryMfaFactorId,
-    challengeId: _recoveryMfaChallengeId,
-    code,
-  });
-  btn.disabled = false;
-  if (error) { errEl.textContent = 'Code invalide, réessayez.'; return; }
-
-  document.getElementById('reset-password-mfa').classList.add('is-hidden');
-  document.getElementById('reset-password-form').classList.remove('is-hidden');
-}
-
-document.getElementById('forgot-password-form').addEventListener('submit', async () => {
-  const email = document.getElementById('forgot-email').value.trim();
-  const errEl = document.getElementById('forgot-password-error');
-  const btn   = document.getElementById('forgot-password-btn');
-  errEl.style.color = '';
-  errEl.textContent = '';
-  if (!email) { errEl.textContent = "Renseignez votre e-mail."; return; }
-  btn.disabled = true;
-  // Passe par notre propre Edge Function (Brevo) plutôt que
-  // sb.auth.resetPasswordForEmail() : le service e-mail intégré de
-  // Supabase a un quota par défaut trop bas ("email rate limit exceeded"),
-  // et ce changement reste scopé au flux mot de passe oublié — pas de
-  // config SMTP globale touchée sur le projet partagé avec Vente/safe-crm.
-  const { error } = await sb.functions.invoke('cyberdesk-forgot-password', { body: { email } });
-  btn.disabled = false;
-  if (error) { errEl.textContent = "Une erreur est survenue, réessayez plus tard."; return; }
-  errEl.style.color = 'var(--accent)';
-  errEl.textContent = "Si un compte existe pour cet e-mail, un lien de réinitialisation vient d'être envoyé.";
-});
-
-document.getElementById('reset-password-form').addEventListener('submit', async () => {
-  const pw1   = document.getElementById('reset-password-new').value;
-  const pw2   = document.getElementById('reset-password-confirm').value;
-  const errEl = document.getElementById('reset-password-error');
-  const btn   = document.getElementById('reset-password-btn');
-  errEl.textContent = '';
-  if (pw1.length < 8) { errEl.textContent = "Le mot de passe doit contenir au moins 8 caractères."; return; }
-  if (pw1 !== pw2) { errEl.textContent = "Les mots de passe ne correspondent pas."; return; }
-  btn.disabled = true;
-  const { error } = await sb.auth.updateUser({ password: pw1 });
-  btn.disabled = false;
-  if (error) {
-    if (error.name === 'AuthSessionMissingError') { showRecoveryLinkInvalid(); return; }
-    errEl.textContent = error.message;
-    return;
-  }
-  document.getElementById('reset-password-panel').classList.add('is-hidden');
-  localStorage.removeItem(PENDING_RECOVERY_KEY);
-  inPasswordRecovery = false;
-  checkSession();
-});
-
-checkSession();
-</script>
+<script src="assets/js/main.js?v=20261003"></script>
+<script src="assets/js/event-bindings.js?v=20261003"></script>
 
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Paiement confirmé — S@FE CYBER PILOT</title>
@@ -36,9 +36,6 @@ p{font-size:.92rem;color:var(--mut);line-height:1.6;margin-bottom:8px}
     <div class="ref" id="ref"></div>
     <div class="brand">S@FE — Prestataire référencé cybermalveillance.gouv.fr / 17Cyber</div>
   </div>
-  <script>
-    var sid = new URLSearchParams(location.search).get('session_id');
-    if (sid) document.getElementById('ref').textContent = 'Référence : ' + sid;
-  </script>
+  <script src="assets/js/payment-return.js?v=20261003"></script>
 </body>
 </html>
