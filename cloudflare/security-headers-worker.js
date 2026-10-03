@@ -102,8 +102,16 @@ export default {
     headers.delete('X-Powered-By');
     headers.delete('Server');
 
-    // Les pages authentifiées ne doivent pas être mises en cache.
-    if (isIndex) {
+    // Interdit le cache sur les pages contenant des données sensibles :
+    // - index.html       : session JWT dans localStorage, contenu post-auth
+    // - paiement-confirme / abonnement-confirme : session_id Stripe dans l'URL
+    // - avis-client      : token d'avis à usage unique dans l'URL
+    const SENSITIVE_PATHS = new Set([
+      '/', '/index.html',
+      '/paiement-confirme.html', '/abonnement-confirme.html',
+      '/avis-client.html',
+    ]);
+    if (SENSITIVE_PATHS.has(path)) {
       headers.set('Cache-Control', 'no-store');
     }
 

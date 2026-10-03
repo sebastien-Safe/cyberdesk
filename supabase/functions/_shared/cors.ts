@@ -8,6 +8,11 @@
 
 const ALLOWED_ORIGINS = [
   "https://cyberdesk.safe-digitalisation.fr",
+  // TODO(pre-prod) F-004 : retirer les origines de développement ci-dessous
+  // avant toute ouverture à des clients externes. Elles permettent à n'importe
+  // quel script tournant sur ces ports locaux de contourner CORS vers les Edge
+  // Functions — risque acceptable en bêta fermée (machine connue, JWT requis),
+  // inacceptable dès qu'un tenant externe a accès au projet.
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:5500",
