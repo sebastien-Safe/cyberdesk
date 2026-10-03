@@ -17,6 +17,20 @@ webhooks Stripe, le job pg_cron et l'historique RGPD déjà en production —
 coordination manuelle (Stripe, DNS, Supabase Dashboard), jamais par un
 simple renommage de texte.
 
+**Dépôt démo (cyberdesk-demo) — parité obligatoire.** Il existe une copie
+navigateur-only de ce projet dans `../cyberdesk-demo` (dépôt privé
+`sebastien-Safe/cyberdesk-demo`, déployée sur
+`demo-cyberdesk.safe-digitalisation.fr` — backend simulé en `localStorage`,
+aucune base ni clé réelle). **Toute modification de code apportée à
+`cyberdesk` doit être reportée sur `cyberdesk-demo`** dans la même tâche
+(correctifs de sécurité, CSP, en-têtes, logique applicative, pages, etc.),
+en l'adaptant aux spécificités du démo : backend simulé (`demo-backend.js`
+au lieu de supabase-js), URLs `https://demo.invalid`, bandeau de démo,
+paiement/e-mails/IA désactivés. Ne JAMAIS fusionner les deux dépôts ni
+réintroduire d'URL ou de clé Supabase réelle dans le démo. Le démo a son
+propre déploiement (Worker Cloudflare + GitHub Actions sur push `main`),
+distinct de GitHub Pages.
+
 ## Ce qu'est S@FE CYBER PILOT
 
 S@FE CYBER PILOT est une plateforme SaaS de gestion d'incidents cyber,
