@@ -360,10 +360,17 @@ function _acctRenderCommission(rows) {
           </div>
           <div style="text-align:right;display:flex;align-items:center;gap:10px">
             <span class="badge ${info.cls}">${info.label}</span>
-            ${_isAdmin && next ? `<button type="button" class="btn btn-out btn-sm" onclick="_acctUpdateCommissionStatus('${r.id}','${next.status}')">${next.label}</button>` : ''}
+            ${_isAdmin && next ? `<button type="button" class="btn btn-out btn-sm" data-action="update-commission" data-id="${r.id}" data-status="${next.status}">${next.label}</button>` : ''}
           </div>
         </div>`;
     }).join('');
+  if (!listEl._delegated) {
+    listEl._delegated = true;
+    listEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action="update-commission"]');
+      if (btn) _acctUpdateCommissionStatus(btn.dataset.id, btn.dataset.status);
+    });
+  }
 }
 
 async function _acctUpdateCommissionStatus(id, newStatus) {

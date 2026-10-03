@@ -21,6 +21,15 @@ let _v17Dragging    = null;
 async function initVictimes17() {
   const board = document.getElementById('v17-board');
   if (!board) return;
+  if (!board._delegated) {
+    board._delegated = true;
+    board.addEventListener('click', _v17BoardClickDelegate);
+    board.addEventListener('dragstart', _v17BoardDragStartDelegate);
+    board.addEventListener('dragend', _v17BoardDragEndDelegate);
+    board.addEventListener('dragover', _v17BoardColDragDelegate);
+    board.addEventListener('dragleave', _v17BoardColDragDelegate);
+    board.addEventListener('drop', _v17BoardColDragDelegate);
+  }
   board.innerHTML = '<div class="pipeline-loading"><div class="pipeline-spinner"></div> Chargement…</div>';
   try {
     await Promise.all([_v17LoadData(), _quoteLoadTarifs().catch(() => null)]);
@@ -72,10 +81,7 @@ function _v17RenderBoard() {
         <div class="pcol-label">${col.icon} ${col.label}</div>
         <div class="pcol-count" id="v17col-count-${col.id}">${byCol[col.id].length}</div>
       </div>
-      <div class="pcol-cards" id="v17col-cards-${col.id}"
-           ondragover="_v17DragOver(event,'${col.id}')"
-           ondragleave="_v17DragLeave(event,'${col.id}')"
-           ondrop="_v17Drop(event,'${col.id}')">
+      <div class="pcol-cards" id="v17col-cards-${col.id}" data-col-id="${col.id}">
         ${byCol[col.id].length
           ? byCol[col.id].map(l => _v17CardHTML(l)).join('')
           : '<div class="pcol-empty">Aucun dossier</div>'}
@@ -89,10 +95,8 @@ function _v17CardHTML(lead) {
   const dateStr = lead.created_at ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '—';
 
   return `
-  <div class="pcard" id="v17card-${lead.id}"
-       draggable="true"
-       ondragstart="_v17DragStart(event,'${lead.id}')"
-       ondragend="_v17DragEnd()">
+  <div class="pcard" id="v17card-${lead.id}" data-lead-id="${lead.id}"
+       draggable="true">
     <div style="padding-left:6px">
       <div class="pcard-company">${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}</div>
       <div class="v17-alert-badge">${escapeHtml(ATTACK_TYPE_LABELS[lead.attack_type] || '—')}</div>
@@ -110,15 +114,49 @@ function _v17CardHTML(lead) {
       ${lead.notes ? `<div class="pcard-meta-item" style="margin-top:4px;font-size:.76rem;opacity:.75">📝 ${escapeHtml(lead.notes.slice(0, 80))}${lead.notes.length > 80 ? '…' : ''}</div>` : ''}
     </div>
     <div class="pcard-actions">
-      <button class="pcard-edit-btn" title="Diagnostic" onclick="openEditVictimLeadModal('${lead.id}')">✏️</button>
-      <button class="pcard-edit-btn" title="Générer le devis" onclick="openQuoteModal('${lead.id}')">📋</button>
-      <button class="pcard-edit-btn" title="Suivi d'intervention" onclick="openTaskTreeModal('${lead.id}')">🗂️</button>
-      <button class="pcard-edit-btn" title="Assistant IA" onclick="openVictimAiModal('${lead.id}')">🤖</button>
-      <button class="pcard-edit-btn" title="Générer le rapport (PDF simple)" onclick="generateVictimReport('${lead.id}')">📄</button>
-      <button class="pcard-edit-btn" title="Enregistrer un paiement manuel (hors Stripe)" onclick="openManualPaymentModal('${lead.id}')">🏦</button>
-      <button class="pcard-edit-btn pcard-del-btn" title="Supprimer" onclick="confirmDeleteVictimLead('${lead.id}', this)">🗑️</button>
+      <button class="pcard-edit-btn" title="Diagnostic" data-action="edit">✏️</button>
+      <button class="pcard-edit-btn" title="Générer le devis" data-action="quote">📋</button>
+      <button class="pcard-edit-btn" title="Suivi d'intervention" data-action="tasks">🗂️</button>
+      <button class="pcard-edit-btn" title="Assistant IA" data-action="ai">🤖</button>
+      <button class="pcard-edit-btn" title="Générer le rapport (PDF simple)" data-action="report">📄</button>
+      <button class="pcard-edit-btn" title="Enregistrer un paiement manuel (hors Stripe)" data-action="payment">🏦</button>
+      <button class="pcard-edit-btn pcard-del-btn" title="Supprimer" data-action="delete">🗑️</button>
     </div>
   </div>`;
+}
+
+// ── Délégation d'événements sur le board (remplace les onclick/ondragstart inline) ──
+function _v17BoardClickDelegate(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const card = btn.closest('.pcard');
+  if (!card) return;
+  const leadId = card.dataset.leadId;
+  const action = btn.dataset.action;
+  if (action === 'edit') openEditVictimLeadModal(leadId);
+  else if (action === 'quote') openQuoteModal(leadId);
+  else if (action === 'tasks') openTaskTreeModal(leadId);
+  else if (action === 'ai') openVictimAiModal(leadId);
+  else if (action === 'report') generateVictimReport(leadId);
+  else if (action === 'payment') openManualPaymentModal(leadId);
+  else if (action === 'delete') confirmDeleteVictimLead(leadId, btn);
+}
+
+function _v17BoardDragStartDelegate(e) {
+  const card = e.target.closest('.pcard[data-lead-id]');
+  if (card) _v17DragStart(e, card.dataset.leadId);
+}
+
+function _v17BoardDragEndDelegate(e) {
+  if (e.target.closest('.pcard')) _v17DragEnd();
+}
+
+function _v17BoardColDragDelegate(e) {
+  const col = e.target.closest('.pcol-cards[data-col-id]');
+  if (!col) return;
+  if (e.type === 'dragover') _v17DragOver(e, col.dataset.colId);
+  else if (e.type === 'dragleave') _v17DragLeave(e, col.dataset.colId);
+  else if (e.type === 'drop') _v17Drop(e, col.dataset.colId);
 }
 
 // ── Suppression dossier (confirmation en deux clics) ──
@@ -869,6 +907,35 @@ function _diagInit() {
   if (birthYearInput) birthYearInput.addEventListener('input', _diagUpdateAgeDisplay);
 }
 
+// Libellés des types d'incident du référentiel « Suivi d'intervention »
+// (assets/data/task_trees.json, clé incidents.*.label) — copie serveur dans
+// supabase/functions/_shared/product-texts.ts (INCIDENT_LABELS), à garder
+// synchronisée.
+const INCIDENT_LABELS = {
+  hameconnage:        'Hameçonnage (phishing)',
+  faux_rib:           'Fraude au virement (faux RIB / BEC)',
+  cyberharcelement:   'Cyberharcèlement',
+  faux_conseiller:    'Fraude au faux conseiller bancaire',
+  faux_support:       'Arnaque au faux support technique',
+  fraude_cb:          'Fraude à la carte bancaire',
+  fuite_donnees:      'Fuite ou violation de données personnelles',
+  piratage_compte:    'Piratage de compte en ligne',
+  virus_informatique: 'Virus informatique',
+};
+
+// Type d'incident faisant foi pour les documents (rapport, devis) : celui
+// choisi par l'agent dans « Suivi d'intervention » (intervention_tasks.
+// incident_type) prime sur le type d'attaque déclaré au signalement, qui
+// n'est qu'une première qualification.
+function _v17ResolveProduct(lead) {
+  const chosen = lead.intervention_tasks?.incident_type;
+  if (chosen && INCIDENT_LABELS[chosen]) return { code: chosen, alert_type: INCIDENT_LABELS[chosen] };
+  return {
+    code:       ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
+    alert_type: ATTACK_TYPE_LABELS[lead.attack_type] || lead.attack_type || 'Incident cybersécurité',
+  };
+}
+
 // ── Génération devis (modale 3 étapes, assets/victimes17/victimes17-quote.js)
 //    Le devis est composé dans la modale (prestation + options + total),
 //    puis finalisé par _quoteFinalize() qui appelle VictimPDF.generateQuoteV2,
@@ -881,10 +948,7 @@ async function generateVictimReport(leadId) {
   // code sans correspondance possible (attack_type ex. deni_de_service/
   // autre) — on utilise alors un intitulé de repli basé sur le diagnostic
   // plutôt que de bloquer.
-  const product = {
-    code:       ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
-    alert_type: ATTACK_TYPE_LABELS[lead.attack_type] || lead.attack_type || 'Incident cybersécurité',
-  };
+  const product = _v17ResolveProduct(lead);
   if (typeof window.VictimPDF === 'undefined') { alert('Générateur PDF indisponible.'); return; }
 
   window.VictimPDF.generateReport(lead, product);
@@ -931,8 +995,10 @@ async function openTaskTreeModal(leadId) {
     await window.TaskTree.init({
       container: '#task-tree-container',
       leadId,
-      incidentType: ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
-      os: lead.os_victim || null,
+      // Réouverture : on reprend le type d'incident et l'OS enregistrés par
+      // l'agent, sinon les tâches cochées ne correspondraient plus.
+      incidentType: lead.intervention_tasks?.incident_type || ATTACK_TYPE_TO_PRODUCT_CODE[lead.attack_type] || null,
+      os: lead.intervention_tasks?.os || lead.os_victim || null,
       savedPhases: lead.intervention_tasks?.phases || null,
       onSave: (payload) => _v17SaveTaskTree(leadId, payload),
     });
