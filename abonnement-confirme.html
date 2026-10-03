@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Abonnement confirmé — S@FE CYBER PILOT</title>
@@ -38,9 +38,6 @@ a.btn{display:inline-block;margin-top:18px;padding:10px 22px;border-radius:8px;b
     <div class="ref" id="ref"></div>
     <div class="brand">CYBER PILOT — S@FE</div>
   </div>
-  <script>
-    var sid = new URLSearchParams(location.search).get('session_id');
-    if (sid) document.getElementById('ref').textContent = 'Référence : ' + sid;
-  </script>
+  <script src="assets/js/payment-return.js?v=20261003"></script>
 </body>
 </html>
