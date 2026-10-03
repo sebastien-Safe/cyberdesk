@@ -4,6 +4,15 @@
 const _SB_URL = 'https://bgkijldrmdhklkadkeua.supabase.co';
 const _SB_ANON_KEY = 'sb_publishable_0e2GVUwr3Tml870xyaEMwQ_LZDt0y32';
 
+// Échappement HTML des champs libres du formulaire avant injection dans le
+// rapport (document.write dans une fenêtre about:blank sans CSP) — page
+// publique, saisie non fiable.
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 async function sendAuditEmail(to_email, to_name, params) {
   try {
     const r = await fetch(`${_SB_URL}/functions/v1/cyberdesk-send-audit-email`, {
@@ -125,7 +134,7 @@ function genPDF(){
     const badge=a.r==='ok'?`<span style="background:#d1fae5;color:#065f46;padding:2px 9px;border-radius:99px;font-size:11px">✅ OK</span>`:a.r==='warn'?`<span style="background:#fef3c7;color:#92400e;padding:2px 9px;border-radius:99px;font-size:11px">⚠️ Partiel</span>`:`<span style="background:#fee2e2;color:#991b1b;padding:2px 9px;border-radius:99px;font-size:11px">❌ À corriger</span>`;
     return `<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;font-size:12px;width:55%">${q.q}</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;font-size:12px">${a.l}</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">${badge}</td></tr>`;}).join('');
   const rowsData=Q.map(q=>{ const a=ans[q.id]; if(!a) return null; const s=a.r==='ok'?{text:'✅ OK',bg:'#d1fae5',color:'#065f46'}:a.r==='warn'?{text:'⚠️ Partiel',bg:'#fef3c7',color:'#92400e'}:{text:'❌ À corriger',bg:'#fee2e2',color:'#991b1b'}; return {question:q.q,reponse:a.l,...s}; }).filter(Boolean);
-  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Rapport Cyber — ${nom}</title>
+  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Rapport Cyber — ${esc(nom)}</title>
 <style>@page{margin:18mm 16mm}body{font-family:Arial,sans-serif;color:#1f2937;font-size:13px;line-height:1.5}
 .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000091;padding-bottom:10px;margin-bottom:16px}
 .logo{font-size:20px;font-weight:900}.logo b{color:#e1000f}.logo small{display:block;font-size:9px;font-weight:400;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-top:1px}
@@ -138,11 +147,11 @@ table{width:100%;border-collapse:collapse}th{background:#000091;color:#fff;paddi
 .footer{margin-top:14px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;display:flex;justify-content:space-between}
 </style></head><body>
 <div class="header"><div><div class="logo">S<b>@</b>FE<small>Safe Digitalisation</small></div></div><div style="text-align:right"><div style="font-size:15px;font-weight:700;color:#000091">Diagnostic Cybersécurité</div><small style="color:#6b7280">${now}</small></div></div>
-<div class="prospect"><div class="pf"><label>Prospect</label><span>${nom}</span></div><div class="pf"><label>Entreprise</label><span>${ent||'—'}</span></div><div class="pf"><label>E-mail</label><span>${email}</span></div><div class="pf"><label>Téléphone</label><span>${tel||'—'}</span></div></div>
+<div class="prospect"><div class="pf"><label>Prospect</label><span>${esc(nom)}</span></div><div class="pf"><label>Entreprise</label><span>${esc(ent||'—')}</span></div><div class="pf"><label>E-mail</label><span>${esc(email)}</span></div><div class="pf"><label>Téléphone</label><span>${esc(tel||'—')}</span></div></div>
 <div class="score-box" style="border-color:${pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444'};background:${pct>=80?'#f0fdf4':pct>=60?'#fffbeb':'#fef2f2'}">
 <div class="score-pct" style="color:${lvlColor}">${pct}%</div><div class="score-lbl">Score de sécurité — ${lvl}</div></div>
 <table><thead><tr><th>Question</th><th>Réponse</th><th>Statut</th></tr></thead><tbody>${rows}</tbody></table>
-<div class="consent">✓ Consentement RGPD recueilli le ${now}. ${nom} (${email}) autorise S@FE à conserver ses coordonnées. Données non transmises à des tiers — Art. 13 RGPD.</div>
+<div class="consent">✓ Consentement RGPD recueilli le ${now}. ${esc(nom)} (${esc(email)}) autorise S@FE à conserver ses coordonnées. Données non transmises à des tiers — Art. 13 RGPD.</div>
 <div class="footer"><span>S@FE — Safe Digitalisation · contact@safe-digitalisation.fr</span><span>Rapport du ${now}</span></div>
 </body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();w.onload=()=>w.print();
