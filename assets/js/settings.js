@@ -109,9 +109,16 @@ async function _settingsRenderCommissionDocs() {
           <div class="diag-label-hint">${Number(montant).toFixed(2)} €${suffix} — ${b.line_count} commission(s)</div>
           ${warning}
         </div>
-        <button type="button" class="btn btn-out btn-sm" onclick="_settingsDownloadBordereau('${b.file_path}')">Télécharger</button>
+        <button type="button" class="btn btn-out btn-sm" data-action="download-bordereau" data-path="${b.file_path}">Télécharger</button>
       </div>`;
   }).join('');
+  if (!listEl._delegated) {
+    listEl._delegated = true;
+    listEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action="download-bordereau"]');
+      if (btn) _settingsDownloadBordereau(btn.dataset.path);
+    });
+  }
 }
 
 async function _settingsDownloadBordereau(filePath) {
@@ -211,7 +218,7 @@ async function _settingsRenderContractDocs(status, docs, signedKeys) {
             <strong>${escapeHtml(d.title)}</strong>
             <div class="diag-label-hint">Signé le ${dateStr}</div>
           </div>
-          <button type="button" class="btn btn-out btn-sm" onclick="_settingsToggleContractDoc('${docId}')">Voir</button>
+          <button type="button" class="btn btn-out btn-sm" data-action="toggle-doc" data-id="${docId}">Voir</button>
         </div>
         <div id="${docId}" style="display:none;margin-top:10px">
           <pre style="white-space:pre-wrap;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:220px;overflow-y:auto">${escapeHtml(text)}</pre>
@@ -219,6 +226,13 @@ async function _settingsRenderContractDocs(status, docs, signedKeys) {
         </div>
       </div>`;
   }).join('');
+  if (!panel._delegated) {
+    panel._delegated = true;
+    panel.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action="toggle-doc"]');
+      if (btn) _settingsToggleContractDoc(btn.dataset.id);
+    });
+  }
 }
 
 function _settingsToggleContractDoc(id) {
