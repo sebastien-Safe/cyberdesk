@@ -2,9 +2,10 @@ name = "cyberdesk-security-headers"
 main = "security-headers-worker.js"
 compatibility_date = "2024-01-01"
 
-# Déployé en route sur le domaine custom (nécessite que le domaine soit
-# proxié par Cloudflare — orange cloud activé).
-# Route à créer manuellement dans le Dashboard :
-#   Workers & Pages → cyberdesk-security-headers → Settings → Routes
-#   Pattern : cyberdesk.safe-digitalisation.fr/*
-#   Zone    : safe-digitalisation.fr
+# Route provisionnée directement par `wrangler deploy` (plus besoin de la
+# créer à la main dans le Dashboard). Nécessite que le domaine soit proxié
+# par Cloudflare (orange cloud activé) et que la zone safe-digitalisation.fr
+# appartienne au compte authentifié via `wrangler login`.
+[[routes]]
+pattern = "cyberdesk.safe-digitalisation.fr/*"
+zone_name = "safe-digitalisation.fr"
